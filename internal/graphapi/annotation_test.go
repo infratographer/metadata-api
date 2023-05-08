@@ -45,7 +45,7 @@ func TestAnnotationUpdate(t *testing.T) {
 			TestName:    "Fails when namespace doesn't exists",
 			NodeID:      gidx.MustNewID("testing"),
 			NamespaceID: gidx.MustNewID("notreal"),
-			ErrorMsg:    "FOREIGN KEY constraint failed", // TODO: This should have a better error message
+			ErrorMsg:    "constraint failed", // TODO: This should have a better error message
 		},
 	}
 

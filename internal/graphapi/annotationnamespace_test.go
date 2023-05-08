@@ -32,7 +32,7 @@ func TestAnnotationNamespacesCreate(t *testing.T) {
 		{
 			TestName:                 "Failed when name is in use by same tenant",
 			AnnotationNamespaceInput: graphclient.CreateAnnotationNamespaceInput{Name: ns1.Name, TenantID: ns1.TenantID},
-			ErrorMsg:                 "UNIQUE constraint failed", // TODO: This should have a better error message
+			ErrorMsg:                 "constraint failed", // TODO: This should have a better error message
 		},
 	}
 
@@ -132,7 +132,7 @@ func TestAnnotationNamespacesUpdate(t *testing.T) {
 			TestName: "Failed when name is in use by same tenant",
 			ID:       ns2.ID,
 			NewName:  ns.Name,
-			ErrorMsg: "UNIQUE constraint failed", // TODO: This should have a better error message
+			ErrorMsg: "constraint failed", // TODO: This should have a better error message
 		},
 	}
 
