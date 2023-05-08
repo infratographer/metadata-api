@@ -7,7 +7,7 @@ replace go.infratographer.com/x => github.com/nicolerenee/x v0.0.0-2023050421371
 replace github.com/testcontainers/testcontainers-go => github.com/testcontainers/testcontainers-go v0.0.0-20230503220718-0df60de8ccd8
 
 require (
-	entgo.io/contrib v0.4.4
+	entgo.io/contrib v0.4.5
 	entgo.io/ent v0.12.2
 	github.com/99designs/gqlgen v0.17.30
 	github.com/Yamashou/gqlgenc v0.13.5
