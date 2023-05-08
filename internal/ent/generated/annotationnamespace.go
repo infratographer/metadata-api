@@ -31,15 +31,15 @@ import (
 type AnnotationNamespace struct {
 	config `json:"-"`
 	// ID of the ent.
-	// The ID for the load balancer provider.
+	// The ID for the annotation namespace.
 	ID gidx.PrefixedID `json:"id,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
-	// The name of the load balancer provider.
+	// The name of the annotation namespace.
 	Name string `json:"name,omitempty"`
-	// The ID for the tenant for this load balancer.
+	// The ID for the tenant for this annotation namespace.
 	TenantID gidx.PrefixedID `json:"tenant_id,omitempty"`
 	// Flag for if this namespace is private.
 	Private bool `json:"private,omitempty"`

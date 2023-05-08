@@ -183,12 +183,12 @@ var (
 			},
 			{
 				Name:    "status_metadata_id_status_namespace_id",
-				Unique:  true,
+				Unique:  false,
 				Columns: []*schema.Column{StatusColumns[6], StatusColumns[5]},
 			},
 			{
 				Name:    "status_metadata_id_status_namespace_id_source",
-				Unique:  false,
+				Unique:  true,
 				Columns: []*schema.Column{StatusColumns[6], StatusColumns[5], StatusColumns[3]},
 			},
 			{

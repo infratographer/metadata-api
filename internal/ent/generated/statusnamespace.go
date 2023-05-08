@@ -31,15 +31,15 @@ import (
 type StatusNamespace struct {
 	config `json:"-"`
 	// ID of the ent.
-	// The ID for the load balancer provider.
+	// The ID for the status namespace.
 	ID gidx.PrefixedID `json:"id,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// UpdatedAt holds the value of the "updated_at" field.
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
-	// The name of the load balancer provider.
+	// The name of the status namespace.
 	Name string `json:"name,omitempty"`
-	// The ID for the tenant for this load balancer.
+	// The ID for the tenant for this status namespace.
 	ResourceProviderID gidx.PrefixedID `json:"resource_provider_id,omitempty"`
 	// Flag for if this namespace is private.
 	Private bool `json:"private,omitempty"`

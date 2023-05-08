@@ -1,2 +1,2 @@
-// Package schema contains the ent schema definitions for the load balancer API.
+// Package schema contains the ent schema definitions for the metadata API.
 package schema

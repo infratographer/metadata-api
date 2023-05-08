@@ -28,23 +28,23 @@ func (AnnotationNamespace) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("id").
 			GoType(gidx.PrefixedID("")).
-			DefaultFunc(func() gidx.PrefixedID { return gidx.MustNewID(MetadataNamespacePrefix) }).
+			DefaultFunc(func() gidx.PrefixedID { return gidx.MustNewID(AnnotationNamespacePrefix) }).
 			Unique().
 			Immutable().
-			Comment("The ID for the load balancer provider.").
+			Comment("The ID for the annotation namespace.").
 			Annotations(
 				entgql.OrderField("ID"),
 			),
 		field.String("name").
 			NotEmpty().
-			Comment("The name of the load balancer provider.").
+			Comment("The name of the annotation namespace.").
 			Annotations(
 				entgql.OrderField("NAME"),
 			),
 		field.String("tenant_id").
 			GoType(gidx.PrefixedID("")).
 			Immutable().
-			Comment("The ID for the tenant for this load balancer.").
+			Comment("The ID for the tenant for this annotation namespace.").
 			Annotations(
 				entgql.QueryField(),
 				entgql.Type("ID"),

@@ -29,11 +29,11 @@ type AnnotationEdge {
   cursor: Cursor!
 }
 type AnnotationNamespace implements Node @key(fields: "id") {
-  """The ID for the load balancer provider."""
+  """The ID for the annotation namespace."""
   id: ID!
   createdAt: Time!
   updatedAt: Time!
-  """The name of the load balancer provider."""
+  """The name of the annotation namespace."""
   name: String!
   """Flag for if this namespace is private."""
   private: Boolean!
@@ -180,9 +180,9 @@ input AnnotationWhereInput {
 }
 """Input information to create an annotation namespace."""
 input CreateAnnotationNamespaceInput {
-  """The name of the load balancer provider."""
+  """The name of the annotation namespace."""
   name: String!
-  """The ID for the tenant for this load balancer."""
+  """The ID for the tenant for this annotation namespace."""
   tenantID: ID!
   """Flag for if this namespace is private."""
   private: Boolean
@@ -197,9 +197,9 @@ input CreateStatusInput {
 }
 """Input information to create a status namespace."""
 input CreateStatusNamespaceInput {
-  """The name of the load balancer provider."""
+  """The name of the status namespace."""
   name: String!
-  """The ID for the tenant for this load balancer."""
+  """The ID for the tenant for this status namespace."""
   resourceProviderID: ID!
   """Flag for if this namespace is private."""
   private: Boolean
@@ -351,11 +351,11 @@ type StatusEdge {
   cursor: Cursor!
 }
 type StatusNamespace implements Node @key(fields: "id") {
-  """The ID for the load balancer provider."""
+  """The ID for the status namespace."""
   id: ID!
   createdAt: Time!
   updatedAt: Time!
-  """The name of the load balancer provider."""
+  """The name of the status namespace."""
   name: String!
   """Flag for if this namespace is private."""
   private: Boolean!
@@ -514,7 +514,7 @@ input StatusWhereInput {
 scalar Time
 """Input information to update an annotation namespace."""
 input UpdateAnnotationNamespaceInput {
-  """The name of the load balancer provider."""
+  """The name of the annotation namespace."""
   name: String
   """Flag for if this namespace is private."""
   private: Boolean
@@ -527,7 +527,7 @@ input UpdateStatusInput {
 }
 """Input information to update a status namespace."""
 input UpdateStatusNamespaceInput {
-  """The name of the load balancer provider."""
+  """The name of the status namespace."""
   name: String
   """Flag for if this namespace is private."""
   private: Boolean
