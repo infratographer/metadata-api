@@ -2,7 +2,7 @@ module go.infratographer.com/metadata-api
 
 go 1.20
 
-replace github.com/testcontainers/testcontainers-go => github.com/testcontainers/testcontainers-go v0.0.0-20230503220718-0df60de8ccd8
+replace github.com/testcontainers/testcontainers-go => github.com/testcontainers/testcontainers-go v0.19.0
 
 require (
 	entgo.io/contrib v0.4.5
@@ -63,7 +63,6 @@ require (
 	github.com/hashicorp/golang-lru/v2 v2.0.1 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/hashicorp/hcl/v2 v2.13.0 // indirect
-	github.com/imdario/mergo v0.3.13 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
 	github.com/jackc/pgconn v1.14.0 // indirect
