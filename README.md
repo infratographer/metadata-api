@@ -1,3 +1,4 @@
+![logo](https://github.com/infratographer/website/blob/main/source/theme/assets/pictures/logo.jpg?raw=true)
 # Metadata API
 
 Metadata API implements a GraphQL API that provides a way to manage and control metadata for all resources in the Graph using GraphQL queries and mutations.
