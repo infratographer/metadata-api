@@ -70,6 +70,7 @@ func serve(ctx context.Context) error {
 		config.AppConfig.Server.WithMiddleware(middleware.CORS())
 		// reinit the logger
 		logger = loggingx.InitLogger(appName, config.AppConfig.Logging)
+		viper.Set("oidc.enabled", false)
 	}
 
 	err := otelx.InitTracer(config.AppConfig.Tracing, appName, logger)
