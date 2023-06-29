@@ -336,7 +336,7 @@ type MetadataEdge {
 type MetadataNode @key(fields: "id") @interfaceObject {
 	id: ID!
 	"""Metadata about this node, including annotations and statuses."""
-	metadata: Metadata
+	metadata: Metadata @shareable
 }
 """Ordering options for Metadata connections"""
 input MetadataOrder {
@@ -501,7 +501,7 @@ type ResourceOwner @key(fields: "id") @interfaceObject {
 		where: AnnotationNamespaceWhereInput
 	): AnnotationNamespaceConnection!
 	"""Metadata about this node, including annotations and statuses."""
-	metadata: Metadata
+	metadata: Metadata @shareable
 }
 type Status implements Node @key(fields: "id") @prefixedID(prefix: "metasts") {
 	id: ID!
@@ -691,7 +691,7 @@ type StatusOwner @key(fields: "id") @interfaceObject {
 		where: StatusNamespaceWhereInput
 	): StatusNamespaceConnection!
 	"""Metadata about this node, including annotations and statuses."""
-	metadata: Metadata
+	metadata: Metadata @shareable
 }
 """Input information to update an status."""
 input StatusUpdateInput {

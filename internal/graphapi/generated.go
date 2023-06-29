@@ -2061,7 +2061,7 @@ type MetadataNode @key(fields: "id") @interfaceObject {
   """
   Metadata about this node, including annotations and statuses.
   """
-  metadata: Metadata @goField(forceResolver: true)
+  metadata: Metadata @shareable @goField(forceResolver: true)
 }
 
 extend type Metadata {
@@ -2107,7 +2107,7 @@ extend type Metadata {
   """
   Metadata about this node, including annotations and statuses.
   """
-  metadata: Metadata @goField(forceResolver: true)
+  metadata: Metadata @shareable @goField(forceResolver: true)
 }
 
 extend type AnnotationNamespace {
@@ -2294,7 +2294,7 @@ type StatusNamespaceUpdatePayload {
   """
   Metadata about this node, including annotations and statuses.
   """
-  metadata: Metadata @goField(forceResolver: true)
+  metadata: Metadata @shareable @goField(forceResolver: true)
 }
 
 extend type StatusNamespace {
