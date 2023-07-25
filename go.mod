@@ -1,6 +1,6 @@
 module go.infratographer.com/metadata-api
 
-go 1.20.5
+go 1.20
 
 require (
 	entgo.io/contrib v0.4.5
