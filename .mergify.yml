@@ -17,6 +17,6 @@ pull_request_rules:
       - author=renovate[bot]
       - and: *CheckRuns
     actions:
-    review:
-      type: APPROVE
-      message: Automatically approve renovate on CI success
+      review:
+        type: APPROVE
+        message: Automatically approve renovate on CI success
