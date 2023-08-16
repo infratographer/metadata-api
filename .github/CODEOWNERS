@@ -1,5 +1,1 @@
 * @infratographer/the_committee @infratographer/sig-bootstrap
-
-// Allow @Mergifyio to approve go.mod and go.sum files from renovate
-go.mod @infratographer/the_committee @infratographer/sig-bootstrap @Mergifyio
-go.sum @infratographer/the_committee @infratographer/sig-bootstrap @Mergifyio
