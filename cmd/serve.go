@@ -27,6 +27,8 @@ import (
 	"go.infratographer.com/metadata-api/internal/config"
 	ent "go.infratographer.com/metadata-api/internal/ent/generated"
 	"go.infratographer.com/metadata-api/internal/graphapi"
+
+	"go.infratographer.com/metadata-api/internal/ent/generated/eventhooks"
 )
 
 const (
@@ -62,7 +64,9 @@ func init() {
 
 	echox.MustViperFlags(viper.GetViper(), serveCmd.Flags(), defaultAPIListenAddr)
 	echojwtx.MustViperFlags(viper.GetViper(), serveCmd.Flags())
+
 	events.MustViperFlags(viper.GetViper(), serveCmd.Flags(), appName)
+	permissions.MustViperFlags(viper.GetViper(), serveCmd.Flags())
 
 	// only available as a CLI arg because it shouldn't be something that could accidentially end up in a config file or env var
 	serveCmd.Flags().BoolVar(&serveDevMode, "dev", false, "dev mode: enables playground, disables all auth checks, sets CORS to allow all, pretty logging, etc.")
@@ -100,8 +104,7 @@ func serve(ctx context.Context) error {
 
 	entDB := entsql.OpenDB(dialect.Postgres, db)
 
-	// cOpts := []ent.Option{ent.Driver(entDB), ent.EventsPublisher(events)}
-	cOpts := []ent.Option{ent.Driver(entDB)}
+	cOpts := []ent.Option{ent.Driver(entDB), ent.EventsPublisher(events)}
 
 	if config.AppConfig.Logging.Debug {
 		cOpts = append(cOpts,
@@ -111,6 +114,15 @@ func serve(ctx context.Context) error {
 	}
 
 	client := ent.NewClient(cOpts...)
+	defer client.Close()
+
+	eventhooks.EventHooks(client)
+
+	// Run the automatic migration tool to create all schema resources.
+	if err := client.Schema.Create(ctx); err != nil {
+		logger.Errorf("failed creating schema resources", zap.Error(err))
+		return err
+	}
 
 	var middleware []echo.MiddlewareFunc
 

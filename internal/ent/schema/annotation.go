@@ -55,8 +55,8 @@ func (Annotation) Fields() []ent.Field {
 			Annotations(
 				entgql.Type("ID"),
 				entgql.Skip(^entgql.SkipMutationUpdateInput),
-				// TODO: implemement a way to add annotation to specify additional subjects
-				// entx.EventsHookAdditionalSubject(),entx.EventsHookAdditionalSubject(),
+				// TODO: implement a way to add annotation to specify additional subjects
+				// entx.EventsHookAdditionalSubject()
 			),
 		field.JSON("data", json.RawMessage{}).
 			Comment("JSON formatted data of this annotation.").
