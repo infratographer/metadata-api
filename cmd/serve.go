@@ -5,13 +5,16 @@ import (
 	"os"
 	"strconv"
 	"syscall"
+	"time"
 
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
+	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	_ "github.com/mattn/go-sqlite3" // sqlite3 driver
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"go.infratographer.com/permissions-api/pkg/permissions"
 	"go.infratographer.com/x/crdbx"
 	"go.infratographer.com/x/echojwtx"
 	"go.infratographer.com/x/echox"
@@ -26,7 +29,10 @@ import (
 	"go.infratographer.com/metadata-api/internal/graphapi"
 )
 
-const defaultAPIListenAddr = ":7905"
+const (
+	defaultAPIListenAddr = ":7905"
+	shutdownTimeout      = 10 * time.Second
+)
 
 var (
 	enablePlayground bool
@@ -56,7 +62,7 @@ func init() {
 
 	echox.MustViperFlags(viper.GetViper(), serveCmd.Flags(), defaultAPIListenAddr)
 	echojwtx.MustViperFlags(viper.GetViper(), serveCmd.Flags())
-	events.MustViperFlagsForPublisher(viper.GetViper(), serveCmd.Flags(), appName)
+	events.MustViperFlags(viper.GetViper(), serveCmd.Flags(), appName)
 
 	// only available as a CLI arg because it shouldn't be something that could accidentially end up in a config file or env var
 	serveCmd.Flags().BoolVar(&serveDevMode, "dev", false, "dev mode: enables playground, disables all auth checks, sets CORS to allow all, pretty logging, etc.")
@@ -76,8 +82,12 @@ func serve(ctx context.Context) error {
 		viper.Set("oidc.enabled", false)
 	}
 
-	err := otelx.InitTracer(config.AppConfig.Tracing, appName, logger)
+	events, err := events.NewConnection(config.AppConfig.Events, events.WithLogger(logger))
 	if err != nil {
+		logger.Fatalw("failed to initialize events", "error", err)
+	}
+
+	if err := otelx.InitTracer(config.AppConfig.Tracing, appName, logger); err != nil {
 		logger.Fatalw("failed to initialize tracer", "error", err)
 	}
 
@@ -90,12 +100,8 @@ func serve(ctx context.Context) error {
 
 	entDB := entsql.OpenDB(dialect.Postgres, db)
 
-	publisher, err := events.NewPublisher(config.AppConfig.Events.Publisher)
-	if err != nil {
-		logger.Fatal("unable to initialize event publisher", zap.Error(err))
-	}
-
-	cOpts := []ent.Option{ent.Driver(entDB), ent.EventsPublisher(publisher)}
+	// cOpts := []ent.Option{ent.Driver(entDB), ent.EventsPublisher(events)}
+	cOpts := []ent.Option{ent.Driver(entDB)}
 
 	if config.AppConfig.Logging.Debug {
 		cOpts = append(cOpts,
@@ -106,21 +112,51 @@ func serve(ctx context.Context) error {
 
 	client := ent.NewClient(cOpts...)
 
-	srv, err := echox.NewServer(logger.Desugar(), config.AppConfig.Server, versionx.BuildDetails())
+	var middleware []echo.MiddlewareFunc
+
+	// jwt auth middleware
+	if viper.GetBool("oidc.enabled") {
+		auth, err := echojwtx.NewAuth(ctx, config.AppConfig.OIDC)
+		if err != nil {
+			logger.Fatalw("failed to initialize jwt authentication", zap.Error(err))
+		}
+
+		middleware = append(middleware, auth.Middleware())
+	}
+
+	srv, err := echox.NewServer(logger.Desugar(), config.AppConfig.Server, versionx.BuildDetails(), echox.WithLoggingSkipper(echox.SkipDefaultEndpoints))
 	if err != nil {
 		logger.Error("failed to create server", zap.Error(err))
 	}
 
+	perms, err := permissions.New(config.AppConfig.Permissions,
+		permissions.WithLogger(logger),
+		permissions.WithDefaultChecker(permissions.DefaultAllowChecker),
+		permissions.WithEventsPublisher(events),
+	)
+	if err != nil {
+		logger.Fatal("failed to initialize permissions", zap.Error(err))
+	}
+
+	middleware = append(middleware, perms.Middleware())
+
 	r := graphapi.NewResolver(client, logger.Named("resolvers"))
-	handler := r.Handler(enablePlayground)
+	handler := r.Handler(enablePlayground, middleware...)
 
 	srv.AddHandler(handler)
+
+	defer func() {
+		ctx, cancel := context.WithTimeout(ctx, shutdownTimeout)
+		defer cancel()
+
+		_ = events.Shutdown(ctx)
+	}()
 
 	if err := srv.RunWithContext(ctx); err != nil {
 		logger.Error("failed to run server", zap.Error(err))
 	}
 
-	return err
+	return nil
 }
 
 // Write a pid file, but first make sure it doesn't exist with a running pid.
