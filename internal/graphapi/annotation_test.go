@@ -8,6 +8,8 @@ import (
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.infratographer.com/permissions-api/pkg/permissions"
+	"go.infratographer.com/permissions-api/pkg/permissions/mockpermissions"
 	"go.infratographer.com/x/gidx"
 
 	"go.infratographer.com/metadata-api/internal/ent/generated/annotation"
@@ -17,6 +19,12 @@ import (
 
 func TestAnnotationUpdate(t *testing.T) {
 	ctx := context.Background()
+	perms := new(mockpermissions.MockPermissions)
+	ctx = perms.ContextWithHandler(ctx)
+
+	// Permit request
+	ctx = context.WithValue(ctx, permissions.CheckerCtxKey, permissions.DefaultAllowChecker)
+
 	meta1 := MetadataBuilder{}.MustNew(ctx)
 	ant1 := AnnotationBuilder{Metadata: meta1}.MustNew(ctx)
 
@@ -81,6 +89,12 @@ func TestAnnotationUpdate(t *testing.T) {
 
 func TestAnnotationDelete(t *testing.T) {
 	ctx := context.Background()
+	perms := new(mockpermissions.MockPermissions)
+	ctx = perms.ContextWithHandler(ctx)
+
+	// Permit request
+	ctx = context.WithValue(ctx, permissions.CheckerCtxKey, permissions.DefaultAllowChecker)
+
 	meta1 := MetadataBuilder{}.MustNew(ctx)
 
 	testCases := []struct {

@@ -10,12 +10,16 @@ import (
 
 	"go.infratographer.com/metadata-api/internal/ent/generated"
 	"go.infratographer.com/metadata-api/internal/ent/generated/annotation"
+	"go.infratographer.com/permissions-api/pkg/permissions"
 	"go.infratographer.com/x/gidx"
 )
 
 // AnnotationNamespaceCreate is the resolver for the annotationNamespaceCreate field.
 func (r *mutationResolver) AnnotationNamespaceCreate(ctx context.Context, input generated.CreateAnnotationNamespaceInput) (*AnnotationNamespaceCreatePayload, error) {
-	// TODO: authz check here
+	if err := permissions.CheckAccess(ctx, input.OwnerID, actionMetadataAnnotationNamespaceCreate); err != nil {
+		return nil, err
+	}
+
 	ns, err := r.client.AnnotationNamespace.Create().SetInput(input).Save(ctx)
 	if err != nil {
 		return nil, err
@@ -26,7 +30,10 @@ func (r *mutationResolver) AnnotationNamespaceCreate(ctx context.Context, input 
 
 // AnnotationNamespaceDelete is the resolver for the annotationNamespaceDelete field.
 func (r *mutationResolver) AnnotationNamespaceDelete(ctx context.Context, id gidx.PrefixedID, force bool) (*AnnotationNamespaceDeletePayload, error) {
-	// TODO: authz check here
+	if err := permissions.CheckAccess(ctx, id, actionMetadataAnnotationNamespaceDelete); err != nil {
+		return nil, err
+	}
+
 	antCount, err := r.client.Annotation.Query().Where(annotation.AnnotationNamespaceID(id)).Count(ctx)
 	if err != nil {
 		return nil, err
@@ -53,7 +60,10 @@ func (r *mutationResolver) AnnotationNamespaceDelete(ctx context.Context, id gid
 
 // AnnotationNamespaceUpdate is the resolver for the annotationNamespaceUpdate field.
 func (r *mutationResolver) AnnotationNamespaceUpdate(ctx context.Context, id gidx.PrefixedID, input generated.UpdateAnnotationNamespaceInput) (*AnnotationNamespaceUpdatePayload, error) {
-	// TODO: authz check here
+	if err := permissions.CheckAccess(ctx, id, actionMetadataAnnotationNamespaceUpdate); err != nil {
+		return nil, err
+	}
+
 	ns, err := r.client.AnnotationNamespace.Get(ctx, id)
 	if err != nil {
 		return nil, err
@@ -69,6 +79,9 @@ func (r *mutationResolver) AnnotationNamespaceUpdate(ctx context.Context, id gid
 
 // AnnotationNamespace is the resolver for the annotationNamespace field.
 func (r *queryResolver) AnnotationNamespace(ctx context.Context, id gidx.PrefixedID) (*generated.AnnotationNamespace, error) {
-	// TODO: authz check here
+	if err := permissions.CheckAccess(ctx, id, actionMetadataAnnotationNamespaceGet); err != nil {
+		return nil, err
+	}
+
 	return r.client.AnnotationNamespace.Get(ctx, id)
 }
