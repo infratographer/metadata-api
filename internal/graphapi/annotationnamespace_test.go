@@ -6,6 +6,7 @@ import (
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.infratographer.com/permissions-api/pkg/permissions"
 	"go.infratographer.com/permissions-api/pkg/permissions/mockpermissions"
@@ -18,7 +19,7 @@ import (
 func TestAnnotationNamespacesCreate(t *testing.T) {
 	ctx := context.Background()
 	perms := new(mockpermissions.MockPermissions)
-	// ??? perms.On("CreateAuthRelationships", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	perms.On("CreateAuthRelationships", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	ctx = perms.ContextWithHandler(ctx)
 
@@ -73,7 +74,9 @@ func TestAnnotationNamespacesCreate(t *testing.T) {
 func TestAnnotationNamespacesDelete(t *testing.T) {
 	ctx := context.Background()
 	perms := new(mockpermissions.MockPermissions)
-	// ??? perms.On("CreateAuthRelationships", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	perms.On("CreateAuthRelationships", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	perms.On("DeleteAuthRelationships", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	ctx = perms.ContextWithHandler(ctx)
 
@@ -135,6 +138,8 @@ func TestAnnotationNamespacesUpdate(t *testing.T) {
 	ctx := context.Background()
 	perms := new(mockpermissions.MockPermissions)
 
+	perms.On("CreateAuthRelationships", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
 	ctx = perms.ContextWithHandler(ctx)
 
 	// Permit request
@@ -188,7 +193,8 @@ func TestAnnotationNamespacesUpdate(t *testing.T) {
 func TestAnnotationNamespacesGet(t *testing.T) {
 	ctx := context.Background()
 	perms := new(mockpermissions.MockPermissions)
-	// ??? perms.On("CreateAuthRelationships", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	perms.On("CreateAuthRelationships", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	ctx = perms.ContextWithHandler(ctx)
 

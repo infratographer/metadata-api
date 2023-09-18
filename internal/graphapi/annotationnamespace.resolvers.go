@@ -6,12 +6,14 @@ package graphapi
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
+
+	"go.infratographer.com/permissions-api/pkg/permissions"
+	"go.infratographer.com/x/gidx"
 
 	"go.infratographer.com/metadata-api/internal/ent/generated"
 	"go.infratographer.com/metadata-api/internal/ent/generated/annotation"
-	"go.infratographer.com/permissions-api/pkg/permissions"
-	"go.infratographer.com/x/gidx"
 )
 
 // AnnotationNamespaceCreate is the resolver for the annotationNamespaceCreate field.
@@ -34,24 +36,48 @@ func (r *mutationResolver) AnnotationNamespaceDelete(ctx context.Context, id gid
 		return nil, err
 	}
 
-	antCount, err := r.client.Annotation.Query().Where(annotation.AnnotationNamespaceID(id)).Count(ctx)
+	tx, err := r.client.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
 		return nil, err
 	}
 
+	annotations, err := r.client.Annotation.Query().Where(annotation.AnnotationNamespaceID(id)).All(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	antCount := len(annotations)
 	if antCount != 0 {
 		if force {
-			antCount, err = r.client.Annotation.Delete().Where(annotation.AnnotationNamespaceID(id)).Exec(ctx)
-			if err != nil {
-				return nil, err
+			antCount := 0
+			for _, ant := range annotations {
+				// TODO - :bug: - must delete one-by-one to ensure the deleted ID is available when the delete eventhook is triggered
+				if err := tx.Annotation.DeleteOneID(ant.ID).Exec(ctx); err != nil {
+					if rerr := tx.Rollback(); rerr != nil {
+						r.logger.Error(fmt.Errorf("%w: %v", err, rerr).Error())
+					}
+					return nil, err
+				}
+				antCount++
 			}
 		} else {
 			return nil, fmt.Errorf("annotation namespace is in use and can't be deleted")
 		}
 	}
 
-	err = r.client.AnnotationNamespace.DeleteOneID(id).Exec(ctx)
-	if err != nil {
+	if err := tx.AnnotationNamespace.DeleteOneID(id).Exec(ctx); err != nil {
+		if rerr := tx.Rollback(); rerr != nil {
+			r.logger.Error(fmt.Errorf("%w: %v", err, rerr).Error())
+		}
+
+		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
+		if rerr := tx.Rollback(); rerr != nil {
+			r.logger.Error(fmt.Errorf("%w: %v", err, rerr).Error())
+		}
+
 		return nil, err
 	}
 

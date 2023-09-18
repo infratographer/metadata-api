@@ -27,6 +27,7 @@ import (
 
 	"go.infratographer.com/metadata-api/db"
 	ent "go.infratographer.com/metadata-api/internal/ent/generated"
+	"go.infratographer.com/metadata-api/internal/ent/generated/eventhooks"
 	"go.infratographer.com/metadata-api/internal/graphapi"
 	"go.infratographer.com/metadata-api/internal/testclient"
 	"go.infratographer.com/metadata-api/x/testcontainersx"
@@ -117,6 +118,8 @@ func setupDB() {
 		log.Println("Running database migrations")
 		goosex.MigrateUp(uri, db.Migrations)
 	}
+
+	eventhooks.EventHooks(c)
 
 	EntClient = c
 }
