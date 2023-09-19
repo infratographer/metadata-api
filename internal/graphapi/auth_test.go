@@ -22,7 +22,6 @@ func TestJWTAnnotationNSCreateWithAuthClient(t *testing.T) {
 
 	ctx := context.Background()
 	perms := new(mockpermissions.MockPermissions)
-	// ???? wtf perms.On("CreateAuthRelationships", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
 	ctx = perms.ContextWithHandler(ctx)
 
