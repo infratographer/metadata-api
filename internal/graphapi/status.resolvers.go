@@ -15,7 +15,7 @@ import (
 
 // StatusUpdate is the resolver for the statusUpdate field.
 func (r *mutationResolver) StatusUpdate(ctx context.Context, input StatusUpdateInput) (*StatusUpdateResponse, error) {
-	if err := permissions.CheckAccess(ctx, input.NamespaceID, actionMetadataStatusUpdate); err != nil {
+	if err := permissions.CheckAccess(ctx, input.NamespaceID, actionMetadataStatusNamespaceUpdate); err != nil {
 		return nil, err
 	}
 
@@ -65,7 +65,7 @@ func (r *mutationResolver) StatusUpdate(ctx context.Context, input StatusUpdateI
 
 // StatusDelete is the resolver for the statusDelete field.
 func (r *mutationResolver) StatusDelete(ctx context.Context, input StatusDeleteInput) (*StatusDeleteResponse, error) {
-	if err := permissions.CheckAccess(ctx, input.NamespaceID, actionMetadataStatusDelete); err != nil {
+	if err := permissions.CheckAccess(ctx, input.NamespaceID, actionMetadataStatusNamespaceDelete); err != nil {
 		return nil, err
 	}
 

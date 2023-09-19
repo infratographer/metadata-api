@@ -14,7 +14,7 @@ import (
 
 // AnnotationUpdate is the resolver for the annotationUpdate field.
 func (r *mutationResolver) AnnotationUpdate(ctx context.Context, input AnnotationUpdateInput) (*AnnotationUpdateResponse, error) {
-	if err := permissions.CheckAccess(ctx, input.NamespaceID, actionMetadataAnnotationUpdate); err != nil {
+	if err := permissions.CheckAccess(ctx, input.NamespaceID, actionMetadataAnnotationNamespaceUpdate); err != nil {
 		return nil, err
 	}
 
@@ -52,7 +52,7 @@ func (r *mutationResolver) AnnotationUpdate(ctx context.Context, input Annotatio
 
 // AnnotationDelete is the resolver for the annotationDelete field.
 func (r *mutationResolver) AnnotationDelete(ctx context.Context, input AnnotationDeleteInput) (*AnnotationDeleteResponse, error) {
-	if err := permissions.CheckAccess(ctx, input.NamespaceID, actionMetadataAnnotationDelete); err != nil {
+	if err := permissions.CheckAccess(ctx, input.NamespaceID, actionMetadataAnnotationNamespaceDelete); err != nil {
 		return nil, err
 	}
 
