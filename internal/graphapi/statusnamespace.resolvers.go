@@ -6,13 +6,13 @@ package graphapi
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
-
-	"go.infratographer.com/permissions-api/pkg/permissions"
-	"go.infratographer.com/x/gidx"
 
 	"go.infratographer.com/metadata-api/internal/ent/generated"
 	"go.infratographer.com/metadata-api/internal/ent/generated/status"
+	"go.infratographer.com/permissions-api/pkg/permissions"
+	"go.infratographer.com/x/gidx"
 )
 
 // StatusNamespaceCreate is the resolver for the statusNamespaceCreate field.
@@ -40,24 +40,40 @@ func (r *mutationResolver) StatusNamespaceDelete(ctx context.Context, id gidx.Pr
 		return nil, err
 	}
 
-	statusCount, err := r.client.Status.Query().Where(status.StatusNamespaceID(id)).Count(ctx)
+	tx, err := r.client.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
 		return nil, err
 	}
 
+	defer tx.Rollback()
+
+	statuses, err := tx.Status.Query().Where(status.StatusNamespaceID(id)).All(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	statusCount := len(statuses)
 	if statusCount != 0 {
 		if force {
-			statusCount, err = r.client.Status.Delete().Where(status.StatusNamespaceID(id)).Exec(ctx)
-			if err != nil {
-				return nil, err
+			statusCount = 0
+			for _, status := range statuses {
+				// TODO - :bug: - must delete one-by-one to ensure the deleted ID is available when the delete eventhook is triggered
+				// statusCount, err = r.client.Status.Delete().Where(status.StatusNamespaceID(id)).Exec(ctx)
+				if err := tx.Status.DeleteOneID(status.ID).Exec(ctx); err != nil {
+					return nil, err
+				}
+				statusCount++
 			}
 		} else {
 			return nil, fmt.Errorf("status namespace is in use and can't be deleted")
 		}
 	}
 
-	err = r.client.StatusNamespace.DeleteOneID(id).Exec(ctx)
-	if err != nil {
+	if err := tx.StatusNamespace.DeleteOneID(id).Exec(ctx); err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
 

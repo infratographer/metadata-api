@@ -41,7 +41,9 @@ func (r *mutationResolver) AnnotationNamespaceDelete(ctx context.Context, id gid
 		return nil, err
 	}
 
-	annotations, err := r.client.Annotation.Query().Where(annotation.AnnotationNamespaceID(id)).All(ctx)
+	defer tx.Rollback()
+
+	annotations, err := tx.Annotation.Query().Where(annotation.AnnotationNamespaceID(id)).All(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -52,10 +54,8 @@ func (r *mutationResolver) AnnotationNamespaceDelete(ctx context.Context, id gid
 			antCount := 0
 			for _, ant := range annotations {
 				// TODO - :bug: - must delete one-by-one to ensure the deleted ID is available when the delete eventhook is triggered
+				// r.client.Annotation.Delete().Where(annotation.AnnotationNamespaceID(id)).Exec(ctx)
 				if err := tx.Annotation.DeleteOneID(ant.ID).Exec(ctx); err != nil {
-					if rerr := tx.Rollback(); rerr != nil {
-						r.logger.Error(fmt.Errorf("%w: %v", err, rerr).Error())
-					}
 					return nil, err
 				}
 				antCount++
@@ -66,18 +66,10 @@ func (r *mutationResolver) AnnotationNamespaceDelete(ctx context.Context, id gid
 	}
 
 	if err := tx.AnnotationNamespace.DeleteOneID(id).Exec(ctx); err != nil {
-		if rerr := tx.Rollback(); rerr != nil {
-			r.logger.Error(fmt.Errorf("%w: %v", err, rerr).Error())
-		}
-
 		return nil, err
 	}
 
 	if err := tx.Commit(); err != nil {
-		if rerr := tx.Rollback(); rerr != nil {
-			r.logger.Error(fmt.Errorf("%w: %v", err, rerr).Error())
-		}
-
 		return nil, err
 	}
 
