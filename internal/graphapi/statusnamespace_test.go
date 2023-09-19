@@ -6,6 +6,7 @@ import (
 
 	"github.com/brianvoe/gofakeit/v6"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.infratographer.com/permissions-api/pkg/permissions"
 	"go.infratographer.com/permissions-api/pkg/permissions/mockpermissions"
@@ -128,102 +129,58 @@ func TestStatusNamespacesDelete(t *testing.T) {
 	}
 }
 
-// func TestAnnotationNamespacesUpdate(t *testing.T) {
-// 	ctx := context.Background()
-// 	perms := new(mockpermissions.MockPermissions)
+func TestStatusNamespacesUpdate(t *testing.T) {
+	ctx := context.Background()
+	perms := new(mockpermissions.MockPermissions)
 
-// 	perms.On("CreateAuthRelationships", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+	perms.On("CreateAuthRelationships", mock.Anything, mock.Anything, mock.Anything).Return(nil)
 
-// 	ctx = perms.ContextWithHandler(ctx)
+	ctx = perms.ContextWithHandler(ctx)
 
-// 	// Permit request
-// 	ctx = context.WithValue(ctx, permissions.CheckerCtxKey, permissions.DefaultAllowChecker)
+	// Permit request
+	ctx = context.WithValue(ctx, permissions.CheckerCtxKey, permissions.DefaultAllowChecker)
 
-// 	ns := AnnotationNamespaceBuilder{}.MustNew(ctx)
-// 	ns2 := AnnotationNamespaceBuilder{OwnerID: ns.OwnerID}.MustNew(ctx)
+	ns := StatusNamespaceBuilder{}.MustNew(ctx)
+	ns2 := StatusNamespaceBuilder{ResourceProviderID: ns.ResourceProviderID}.MustNew(ctx)
 
-// 	testCases := []struct {
-// 		TestName string
-// 		ID       gidx.PrefixedID
-// 		NewName  string
-// 		ErrorMsg string
-// 	}{
-// 		{
-// 			TestName: "Successful path",
-// 			ID:       AnnotationNamespaceBuilder{}.MustNew(ctx).ID,
-// 			NewName:  gofakeit.DomainName(),
-// 		},
-// 		{
-// 			TestName: "Successful even when name is in use by another tenant",
-// 			ID:       AnnotationNamespaceBuilder{}.MustNew(ctx).ID,
-// 			NewName:  ns.Name,
-// 		},
-// 		{
-// 			TestName: "Failed when name is in use by same tenant",
-// 			ID:       ns2.ID,
-// 			NewName:  ns.Name,
-// 			ErrorMsg: "constraint failed", // TODO: This should have a better error message
-// 		},
-// 	}
+	testCases := []struct {
+		TestName string
+		ID       gidx.PrefixedID
+		NewName  string
+		ErrorMsg string
+	}{
+		{
+			TestName: "Successful path",
+			ID:       StatusNamespaceBuilder{}.MustNew(ctx).ID,
+			NewName:  gofakeit.DomainName(),
+		},
+		{
+			TestName: "Successful even when name is in use by another tenant",
+			ID:       StatusNamespaceBuilder{}.MustNew(ctx).ID,
+			NewName:  ns.Name,
+		},
+		{
+			TestName: "Failed when name is in use by same tenant",
+			ID:       ns2.ID,
+			NewName:  ns.Name,
+			ErrorMsg: "constraint failed", // TODO: This should have a better error message
+		},
+	}
 
-// 	for _, tt := range testCases {
-// 		t.Run(tt.TestName, func(t *testing.T) {
-// 			resp, err := graphTestClient().AnnotationNamespaceUpdate(ctx, tt.ID, testclient.UpdateAnnotationNamespaceInput{Name: &tt.NewName})
+	for _, tt := range testCases {
+		t.Run(tt.TestName, func(t *testing.T) {
+			resp, err := graphTestClient().StatusNamespaceUpdate(ctx, tt.ID, testclient.UpdateStatusNamespaceInput{Name: &tt.NewName})
 
-// 			if tt.ErrorMsg != "" {
-// 				assert.Error(t, err)
-// 				assert.ErrorContains(t, err, tt.ErrorMsg)
+			if tt.ErrorMsg != "" {
+				assert.Error(t, err)
+				assert.ErrorContains(t, err, tt.ErrorMsg)
 
-// 				return
-// 			}
+				return
+			}
 
-// 			require.NoError(t, err)
-// 			assert.NotNil(t, resp.AnnotationNamespaceUpdate.AnnotationNamespace)
-// 			assert.Equal(t, tt.NewName, resp.AnnotationNamespaceUpdate.AnnotationNamespace.Name)
-// 		})
-// 	}
-// }
-
-// func TestAnnotationNamespacesGet(t *testing.T) {
-// 	ctx := context.Background()
-// 	perms := new(mockpermissions.MockPermissions)
-
-// 	perms.On("CreateAuthRelationships", mock.Anything, mock.Anything, mock.Anything).Return(nil)
-
-// 	ctx = perms.ContextWithHandler(ctx)
-
-// 	// Permit request
-// 	ctx = context.WithValue(ctx, permissions.CheckerCtxKey, permissions.DefaultAllowChecker)
-
-// 	ns1 := AnnotationNamespaceBuilder{}.MustNew(ctx)
-
-// 	testCases := []struct {
-// 		TestName   string
-// 		QueryID    gidx.PrefixedID
-// 		ExpectedLB *ent.AnnotationNamespace
-// 		ErrorMsg   string
-// 	}{
-// 		{
-// 			TestName:   "Successful path",
-// 			QueryID:    ns1.ID,
-// 			ExpectedLB: ns1,
-// 		},
-// 	}
-
-// 	for _, tt := range testCases {
-// 		t.Run(tt.TestName, func(t *testing.T) {
-// 			resp, err := graphTestClient().GetAnnotationNamespace(ctx, ns1.ID)
-
-// 			if tt.ErrorMsg != "" {
-// 				assert.Error(t, err)
-// 				assert.ErrorContains(t, err, tt.ErrorMsg)
-
-// 				return
-// 			}
-
-// 			require.NoError(t, err)
-// 			require.NotNil(t, resp)
-// 			assert.EqualValues(t, tt.ExpectedLB.Name, resp.AnnotationNamespace.Name)
-// 		})
-// 	}
-// }
+			require.NoError(t, err)
+			assert.NotNil(t, resp.StatusNamespaceUpdate.StatusNamespace)
+			assert.Equal(t, tt.NewName, resp.StatusNamespaceUpdate.StatusNamespace.Name)
+		})
+	}
+}
