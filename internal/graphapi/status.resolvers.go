@@ -52,6 +52,10 @@ func (r *mutationResolver) StatusUpdate(ctx context.Context, input StatusUpdateI
 			if generated.IsNotFound(err) {
 				md, err = r.client.Metadata.Create().SetNodeID(input.NodeID).Save(ctx)
 				if err != nil {
+					if generated.IsValidationError(err) {
+						return nil, err
+					}
+
 					logger.Errorw("failed to create metadata", "error", err)
 					return nil, ErrInternalServerError
 				}
@@ -88,6 +92,14 @@ func (r *mutationResolver) StatusUpdate(ctx context.Context, input StatusUpdateI
 func (r *mutationResolver) StatusDelete(ctx context.Context, input StatusDeleteInput) (*StatusDeleteResponse, error) {
 	logger := r.logger.With("nodeID", input.NodeID, "namespaceID", input.NamespaceID, "source", input.Source)
 
+	if _, err := gidx.Parse(input.NodeID.String()); err != nil {
+		return nil, &ErrInvalidID{field: "NodeID", err: err}
+	}
+
+	if _, err := gidx.Parse(input.NamespaceID.String()); err != nil {
+		return nil, &ErrInvalidID{field: "NamespaceID", err: err}
+	}
+
 	if err := permissions.CheckAccess(ctx, input.NamespaceID, actionMetadataStatusNamespaceDelete); err != nil {
 		return nil, err
 	}
@@ -106,8 +118,7 @@ func (r *mutationResolver) StatusDelete(ctx context.Context, input StatusDeleteI
 		return nil, ErrInternalServerError
 	}
 
-	err = r.client.Status.DeleteOne(st).Exec(ctx)
-	if err != nil {
+	if err := r.client.Status.DeleteOne(st).Exec(ctx); err != nil {
 		logger.Errorw("failed to delete status", "error", err)
 		return nil, ErrInternalServerError
 	}

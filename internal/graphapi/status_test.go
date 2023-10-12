@@ -74,6 +74,34 @@ func TestStatusUpdate(t *testing.T) {
 			Source:      "go-tests",
 			ErrorMsg:    "value is less than the required length",
 		},
+		{
+			TestName:    "Fails when StatusNamespaceID is empty",
+			NodeID:      gidx.MustNewID("testing"),
+			NamespaceID: "",
+			Source:      "go-tests",
+			ErrorMsg:    "not found",
+		},
+		{
+			TestName:    "Fails when statusNamespaceID is an invalid id",
+			NodeID:      gidx.MustNewID("testing"),
+			NamespaceID: "meta-invalid",
+			Source:      "go-tests",
+			ErrorMsg:    "invalid id",
+		},
+		{
+			TestName:    "Fails when nodeID is an invalid id",
+			NodeID:      "invalidgidx-testing",
+			NamespaceID: st1.StatusNamespaceID,
+			Source:      "go-tests",
+			ErrorMsg:    "invalid id",
+		},
+		{
+			TestName:    "Fails when statusNamespaceID is not found",
+			NodeID:      gidx.MustNewID("testing"),
+			NamespaceID: "metasns-does-not-exist",
+			Source:      "go-tests",
+			ErrorMsg:    "not found",
+		},
 	}
 
 	for _, tt := range testCases {
@@ -132,6 +160,34 @@ func TestStatusDelete(t *testing.T) {
 			NamespaceID: st2.StatusNamespaceID,
 			Source:      "this-is-not-source-you-are-looking-for",
 			ErrorMsg:    "status not found",
+		},
+		{
+			TestName:    "fails when NodeID is empty",
+			NodeID:      "",
+			NamespaceID: st2.StatusNamespaceID,
+			Source:      "unit-test",
+			ErrorMsg:    "status not found",
+		},
+		{
+			TestName:    "fails when StatusNamespaceID is empty",
+			NodeID:      meta1.NodeID,
+			NamespaceID: "",
+			Source:      "unit-test",
+			ErrorMsg:    "status not found",
+		},
+		{
+			TestName:    "fails when NodeID is an invalid gidx",
+			NodeID:      "invalidgidx-testing",
+			NamespaceID: st2.StatusNamespaceID,
+			Source:      "unit-test",
+			ErrorMsg:    "invalid id",
+		},
+		{
+			TestName:    "fails when StatusNamespaceID is an invalid gidx",
+			NodeID:      gidx.MustNewID("testing"),
+			NamespaceID: "invalidgidx-testing",
+			Source:      "unit-test",
+			ErrorMsg:    "invalid id",
 		},
 	}
 
