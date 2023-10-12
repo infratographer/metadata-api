@@ -61,12 +61,6 @@ func (c *Client) StatusUpdate(ctx context.Context, input *StatusUpdateInput) (*S
 
 func translateGQLErr(err error) error {
 	switch {
-	case strings.Contains(err.Error(), "field: NodeID"):
-		return &ErrInvalidID{field: "NodeID", err: err}
-	case strings.Contains(err.Error(), "field: NamespaceID"):
-		return &ErrInvalidID{field: "NamespaceID", err: err}
-	case strings.Contains(err.Error(), "status_namespace not found"):
-		return ErrStatusNamespaceNotfound
 	case strings.Contains(err.Error(), "invalid or expired jwt"):
 		return ErrUnauthorized
 	}

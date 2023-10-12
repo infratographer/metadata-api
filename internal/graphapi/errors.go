@@ -5,8 +5,13 @@ import (
 	"fmt"
 )
 
-// ErrInternalServerError is returned when an internal error occurs.
-var ErrInternalServerError = errors.New("internal server error")
+var (
+	// ErrInternalServerError is returned when an internal error occurs.
+	ErrInternalServerError = errors.New("internal server error")
+
+	// ErrInvalidJSON is returned when invalid json is provided.
+	ErrInvalidJSON = errors.New("invalid json data")
+)
 
 // ErrInvalidID is returned when an invalid ID is provided.
 type ErrInvalidID struct {

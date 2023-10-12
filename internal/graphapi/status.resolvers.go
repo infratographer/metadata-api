@@ -6,6 +6,7 @@ package graphapi
 
 import (
 	"context"
+	"encoding/json"
 
 	"go.infratographer.com/x/gidx"
 
@@ -26,6 +27,10 @@ func (r *mutationResolver) StatusUpdate(ctx context.Context, input StatusUpdateI
 
 	if _, err := gidx.Parse(input.NamespaceID.String()); err != nil {
 		return nil, &ErrInvalidID{field: "NamespaceID", err: err}
+	}
+
+	if !json.Valid(input.Data) {
+		return nil, ErrInvalidJSON
 	}
 
 	if err := permissions.CheckAccess(ctx, input.NamespaceID, actionMetadataStatusNamespaceUpdate); err != nil {

@@ -33,6 +33,7 @@ func TestStatusUpdate(t *testing.T) {
 		TestName    string
 		NodeID      gidx.PrefixedID
 		NamespaceID gidx.PrefixedID
+		JSONData    json.RawMessage // optional, otherwise generated
 		Source      string
 		ErrorMsg    string
 	}{
@@ -102,14 +103,25 @@ func TestStatusUpdate(t *testing.T) {
 			Source:      "go-tests",
 			ErrorMsg:    "not found",
 		},
+		{
+			TestName:    "Fails to update nodeID status with invalid json data",
+			NodeID:      gidx.MustNewID("testing"),
+			NamespaceID: st1.StatusNamespaceID,
+			JSONData:    json.RawMessage(`{{}`),
+			Source:      "go-tests",
+			ErrorMsg:    "error calling MarshalJSON",
+		},
 	}
 
 	for _, tt := range testCases {
 		t.Run(tt.TestName, func(t *testing.T) {
-			jsonData, err := gofakeit.JSON(nil)
-			require.NoError(t, err)
+			if tt.JSONData == nil {
+				jsonData, err := gofakeit.JSON(nil)
+				tt.JSONData = json.RawMessage(jsonData)
+				require.NoError(t, err)
+			}
 
-			resp, err := graphTestClient().StatusUpdate(ctx, testclient.StatusUpdateInput{NodeID: tt.NodeID, NamespaceID: tt.NamespaceID, Source: tt.Source, Data: json.RawMessage(jsonData)})
+			resp, err := graphTestClient().StatusUpdate(ctx, testclient.StatusUpdateInput{NodeID: tt.NodeID, NamespaceID: tt.NamespaceID, Source: tt.Source, Data: tt.JSONData})
 
 			if tt.ErrorMsg != "" {
 				assert.Error(t, err)
@@ -120,7 +132,7 @@ func TestStatusUpdate(t *testing.T) {
 
 			require.NoError(t, err)
 			assert.NotNil(t, resp.StatusUpdate.Status)
-			assert.JSONEq(t, string(jsonData), string(resp.StatusUpdate.Status.Data))
+			assert.JSONEq(t, string(tt.JSONData), string(resp.StatusUpdate.Status.Data))
 
 			stCount := EntClient.Status.Query().Where(status.StatusNamespaceID(tt.NamespaceID), status.Source(tt.Source), status.HasMetadataWith(metadata.NodeID(tt.NodeID))).CountX(ctx)
 			assert.Equal(t, 1, stCount)

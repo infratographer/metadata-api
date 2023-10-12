@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -49,8 +50,7 @@ func TestUpdateStatus(t *testing.T) {
 
 		require.Nil(t, status)
 		require.Error(t, err)
-		var e *ErrInvalidID
-		assert.ErrorAs(t, err, &e)
+		assert.ErrorContains(t, err, "invalid id")
 	})
 
 	t.Run("fails to update with bad NamespaceID prefix", func(t *testing.T) {
@@ -75,10 +75,33 @@ func TestUpdateStatus(t *testing.T) {
 
 		require.Nil(t, status)
 		require.Error(t, err)
-		var e *ErrInvalidID
-		assert.ErrorAs(t, err, &e)
+		assert.ErrorContains(t, err, "invalid id")
 	})
 
+	t.Run("fails to update with unknown NamespaceID", func(t *testing.T) {
+		respJSON := `{
+			"errors": [
+				{
+					"message": "generated: status_namespace not found",
+					"path": [
+						"statusUpdate"
+					]
+				}
+			],
+			"data": null
+			}`
+
+		cli.gqlCli = mustNewGQLTestClient(respJSON, http.StatusOK)
+
+		status, err := cli.StatusUpdate(ctx, &StatusUpdateInput{
+			NodeID:      "loadbal-testing",
+			NamespaceID: "metasns-does-not-exist",
+		})
+
+		require.Nil(t, status)
+		require.Error(t, err)
+		assert.ErrorContains(t, err, "not found")
+	})
 	t.Run("successfully updates a node status", func(t *testing.T) {
 		respJSON := `{
 			"data": {
@@ -103,7 +126,7 @@ func TestUpdateStatus(t *testing.T) {
 			NodeID:      "loadbal-testing",
 			NamespaceID: "metasts-testing",
 			Source:      "unit-test",
-			Data:        []byte(`{"state":"ACTIVE"}`),
+			Data:        json.RawMessage(`{"state":"ACTIVE"}`),
 		})
 
 		require.NoError(t, err)
