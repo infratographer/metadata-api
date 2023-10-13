@@ -63,6 +63,8 @@ func translateGQLErr(err error) error {
 	switch {
 	case strings.Contains(err.Error(), "invalid or expired jwt"):
 		return ErrUnauthorized
+	case strings.Contains(err.Error(), "subject doesn't have access"):
+		return ErrPermissionDenied
 	}
 
 	return err

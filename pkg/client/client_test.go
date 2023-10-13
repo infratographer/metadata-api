@@ -28,6 +28,17 @@ func TestUpdateStatus(t *testing.T) {
 		assert.ErrorIs(t, err, ErrUnauthorized)
 	})
 
+	t.Run("permission denied", func(t *testing.T) {
+		respJSON := `{"message":"subject doesn't have access"}`
+
+		cli.gqlCli = mustNewGQLTestClient(respJSON, http.StatusForbidden)
+
+		lb, err := cli.StatusUpdate(context.Background(), &StatusUpdateInput{})
+		require.Nil(t, lb)
+		require.Error(t, err)
+		assert.ErrorIs(t, err, ErrPermissionDenied)
+	})
+
 	t.Run("fails to update with bad NodeID prefix", func(t *testing.T) {
 		respJSON := `{
 			"errors": [

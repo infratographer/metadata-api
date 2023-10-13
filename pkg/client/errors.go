@@ -16,5 +16,10 @@ func (e *ErrInvalidID) Error() string {
 	return fmt.Sprintf("%v, field: %s", e.err, e.field)
 }
 
-// ErrUnauthorized returned when the request is not authorized
-var ErrUnauthorized = errors.New("client is unauthorized")
+var (
+	// ErrUnauthorized returned when the request is not authorized
+	ErrUnauthorized = errors.New("client is unauthorized")
+
+	// ErrPermissionDenied returned when the request is not authorized
+	ErrPermissionDenied = errors.New("client does not have permission to perform this action")
+)
