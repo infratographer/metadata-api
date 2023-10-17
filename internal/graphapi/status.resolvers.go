@@ -45,6 +45,10 @@ func (r *mutationResolver) StatusUpdate(ctx context.Context, input StatusUpdateI
 		return nil, &ErrInvalidField{field: "Data", err: ErrInvalidJSON}
 	}
 
+	if err := permissions.CheckAccess(ctx, input.NamespaceID, actionMetadataStatusNamespaceUpdate); err != nil {
+		return nil, err
+	}
+
 	if _, err := r.client.StatusNamespace.Get(ctx, input.NamespaceID); err != nil {
 		if generated.IsNotFound(err) {
 			return nil, err
@@ -56,10 +60,6 @@ func (r *mutationResolver) StatusUpdate(ctx context.Context, input StatusUpdateI
 
 		logger.Errorw("failed to get status namespace", "error", err)
 		return nil, ErrInternalServerError
-	}
-
-	if err := permissions.CheckAccess(ctx, input.NamespaceID, actionMetadataStatusNamespaceUpdate); err != nil {
-		return nil, err
 	}
 
 	status, err := r.client.Status.Query().Where(
