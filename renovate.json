@@ -1,49 +1,75 @@
 {
   "extends": [
-    "config:base"
+    "config:recommended"
   ],
   "labels": [
     "dependencies"
   ],
   "packageRules": [
     {
-      "addLabels": ["major"],
+      "addLabels": [
+        "major"
+      ],
       "matchCurrentVersion": "!/^0/",
-      "matchUpdateTypes": ["major"],
-      "stabilityDays": 14
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "minimumReleaseAge": "14 days"
     },
     {
-      "addLabels": ["minor"],
-      "automerge": true,
-      "automergeType": "pr",
-      "matchCurrentVersion": "!/^0/",
-      "matchUpdateTypes": ["minor"],
-      "stabilityDays":7
-    },
-    {
-      "addLabels": ["patch"],
+      "addLabels": [
+        "minor"
+      ],
       "automerge": true,
       "automergeType": "pr",
       "matchCurrentVersion": "!/^0/",
-      "matchUpdateTypes": ["patch"],
-      "stabilityDays": 3
+      "matchUpdateTypes": [
+        "minor"
+      ],
+      "minimumReleaseAge": "7 days"
     },
     {
-      "addLabels": ["digest"],
+      "addLabels": [
+        "patch"
+      ],
       "automerge": true,
       "automergeType": "pr",
-      "matchManagers": ["gomod"],
-      "matchDepTypes": ["digest"],
-      "stabilityDays": 3
+      "matchCurrentVersion": "!/^0/",
+      "matchUpdateTypes": [
+        "patch"
+      ],
+      "minimumReleaseAge": "3 days"
+    },
+    {
+      "addLabels": [
+        "digest"
+      ],
+      "automerge": true,
+      "automergeType": "pr",
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchDepTypes": [
+        "digest"
+      ],
+      "minimumReleaseAge": "3 days"
     },
     {
       "automerge": true,
-      "addLabels": ["indirect"],
+      "addLabels": [
+        "indirect"
+      ],
       "automergeType": "pr",
-      "matchManagers": ["gomod"],
-      "matchDepTypes": ["indirect"],
-      "stabilityDays": 3
+      "matchManagers": [
+        "gomod"
+      ],
+      "matchDepTypes": [
+        "indirect"
+      ],
+      "minimumReleaseAge": "3 days"
     }
   ],
-  "postUpdateOptions": ["gomodTidy"]
+  "postUpdateOptions": [
+    "gomodTidy"
+  ]
 }
