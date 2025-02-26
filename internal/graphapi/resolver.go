@@ -3,9 +3,15 @@ package graphapi
 import (
 	"fmt"
 	"net/http"
+	"time"
 
+	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/handler/extension"
+	"github.com/99designs/gqlgen/graphql/handler/lru"
+	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/labstack/echo/v4"
+	"github.com/vektah/gqlparser/v2/ast"
 	"github.com/wundergraph/graphql-go-tools/pkg/playground"
 	"go.infratographer.com/x/gqlgenx/oteltracing"
 	"go.uber.org/zap"
@@ -48,7 +54,7 @@ type Handler struct {
 
 // Handler returns an http handler for a graph resolver
 func (r *Resolver) Handler(withPlayground bool, middleware ...echo.MiddlewareFunc) *Handler {
-	srv := handler.NewDefaultServer(
+	srv := newDefaultServer(
 		NewExecutableSchema(
 			Config{
 				Resolvers: r,
@@ -107,4 +113,25 @@ func (h *Handler) Routes(e *echo.Group) {
 			})
 		}
 	}
+}
+
+func newDefaultServer(es graphql.ExecutableSchema) *handler.Server {
+	srv := handler.New(es)
+
+	srv.AddTransport(transport.Websocket{
+		KeepAlivePingInterval: 10 * time.Second,
+	})
+	srv.AddTransport(transport.Options{})
+	srv.AddTransport(transport.GET{})
+	srv.AddTransport(transport.POST{})
+	srv.AddTransport(transport.MultipartForm{})
+
+	srv.SetQueryCache(lru.New[*ast.QueryDocument](1000))
+
+	srv.Use(extension.Introspection{})
+	srv.Use(extension.AutomaticPersistedQuery{
+		Cache: lru.New[string](100),
+	})
+
+	return srv
 }

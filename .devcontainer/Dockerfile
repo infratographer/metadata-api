@@ -1,10 +1,9 @@
-ARG GO_VERSION=1.21
+ARG GO_VERSION=1.23
 
 # Used to install CRDB into the devcontainer
 FROM cockroachdb/cockroach:latest-v22.2 as CRDB
 
-FROM mcr.microsoft.com/vscode/devcontainers/go:1-${GO_VERSION}-bullseye
-
+FROM mcr.microsoft.com/devcontainers/go:1-${GO_VERSION}-bookworm
 # Set up crdb
 RUN mkdir /usr/local/lib/cockroach
 COPY --from=CRDB /cockroach/cockroach /usr/local/bin

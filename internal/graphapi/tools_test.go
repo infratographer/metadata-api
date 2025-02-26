@@ -9,34 +9,39 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"entgo.io/ent/dialect"
+	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/handler/extension"
+	"github.com/99designs/gqlgen/graphql/handler/lru"
+	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/labstack/echo/v4"
 	_ "github.com/lib/pq"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
-	"go.uber.org/zap"
-
+	"github.com/vektah/gqlparser/v2/ast"
 	"go.infratographer.com/permissions-api/pkg/permissions"
 	"go.infratographer.com/x/echojwtx"
 	"go.infratographer.com/x/echox"
 	"go.infratographer.com/x/events"
 	"go.infratographer.com/x/goosex"
+	"go.infratographer.com/x/testing/containersx"
 	"go.infratographer.com/x/testing/eventtools"
+	"go.uber.org/zap"
 
 	"go.infratographer.com/metadata-api/db"
 	ent "go.infratographer.com/metadata-api/internal/ent/generated"
 	"go.infratographer.com/metadata-api/internal/ent/generated/eventhooks"
 	"go.infratographer.com/metadata-api/internal/graphapi"
 	"go.infratographer.com/metadata-api/internal/testclient"
-	"go.infratographer.com/metadata-api/x/testcontainersx"
 )
 
 var (
 	TestDBURI   = os.Getenv("METADATAAPI_TESTDB_URI")
 	EntClient   *ent.Client
-	DBContainer *testcontainersx.DBContainer
+	DBContainer *containersx.DBContainer
 )
 
 func TestMain(m *testing.M) {
@@ -50,7 +55,7 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-func parseDBURI(ctx context.Context) (string, string, *testcontainersx.DBContainer) {
+func parseDBURI(ctx context.Context) (string, string, *containersx.DBContainer) {
 	switch {
 	// if you don't pass in a database we default to an in memory sqlite
 	case TestDBURI == "":
@@ -64,12 +69,12 @@ func parseDBURI(ctx context.Context) (string, string, *testcontainersx.DBContain
 
 		switch {
 		case strings.HasPrefix(dbImage, "cockroach"), strings.HasPrefix(dbImage, "cockroachdb"), strings.HasPrefix(dbImage, "crdb"):
-			cntr, err := testcontainersx.NewCockroachDB(ctx, dbImage)
+			cntr, err := containersx.NewCockroachDB(ctx, dbImage)
 			errPanic("error starting db test container", err)
 
 			return dialect.Postgres, cntr.URI, cntr
 		case strings.HasPrefix(dbImage, "postgres"):
-			cntr, err := testcontainersx.NewPostgresDB(ctx, dbImage,
+			cntr, err := containersx.NewPostgresDB(ctx, dbImage,
 				postgres.WithInitScripts(filepath.Join("testdata", "postgres_init.sh")),
 			)
 			errPanic("error starting db test container", err)
@@ -116,7 +121,7 @@ func setupDB() {
 		errPanic("failed creating db scema", c.Schema.Create(ctx))
 	case dialect.Postgres:
 		log.Println("Running database migrations")
-		goosex.MigrateUp(uri, db.Migrations)
+		goosex.MigrateUpContext(ctx, uri, db.Migrations)
 	}
 
 	eventhooks.EventHooks(c)
@@ -164,7 +169,7 @@ func withGraphClientHTTPClient(httpcli *http.Client) graphClientOptions {
 func graphTestClient(options ...graphClientOptions) testclient.TestClient {
 	g := &graphClient{
 		srvURL: "graph",
-		httpClient: &http.Client{Transport: localRoundTripper{handler: handler.NewDefaultServer(
+		httpClient: &http.Client{Transport: localRoundTripper{handler: newDefaultServer(
 			graphapi.NewExecutableSchema(
 				graphapi.Config{Resolvers: graphapi.NewResolver(EntClient, zap.NewNop().Sugar())},
 			))}},
@@ -175,6 +180,27 @@ func graphTestClient(options ...graphClientOptions) testclient.TestClient {
 	}
 
 	return testclient.NewClient(g.httpClient, g.srvURL)
+}
+
+func newDefaultServer(es graphql.ExecutableSchema) *handler.Server {
+	srv := handler.New(es)
+
+	srv.AddTransport(transport.Websocket{
+		KeepAlivePingInterval: 10 * time.Second,
+	})
+	srv.AddTransport(transport.Options{})
+	srv.AddTransport(transport.GET{})
+	srv.AddTransport(transport.POST{})
+	srv.AddTransport(transport.MultipartForm{})
+
+	srv.SetQueryCache(lru.New[*ast.QueryDocument](1000))
+
+	srv.Use(extension.Introspection{})
+	srv.Use(extension.AutomaticPersistedQuery{
+		Cache: lru.New[string](100),
+	})
+
+	return srv
 }
 
 // localRoundTripper is an http.RoundTripper that executes HTTP transactions
