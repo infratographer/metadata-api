@@ -9,7 +9,6 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        VARIANT: 1.21-bullseye
         NODE_VERSION: "none"
     # Overrides default command so things don't shut down after the process ends.
     command: sleep infinity
@@ -65,12 +64,12 @@ services:
       - /scripts/nats_init.sh
 
   nats:
-    image: 'nats:alpine'
+    image: "nats:alpine"
     depends_on:
       - nats-init
     command:
       - -c
-      - '/etc/nats/nats-server.conf'
+      - "/etc/nats/nats-server.conf"
       - -D
     volumes:
       - ./nats/:/etc/nats
