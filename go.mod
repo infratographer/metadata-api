@@ -8,7 +8,7 @@ require (
 	entgo.io/contrib v0.6.0
 	entgo.io/ent v0.14.2
 	github.com/99designs/gqlgen v0.17.66
-	github.com/Yamashou/gqlgenc v0.15.1
+	github.com/Yamashou/gqlgenc v0.30.3
 	github.com/brianvoe/gofakeit/v6 v6.26.4
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hasura/go-graphql-client v0.10.2
