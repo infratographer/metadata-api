@@ -58,7 +58,7 @@ func init() {
 	// Setup migrate command
 	goosex.RegisterCobraCommand(rootCmd, func() {
 		goosex.SetBaseFS(db.Migrations)
-		goosex.SetDBURI(config.AppConfig.CRDB.URI)
+		goosex.SetDBURI(config.AppConfig.CRDB.GetURI())
 		goosex.SetLogger(logger)
 	})
 }
