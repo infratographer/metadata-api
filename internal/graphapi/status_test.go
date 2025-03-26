@@ -94,13 +94,13 @@ func TestStatusUpdate(t *testing.T) {
 		{
 			TestName:    "Fails when statusNamespaceID is an invalid id",
 			NodeID:      gidx.MustNewID("testing"),
-			NamespaceID: "meta-invalid",
+			NamespaceID: "a-invalid",
 			Source:      "go-tests",
 			ErrorMsg:    "invalid id",
 		},
 		{
 			TestName:    "Fails when nodeID is an invalid id",
-			NodeID:      "invalidgidx-testing",
+			NodeID:      "a-invalid",
 			NamespaceID: st1.StatusNamespaceID,
 			Source:      "go-tests",
 			ErrorMsg:    "invalid id",
@@ -192,7 +192,7 @@ func TestStatusDelete(t *testing.T) {
 		},
 		{
 			TestName:    "fails when NodeID is an invalid gidx",
-			NodeID:      "invalidgidx-testing",
+			NodeID:      "a-testing",
 			NamespaceID: st2.StatusNamespaceID,
 			Source:      "unit-test",
 			ErrorMsg:    "invalid id",
@@ -200,7 +200,7 @@ func TestStatusDelete(t *testing.T) {
 		{
 			TestName:    "fails when StatusNamespaceID is an invalid gidx",
 			NodeID:      gidx.MustNewID("testing"),
-			NamespaceID: "invalidgidx-testing",
+			NamespaceID: "a-testing",
 			Source:      "unit-test",
 			ErrorMsg:    "invalid id",
 		},

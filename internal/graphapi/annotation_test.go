@@ -69,7 +69,7 @@ func TestAnnotationUpdate(t *testing.T) {
 		{
 			TestName:    "Fails when namespace gidx is invalid",
 			NodeID:      gidx.MustNewID("testing"),
-			NamespaceID: "test-invalid-id",
+			NamespaceID: "a-invalid-id",
 			ErrorMsg:    "invalid id",
 		},
 		{
@@ -80,7 +80,7 @@ func TestAnnotationUpdate(t *testing.T) {
 		},
 		{
 			TestName:    "Fails when node gidx is invalid",
-			NodeID:      "test-invalid-id",
+			NodeID:      "a-invalid-id",
 			NamespaceID: gidx.MustNewID("testing"),
 			ErrorMsg:    "invalid id",
 		},
@@ -158,7 +158,7 @@ func TestAnnotationDelete(t *testing.T) {
 		{
 			TestName:    "Fails when namespace gidx is invalid",
 			NodeID:      gidx.MustNewID("testing"),
-			NamespaceID: "test-invalid-id",
+			NamespaceID: "a-invalid-id",
 			ErrorMsg:    "invalid id",
 		},
 		{
@@ -169,7 +169,7 @@ func TestAnnotationDelete(t *testing.T) {
 		},
 		{
 			TestName:    "Fails when node gidx is invalid",
-			NodeID:      "test-invalid-id",
+			NodeID:      "a-invalid-id",
 			NamespaceID: gidx.MustNewID("testing"),
 			ErrorMsg:    "invalid id",
 		},

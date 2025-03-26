@@ -52,7 +52,7 @@ func TestStatusNamespacesCreate(t *testing.T) {
 		},
 		{
 			TestName:             "Fails when resource provider is an invalid gidx",
-			StatusNamespaceInput: testclient.CreateStatusNamespaceInput{Name: ns1.Name, ResourceProviderID: "test-invalid-id"},
+			StatusNamespaceInput: testclient.CreateStatusNamespaceInput{Name: ns1.Name, ResourceProviderID: "a-invalid-id"},
 			ErrorMsg:             "invalid id",
 		},
 		{
@@ -118,7 +118,7 @@ func TestStatusNamespacesDelete(t *testing.T) {
 		},
 		{
 			TestName:          "Fails when id is an invalid gidx",
-			StatusNamespaceID: "test-invalid-id",
+			StatusNamespaceID: "a-invalid-id",
 			ErrorMsg:          "invalid id",
 		},
 		{
@@ -217,7 +217,7 @@ func TestStatusNamespacesUpdate(t *testing.T) {
 		},
 		{
 			TestName: "Fails when id is an invalid gidx",
-			ID:       "test-invalid-id",
+			ID:       "a-invalid-id",
 			NewName:  newString(ns.Name),
 			ErrorMsg: "invalid id",
 		},
