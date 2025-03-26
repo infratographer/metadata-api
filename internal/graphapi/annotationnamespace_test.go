@@ -58,7 +58,7 @@ func TestAnnotationNamespacesCreate(t *testing.T) {
 		},
 		{
 			TestName:                 "Fails when owner is an invalid gidx",
-			AnnotationNamespaceInput: testclient.CreateAnnotationNamespaceInput{Name: ns1.Name, OwnerID: "test-invalid-id"},
+			AnnotationNamespaceInput: testclient.CreateAnnotationNamespaceInput{Name: ns1.Name, OwnerID: "a-invalid-id"},
 			ErrorMsg:                 "invalid id",
 		},
 	}
@@ -120,7 +120,7 @@ func TestAnnotationNamespacesDelete(t *testing.T) {
 		},
 		{
 			TestName:              "Fails when id is an invalid gidx",
-			AnnotationNamespaceID: "test-invalid-id",
+			AnnotationNamespaceID: "a-invalid-id",
 			ErrorMsg:              "invalid id",
 		},
 		{
@@ -218,7 +218,7 @@ func TestAnnotationNamespacesUpdate(t *testing.T) {
 		},
 		{
 			TestName: "Fails when id is an invalid gidx",
-			ID:       "test-invalid-id",
+			ID:       "a-invalid-id",
 			NewName:  newString(ns.Name),
 			ErrorMsg: "invalid id",
 		},
@@ -284,7 +284,7 @@ func TestAnnotationNamespacesGet(t *testing.T) {
 		},
 		{
 			TestName: "Fails when id is an invalid gidx",
-			QueryID:  "test-invalid-id",
+			QueryID:  "a-invalid-id",
 			ErrorMsg: "invalid id",
 		},
 		{
