@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/brianvoe/gofakeit/v6"
+	"github.com/brianvoe/gofakeit/v7"
 	"go.infratographer.com/x/gidx"
 
 	ent "go.infratographer.com/metadata-api/internal/ent/generated"
