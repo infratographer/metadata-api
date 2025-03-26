@@ -2,7 +2,7 @@ module go.infratographer.com/metadata-api
 
 go 1.23.0
 
-toolchain go1.23.4
+toolchain go1.24.1
 
 require (
 	entgo.io/contrib v0.6.0
