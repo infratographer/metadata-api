@@ -33,5 +33,5 @@ jobs:
           differ true
       - name: DB Migrations
         run: |
-          go run -mod=mod db/create_migrations.go lint
+          go run -mod=mod db/create_migration.go lint
           differ true
