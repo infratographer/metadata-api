@@ -1,10 +1,12 @@
 ---
 name: Test - Golang
 
-# Run for all pushes to main and pull requests when Go or YAML files change
 on:
   push:
+    branches:
+      - main
   pull_request:
+  merge_group:
 
 jobs:
   gotest:
@@ -51,3 +53,17 @@ jobs:
 
       - name: Run go tests for ${{ matrix.ci-database }}
         run: METADATAAPI_TESTDB_URI="${{ matrix.env-database-uri }}" go test -race -coverprofile=coverage.txt -covermode=atomic -tags testtools ./...
+
+  success:
+    if: ${{ !cancelled() }}
+    needs: ["gotest"]
+    name: Success
+    runs-on: ubuntu-latest
+    steps:
+      - name: Any jobs failed?
+        if: ${{ contains(needs.*.result, 'failure') }}
+        run: exit 1
+
+      - name: All jobs passed or skipped?
+        if: ${{ !(contains(needs.*.result, 'failure')) }}
+        run: echo "All jobs passed or skipped" && echo "${{ toJSON(needs.*.result) }}"

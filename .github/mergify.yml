@@ -1,0 +1,9 @@
+---
+pull_request_rules:
+  - name: Automatically approve Renovate PRs
+    conditions:
+      - author = renovate[bot]
+      - check-success=test
+    actions:
+      review:
+        type: APPROVE

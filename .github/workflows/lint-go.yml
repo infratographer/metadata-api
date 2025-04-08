@@ -1,7 +1,10 @@
 name: Lint - Go
 on:
   push:
+    branches:
+      - main
   pull_request:
+  merge_group:
 permissions:
   contents: read
   pull-requests: read
@@ -13,9 +16,22 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
-          go-version-file: 'go.mod'
+          go-version-file: "go.mod"
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v5
+        uses: golangci/golangci-lint-action@v6.5.2
         with:
           args: --timeout=5m
           version: latest
+      # - name: Install differ
+      #   run: go install github.com/kevinburke/differ@1.2
+      # - name: tidy
+      #   run: differ go mod tidy
+      # - name: Generate
+      #   run: |
+      #     go generate ./...
+      #     git checkout -- go.sum
+      #     differ true
+      # - name: DB Migrations
+      #   run: |
+      #     go run -mod=mod db/create_migrations.go lint
+      #     differ true
