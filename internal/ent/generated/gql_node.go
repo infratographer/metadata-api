@@ -36,20 +36,30 @@ type Noder interface {
 	IsNode()
 }
 
-// IsNode implements the Node interface check for GQLGen.
-func (n *Annotation) IsNode() {}
+var annotationImplementors = []string{"Annotation", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
-func (n *AnnotationNamespace) IsNode() {}
+func (*Annotation) IsNode() {}
+
+var annotationnamespaceImplementors = []string{"AnnotationNamespace", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
-func (n *Metadata) IsNode() {}
+func (*AnnotationNamespace) IsNode() {}
+
+var metadataImplementors = []string{"Metadata", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
-func (n *Status) IsNode() {}
+func (*Metadata) IsNode() {}
+
+var statusImplementors = []string{"Status", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
-func (n *StatusNamespace) IsNode() {}
+func (*Status) IsNode() {}
+
+var statusnamespaceImplementors = []string{"StatusNamespace", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*StatusNamespace) IsNode() {}
 
 var errNodeInvalidID = &NotFoundError{"node"}
 
@@ -116,15 +126,12 @@ func (c *Client) noder(ctx context.Context, table string, id gidx.PrefixedID) (N
 		}
 		query := c.Annotation.Query().
 			Where(annotation.ID(uid))
-		query, err := query.CollectFields(ctx, "Annotation")
-		if err != nil {
-			return nil, err
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, annotationImplementors...); err != nil {
+				return nil, err
+			}
 		}
-		n, err := query.Only(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return n, nil
+		return query.Only(ctx)
 	case annotationnamespace.Table:
 		var uid gidx.PrefixedID
 		if err := uid.UnmarshalGQL(id); err != nil {
@@ -132,15 +139,12 @@ func (c *Client) noder(ctx context.Context, table string, id gidx.PrefixedID) (N
 		}
 		query := c.AnnotationNamespace.Query().
 			Where(annotationnamespace.ID(uid))
-		query, err := query.CollectFields(ctx, "AnnotationNamespace")
-		if err != nil {
-			return nil, err
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, annotationnamespaceImplementors...); err != nil {
+				return nil, err
+			}
 		}
-		n, err := query.Only(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return n, nil
+		return query.Only(ctx)
 	case metadata.Table:
 		var uid gidx.PrefixedID
 		if err := uid.UnmarshalGQL(id); err != nil {
@@ -148,15 +152,12 @@ func (c *Client) noder(ctx context.Context, table string, id gidx.PrefixedID) (N
 		}
 		query := c.Metadata.Query().
 			Where(metadata.ID(uid))
-		query, err := query.CollectFields(ctx, "Metadata")
-		if err != nil {
-			return nil, err
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, metadataImplementors...); err != nil {
+				return nil, err
+			}
 		}
-		n, err := query.Only(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return n, nil
+		return query.Only(ctx)
 	case status.Table:
 		var uid gidx.PrefixedID
 		if err := uid.UnmarshalGQL(id); err != nil {
@@ -164,15 +165,12 @@ func (c *Client) noder(ctx context.Context, table string, id gidx.PrefixedID) (N
 		}
 		query := c.Status.Query().
 			Where(status.ID(uid))
-		query, err := query.CollectFields(ctx, "Status")
-		if err != nil {
-			return nil, err
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, statusImplementors...); err != nil {
+				return nil, err
+			}
 		}
-		n, err := query.Only(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return n, nil
+		return query.Only(ctx)
 	case statusnamespace.Table:
 		var uid gidx.PrefixedID
 		if err := uid.UnmarshalGQL(id); err != nil {
@@ -180,15 +178,12 @@ func (c *Client) noder(ctx context.Context, table string, id gidx.PrefixedID) (N
 		}
 		query := c.StatusNamespace.Query().
 			Where(statusnamespace.ID(uid))
-		query, err := query.CollectFields(ctx, "StatusNamespace")
-		if err != nil {
-			return nil, err
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, statusnamespaceImplementors...); err != nil {
+				return nil, err
+			}
 		}
-		n, err := query.Only(ctx)
-		if err != nil {
-			return nil, err
-		}
-		return n, nil
+		return query.Only(ctx)
 	default:
 		return nil, fmt.Errorf("cannot resolve noder from table %q: %w", table, errNodeInvalidID)
 	}
@@ -265,7 +260,7 @@ func (c *Client) noders(ctx context.Context, table string, ids []gidx.PrefixedID
 	case annotation.Table:
 		query := c.Annotation.Query().
 			Where(annotation.IDIn(ids...))
-		query, err := query.CollectFields(ctx, "Annotation")
+		query, err := query.CollectFields(ctx, annotationImplementors...)
 		if err != nil {
 			return nil, err
 		}
@@ -281,7 +276,7 @@ func (c *Client) noders(ctx context.Context, table string, ids []gidx.PrefixedID
 	case annotationnamespace.Table:
 		query := c.AnnotationNamespace.Query().
 			Where(annotationnamespace.IDIn(ids...))
-		query, err := query.CollectFields(ctx, "AnnotationNamespace")
+		query, err := query.CollectFields(ctx, annotationnamespaceImplementors...)
 		if err != nil {
 			return nil, err
 		}
@@ -297,7 +292,7 @@ func (c *Client) noders(ctx context.Context, table string, ids []gidx.PrefixedID
 	case metadata.Table:
 		query := c.Metadata.Query().
 			Where(metadata.IDIn(ids...))
-		query, err := query.CollectFields(ctx, "Metadata")
+		query, err := query.CollectFields(ctx, metadataImplementors...)
 		if err != nil {
 			return nil, err
 		}
@@ -313,7 +308,7 @@ func (c *Client) noders(ctx context.Context, table string, ids []gidx.PrefixedID
 	case status.Table:
 		query := c.Status.Query().
 			Where(status.IDIn(ids...))
-		query, err := query.CollectFields(ctx, "Status")
+		query, err := query.CollectFields(ctx, statusImplementors...)
 		if err != nil {
 			return nil, err
 		}
@@ -329,7 +324,7 @@ func (c *Client) noders(ctx context.Context, table string, ids []gidx.PrefixedID
 	case statusnamespace.Table:
 		query := c.StatusNamespace.Query().
 			Where(statusnamespace.IDIn(ids...))
-		query, err := query.CollectFields(ctx, "StatusNamespace")
+		query, err := query.CollectFields(ctx, statusnamespaceImplementors...)
 		if err != nil {
 			return nil, err
 		}

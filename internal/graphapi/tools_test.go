@@ -179,7 +179,7 @@ func graphTestClient(options ...graphClientOptions) testclient.TestClient {
 		opt(g)
 	}
 
-	return testclient.NewClient(g.httpClient, g.srvURL)
+	return testclient.NewClient(g.httpClient, g.srvURL, nil)
 }
 
 func newDefaultServer(es graphql.ExecutableSchema) *handler.Server {

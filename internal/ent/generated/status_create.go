@@ -204,10 +204,10 @@ func (sc *StatusCreate) check() error {
 	if _, ok := sc.mutation.Data(); !ok {
 		return &ValidationError{Name: "data", err: errors.New(`generated: missing required field "Status.data"`)}
 	}
-	if _, ok := sc.mutation.NamespaceID(); !ok {
+	if len(sc.mutation.NamespaceIDs()) == 0 {
 		return &ValidationError{Name: "namespace", err: errors.New(`generated: missing required edge "Status.namespace"`)}
 	}
-	if _, ok := sc.mutation.MetadataID(); !ok {
+	if len(sc.mutation.MetadataIDs()) == 0 {
 		return &ValidationError{Name: "metadata", err: errors.New(`generated: missing required edge "Status.metadata"`)}
 	}
 	return nil

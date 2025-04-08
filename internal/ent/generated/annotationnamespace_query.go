@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"math"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -103,7 +104,7 @@ func (anq *AnnotationNamespaceQuery) QueryAnnotations() *AnnotationQuery {
 // First returns the first AnnotationNamespace entity from the query.
 // Returns a *NotFoundError when no AnnotationNamespace was found.
 func (anq *AnnotationNamespaceQuery) First(ctx context.Context) (*AnnotationNamespace, error) {
-	nodes, err := anq.Limit(1).All(setContextOp(ctx, anq.ctx, "First"))
+	nodes, err := anq.Limit(1).All(setContextOp(ctx, anq.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +127,7 @@ func (anq *AnnotationNamespaceQuery) FirstX(ctx context.Context) *AnnotationName
 // Returns a *NotFoundError when no AnnotationNamespace ID was found.
 func (anq *AnnotationNamespaceQuery) FirstID(ctx context.Context) (id gidx.PrefixedID, err error) {
 	var ids []gidx.PrefixedID
-	if ids, err = anq.Limit(1).IDs(setContextOp(ctx, anq.ctx, "FirstID")); err != nil {
+	if ids, err = anq.Limit(1).IDs(setContextOp(ctx, anq.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -149,7 +150,7 @@ func (anq *AnnotationNamespaceQuery) FirstIDX(ctx context.Context) gidx.Prefixed
 // Returns a *NotSingularError when more than one AnnotationNamespace entity is found.
 // Returns a *NotFoundError when no AnnotationNamespace entities are found.
 func (anq *AnnotationNamespaceQuery) Only(ctx context.Context) (*AnnotationNamespace, error) {
-	nodes, err := anq.Limit(2).All(setContextOp(ctx, anq.ctx, "Only"))
+	nodes, err := anq.Limit(2).All(setContextOp(ctx, anq.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
 	}
@@ -177,7 +178,7 @@ func (anq *AnnotationNamespaceQuery) OnlyX(ctx context.Context) *AnnotationNames
 // Returns a *NotFoundError when no entities are found.
 func (anq *AnnotationNamespaceQuery) OnlyID(ctx context.Context) (id gidx.PrefixedID, err error) {
 	var ids []gidx.PrefixedID
-	if ids, err = anq.Limit(2).IDs(setContextOp(ctx, anq.ctx, "OnlyID")); err != nil {
+	if ids, err = anq.Limit(2).IDs(setContextOp(ctx, anq.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -202,7 +203,7 @@ func (anq *AnnotationNamespaceQuery) OnlyIDX(ctx context.Context) gidx.PrefixedI
 
 // All executes the query and returns a list of AnnotationNamespaces.
 func (anq *AnnotationNamespaceQuery) All(ctx context.Context) ([]*AnnotationNamespace, error) {
-	ctx = setContextOp(ctx, anq.ctx, "All")
+	ctx = setContextOp(ctx, anq.ctx, ent.OpQueryAll)
 	if err := anq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
@@ -224,7 +225,7 @@ func (anq *AnnotationNamespaceQuery) IDs(ctx context.Context) (ids []gidx.Prefix
 	if anq.ctx.Unique == nil && anq.path != nil {
 		anq.Unique(true)
 	}
-	ctx = setContextOp(ctx, anq.ctx, "IDs")
+	ctx = setContextOp(ctx, anq.ctx, ent.OpQueryIDs)
 	if err = anq.Select(annotationnamespace.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
@@ -242,7 +243,7 @@ func (anq *AnnotationNamespaceQuery) IDsX(ctx context.Context) []gidx.PrefixedID
 
 // Count returns the count of the given query.
 func (anq *AnnotationNamespaceQuery) Count(ctx context.Context) (int, error) {
-	ctx = setContextOp(ctx, anq.ctx, "Count")
+	ctx = setContextOp(ctx, anq.ctx, ent.OpQueryCount)
 	if err := anq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
@@ -260,7 +261,7 @@ func (anq *AnnotationNamespaceQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (anq *AnnotationNamespaceQuery) Exist(ctx context.Context) (bool, error) {
-	ctx = setContextOp(ctx, anq.ctx, "Exist")
+	ctx = setContextOp(ctx, anq.ctx, ent.OpQueryExist)
 	switch _, err := anq.FirstID(ctx); {
 	case IsNotFound(err):
 		return false, nil
@@ -578,7 +579,7 @@ func (angb *AnnotationNamespaceGroupBy) Aggregate(fns ...AggregateFunc) *Annotat
 
 // Scan applies the selector query and scans the result into the given value.
 func (angb *AnnotationNamespaceGroupBy) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, angb.build.ctx, "GroupBy")
+	ctx = setContextOp(ctx, angb.build.ctx, ent.OpQueryGroupBy)
 	if err := angb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
@@ -626,7 +627,7 @@ func (ans *AnnotationNamespaceSelect) Aggregate(fns ...AggregateFunc) *Annotatio
 
 // Scan applies the selector query and scans the result into the given value.
 func (ans *AnnotationNamespaceSelect) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, ans.ctx, "Select")
+	ctx = setContextOp(ctx, ans.ctx, ent.OpQuerySelect)
 	if err := ans.prepareQuery(ctx); err != nil {
 		return err
 	}

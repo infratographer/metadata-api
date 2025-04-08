@@ -15,31 +15,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        ci-database:
-          [
-            "sqlite",
-            "cockroach-v22.1",
-            "cockroach-v22.2",
-            "cockroach-latest",
-            "postgres-14",
-            "postgres-15",
-            "postgres-latest",
-          ]
+        ci-database: ["sqlite", "cockroach", "postgres"]
         include:
           - ci-database: "sqlite"
             env-database-uri: "sqlite://file:ent?mode=memory&cache=shared&_fk=1"
-          - ci-database: "cockroach-v22.1"
-            env-database-uri: "docker://cockroach:latest-v22.1"
-          - ci-database: "cockroach-v22.2"
-            env-database-uri: "docker://cockroach:latest-v22.2"
-          - ci-database: "cockroach-latest"
+          - ci-database: "cockroach"
             env-database-uri: "docker://cockroach:latest"
-          - ci-database: "postgres-14"
-            env-database-uri: "docker://postgres:14-alpine"
-          - ci-database: "postgres-15"
-            env-database-uri: "docker://postgres:15-alpine"
-          - ci-database: "postgres-latest"
-            env-database-uri: "docker://postgres:alpine"
+          - ci-database: "postgres"
+            env-database-uri: "docker://postgres:latest"
 
     steps:
       - name: Checkout code for ${{ matrix.ci-database }}
@@ -48,11 +31,9 @@ jobs:
         uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5
         with:
           go-version-file: "go.mod"
-      - name: Install atlas for db migrations on ${{ matrix.ci-database }}
-        run: go install ariga.io/atlas/cmd/atlas@latest
 
       - name: Run go tests for ${{ matrix.ci-database }}
-        run: METADATAAPI_TESTDB_URI="${{ matrix.env-database-uri }}" go test -race -coverprofile=coverage.txt -covermode=atomic -tags testtools ./...
+        run: METADATAAPI_TESTDB_URI="${{ matrix.env-database-uri }}" go test -p 1 -race -coverprofile=coverage.txt -covermode=atomic -tags testtools ./...
 
   success:
     if: ${{ !cancelled() }}

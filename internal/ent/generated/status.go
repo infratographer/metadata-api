@@ -69,12 +69,10 @@ type StatusEdges struct {
 // NamespaceOrErr returns the Namespace value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e StatusEdges) NamespaceOrErr() (*StatusNamespace, error) {
-	if e.loadedTypes[0] {
-		if e.Namespace == nil {
-			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: statusnamespace.Label}
-		}
+	if e.Namespace != nil {
 		return e.Namespace, nil
+	} else if e.loadedTypes[0] {
+		return nil, &NotFoundError{label: statusnamespace.Label}
 	}
 	return nil, &NotLoadedError{edge: "namespace"}
 }
@@ -82,12 +80,10 @@ func (e StatusEdges) NamespaceOrErr() (*StatusNamespace, error) {
 // MetadataOrErr returns the Metadata value or an error if the edge
 // was not loaded in eager-loading, or loaded but was not found.
 func (e StatusEdges) MetadataOrErr() (*Metadata, error) {
-	if e.loadedTypes[1] {
-		if e.Metadata == nil {
-			// Edge was loaded but was not found.
-			return nil, &NotFoundError{label: metadata.Label}
-		}
+	if e.Metadata != nil {
 		return e.Metadata, nil
+	} else if e.loadedTypes[1] {
+		return nil, &NotFoundError{label: metadata.Label}
 	}
 	return nil, &NotLoadedError{edge: "metadata"}
 }

@@ -29,6 +29,7 @@ import (
 // NewExecutableSchema creates an ExecutableSchema from the ResolverRoot interface.
 func NewExecutableSchema(cfg Config) graphql.ExecutableSchema {
 	return &executableSchema{
+		schema:     cfg.Schema,
 		resolvers:  cfg.Resolvers,
 		directives: cfg.Directives,
 		complexity: cfg.Complexity,
@@ -36,6 +37,7 @@ func NewExecutableSchema(cfg Config) graphql.ExecutableSchema {
 }
 
 type Config struct {
+	Schema     *ast.Schema
 	Resolvers  ResolverRoot
 	Directives DirectiveRoot
 	Complexity ComplexityRoot
@@ -54,7 +56,6 @@ type ResolverRoot interface {
 }
 
 type DirectiveRoot struct {
-	ComposeDirective func(ctx context.Context, obj interface{}, next graphql.Resolver, name string) (res interface{}, err error)
 }
 
 type ComplexityRoot struct {
@@ -182,7 +183,7 @@ type ComplexityRoot struct {
 	Query struct {
 		AnnotationNamespace func(childComplexity int, id gidx.PrefixedID) int
 		__resolve__service  func(childComplexity int) int
-		__resolve_entities  func(childComplexity int, representations []map[string]interface{}) int
+		__resolve_entities  func(childComplexity int, representations []map[string]any) int
 	}
 
 	ResourceOwner struct {
@@ -314,16 +315,20 @@ type StatusOwnerResolver interface {
 }
 
 type executableSchema struct {
+	schema     *ast.Schema
 	resolvers  ResolverRoot
 	directives DirectiveRoot
 	complexity ComplexityRoot
 }
 
 func (e *executableSchema) Schema() *ast.Schema {
+	if e.schema != nil {
+		return e.schema
+	}
 	return parsedSchema
 }
 
-func (e *executableSchema) Complexity(typeName, field string, childComplexity int, rawArgs map[string]interface{}) (int, bool) {
+func (e *executableSchema) Complexity(typeName, field string, childComplexity int, rawArgs map[string]any) (int, bool) {
 	ec := executionContext{nil, e, 0, 0, nil}
 	_ = ec
 	switch typeName + "." + field {
@@ -931,7 +936,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.__resolve_entities(childComplexity, args["representations"].([]map[string]interface{})), true
+		return e.complexity.Query.__resolve_entities(childComplexity, args["representations"].([]map[string]any)), true
 
 	case "ResourceOwner.annotationNamespaces":
 		if e.complexity.ResourceOwner.AnnotationNamespaces == nil {
@@ -1214,8 +1219,8 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 }
 
 func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
-	rc := graphql.GetOperationContext(ctx)
-	ec := executionContext{rc, e, 0, 0, make(chan graphql.DeferredResult)}
+	opCtx := graphql.GetOperationContext(ctx)
+	ec := executionContext{opCtx, e, 0, 0, make(chan graphql.DeferredResult)}
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
 		ec.unmarshalInputAnnotationDeleteInput,
 		ec.unmarshalInputAnnotationNamespaceOrder,
@@ -1240,7 +1245,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	)
 	first := true
 
-	switch rc.Operation.Operation {
+	switch opCtx.Operation.Operation {
 	case ast.Query:
 		return func(ctx context.Context) *graphql.Response {
 			var response graphql.Response
@@ -1248,7 +1253,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 			if first {
 				first = false
 				ctx = graphql.WithUnmarshalerMap(ctx, inputUnmarshalMap)
-				data = ec._Query(ctx, rc.Operation.SelectionSet)
+				data = ec._Query(ctx, opCtx.Operation.SelectionSet)
 			} else {
 				if atomic.LoadInt32(&ec.pendingDeferred) > 0 {
 					result := <-ec.deferredResults
@@ -1278,7 +1283,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 			}
 			first = false
 			ctx = graphql.WithUnmarshalerMap(ctx, inputUnmarshalMap)
-			data := ec._Mutation(ctx, rc.Operation.SelectionSet)
+			data := ec._Mutation(ctx, opCtx.Operation.SelectionSet)
 			var buf bytes.Buffer
 			data.MarshalGQL(&buf)
 
@@ -1323,14 +1328,14 @@ func (ec *executionContext) introspectSchema() (*introspection.Schema, error) {
 	if ec.DisableIntrospection {
 		return nil, errors.New("introspection disabled")
 	}
-	return introspection.WrapSchema(parsedSchema), nil
+	return introspection.WrapSchema(ec.Schema()), nil
 }
 
 func (ec *executionContext) introspectType(name string) (*introspection.Type, error) {
 	if ec.DisableIntrospection {
 		return nil, errors.New("introspection disabled")
 	}
-	return introspection.WrapTypeFromDef(parsedSchema, parsedSchema.Types[name]), nil
+	return introspection.WrapTypeFromDef(ec.Schema(), ec.Schema().Types[name]), nil
 }
 
 var sources = []*ast.Source{
@@ -1476,71 +1481,119 @@ type AnnotationNamespaceUpdatePayload {
   annotationNamespace: AnnotationNamespace!
 }
 `, BuiltIn: false},
-	{Name: "../../schema/ent.graphql", Input: `directive @goField(forceResolver: Boolean, name: String) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
-directive @goModel(model: String, models: [String!]) on OBJECT | INPUT_OBJECT | SCALAR | ENUM | INTERFACE | UNION
+	{Name: "../../schema/ent.graphql", Input: `directive @goField(forceResolver: Boolean, name: String, omittable: Boolean) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
+directive @goModel(model: String, models: [String!], forceGenerate: Boolean) on OBJECT | INPUT_OBJECT | SCALAR | ENUM | INTERFACE | UNION
 type Annotation implements Node @key(fields: "id") @prefixedID(prefix: "metaano") {
-  """ID for the annotation."""
+  """
+  ID for the annotation.
+  """
   id: ID!
   createdAt: Time!
   updatedAt: Time!
-  """ID of the metadata of this annotation"""
+  """
+  ID of the metadata of this annotation
+  """
   metadataID: ID!
-  """JSON formatted data of this annotation."""
+  """
+  JSON formatted data of this annotation.
+  """
   data: JSON!
   namespace: AnnotationNamespace!
   metadata: Metadata!
 }
-"""A connection to a list of items."""
+"""
+A connection to a list of items.
+"""
 type AnnotationConnection {
-  """A list of edges."""
+  """
+  A list of edges.
+  """
   edges: [AnnotationEdge]
-  """Information to aid in pagination."""
+  """
+  Information to aid in pagination.
+  """
   pageInfo: PageInfo!
-  """Identifies the total count of items in the connection."""
+  """
+  Identifies the total count of items in the connection.
+  """
   totalCount: Int!
 }
-"""An edge in a connection."""
+"""
+An edge in a connection.
+"""
 type AnnotationEdge {
-  """The item at the end of the edge."""
+  """
+  The item at the end of the edge.
+  """
   node: Annotation
-  """A cursor for use in pagination."""
+  """
+  A cursor for use in pagination.
+  """
   cursor: Cursor!
 }
 type AnnotationNamespace implements Node @key(fields: "id") @prefixedID(prefix: "metamns") {
-  """The ID for the annotation namespace."""
+  """
+  The ID for the annotation namespace.
+  """
   id: ID!
   createdAt: Time!
   updatedAt: Time!
-  """The name of the annotation namespace."""
+  """
+  The name of the annotation namespace.
+  """
   name: String!
-  """Flag for if this namespace is private."""
+  """
+  Flag for if this namespace is private.
+  """
   private: Boolean!
   annotations: [Annotation!]
 }
-"""A connection to a list of items."""
+"""
+A connection to a list of items.
+"""
 type AnnotationNamespaceConnection {
-  """A list of edges."""
+  """
+  A list of edges.
+  """
   edges: [AnnotationNamespaceEdge]
-  """Information to aid in pagination."""
+  """
+  Information to aid in pagination.
+  """
   pageInfo: PageInfo!
-  """Identifies the total count of items in the connection."""
+  """
+  Identifies the total count of items in the connection.
+  """
   totalCount: Int!
 }
-"""An edge in a connection."""
+"""
+An edge in a connection.
+"""
 type AnnotationNamespaceEdge {
-  """The item at the end of the edge."""
+  """
+  The item at the end of the edge.
+  """
   node: AnnotationNamespace
-  """A cursor for use in pagination."""
+  """
+  A cursor for use in pagination.
+  """
   cursor: Cursor!
 }
-"""Ordering options for AnnotationNamespace connections"""
+"""
+Ordering options for AnnotationNamespace connections
+"""
 input AnnotationNamespaceOrder {
-  """The ordering direction."""
+  """
+  The ordering direction.
+  """
   direction: OrderDirection! = ASC
-  """The field by which to order AnnotationNamespaces."""
+  """
+  The field by which to order AnnotationNamespaces.
+  """
   field: AnnotationNamespaceOrderField!
 }
-"""Properties by which AnnotationNamespace connections can be ordered."""
+"""
+Properties by which AnnotationNamespace connections can be ordered.
+"""
 enum AnnotationNamespaceOrderField {
   ID
   CREATED_AT
@@ -1557,7 +1610,9 @@ input AnnotationNamespaceWhereInput {
   not: AnnotationNamespaceWhereInput
   and: [AnnotationNamespaceWhereInput!]
   or: [AnnotationNamespaceWhereInput!]
-  """id field predicates"""
+  """
+  id field predicates
+  """
   id: ID
   idNEQ: ID
   idIn: [ID!]
@@ -1566,7 +1621,9 @@ input AnnotationNamespaceWhereInput {
   idGTE: ID
   idLT: ID
   idLTE: ID
-  """created_at field predicates"""
+  """
+  created_at field predicates
+  """
   createdAt: Time
   createdAtNEQ: Time
   createdAtIn: [Time!]
@@ -1575,7 +1632,9 @@ input AnnotationNamespaceWhereInput {
   createdAtGTE: Time
   createdAtLT: Time
   createdAtLTE: Time
-  """updated_at field predicates"""
+  """
+  updated_at field predicates
+  """
   updatedAt: Time
   updatedAtNEQ: Time
   updatedAtIn: [Time!]
@@ -1584,7 +1643,9 @@ input AnnotationNamespaceWhereInput {
   updatedAtGTE: Time
   updatedAtLT: Time
   updatedAtLTE: Time
-  """name field predicates"""
+  """
+  name field predicates
+  """
   name: String
   nameNEQ: String
   nameIn: [String!]
@@ -1598,18 +1659,28 @@ input AnnotationNamespaceWhereInput {
   nameHasSuffix: String
   nameEqualFold: String
   nameContainsFold: String
-  """annotations edge predicates"""
+  """
+  annotations edge predicates
+  """
   hasAnnotations: Boolean
   hasAnnotationsWith: [AnnotationWhereInput!]
 }
-"""Ordering options for Annotation connections"""
+"""
+Ordering options for Annotation connections
+"""
 input AnnotationOrder {
-  """The ordering direction."""
+  """
+  The ordering direction.
+  """
   direction: OrderDirection! = ASC
-  """The field by which to order Annotations."""
+  """
+  The field by which to order Annotations.
+  """
   field: AnnotationOrderField!
 }
-"""Properties by which Annotation connections can be ordered."""
+"""
+Properties by which Annotation connections can be ordered.
+"""
 enum AnnotationOrderField {
   CREATED_AT
   UPDATED_AT
@@ -1622,7 +1693,9 @@ input AnnotationWhereInput {
   not: AnnotationWhereInput
   and: [AnnotationWhereInput!]
   or: [AnnotationWhereInput!]
-  """id field predicates"""
+  """
+  id field predicates
+  """
   id: ID
   idNEQ: ID
   idIn: [ID!]
@@ -1631,7 +1704,9 @@ input AnnotationWhereInput {
   idGTE: ID
   idLT: ID
   idLTE: ID
-  """created_at field predicates"""
+  """
+  created_at field predicates
+  """
   createdAt: Time
   createdAtNEQ: Time
   createdAtIn: [Time!]
@@ -1640,7 +1715,9 @@ input AnnotationWhereInput {
   createdAtGTE: Time
   createdAtLT: Time
   createdAtLTE: Time
-  """updated_at field predicates"""
+  """
+  updated_at field predicates
+  """
   updatedAt: Time
   updatedAtNEQ: Time
   updatedAtIn: [Time!]
@@ -1649,37 +1726,61 @@ input AnnotationWhereInput {
   updatedAtGTE: Time
   updatedAtLT: Time
   updatedAtLTE: Time
-  """namespace edge predicates"""
+  """
+  namespace edge predicates
+  """
   hasNamespace: Boolean
   hasNamespaceWith: [AnnotationNamespaceWhereInput!]
-  """metadata edge predicates"""
+  """
+  metadata edge predicates
+  """
   hasMetadata: Boolean
   hasMetadataWith: [MetadataWhereInput!]
 }
-"""Input information to create an annotation namespace."""
+"""
+Input information to create an annotation namespace.
+"""
 input CreateAnnotationNamespaceInput {
-  """The name of the annotation namespace."""
+  """
+  The name of the annotation namespace.
+  """
   name: String!
-  """The ID for the owner for this annotation namespace."""
+  """
+  The ID for the owner for this annotation namespace.
+  """
   ownerID: ID!
-  """Flag for if this namespace is private."""
+  """
+  Flag for if this namespace is private.
+  """
   private: Boolean
 }
-"""Input information to create a status namespace."""
+"""
+Input information to create a status namespace.
+"""
 input CreateStatusInput {
   source: String!
-  """JSON formatted data of this annotation."""
+  """
+  JSON formatted data of this annotation.
+  """
   data: JSON!
   namespaceID: ID!
   metadataID: ID!
 }
-"""Input information to create a status namespace."""
+"""
+Input information to create a status namespace.
+"""
 input CreateStatusNamespaceInput {
-  """The name of the status namespace."""
+  """
+  The name of the status namespace.
+  """
   name: String!
-  """The ID of the resource provider for this status namespace."""
+  """
+  The ID of the resource provider for this status namespace.
+  """
   resourceProviderID: ID!
-  """Flag for if this namespace is private."""
+  """
+  Flag for if this namespace is private.
+  """
   private: Boolean
 }
 """
@@ -1687,78 +1788,130 @@ Define a Relay Cursor type:
 https://relay.dev/graphql/connections.htm#sec-Cursor
 """
 scalar Cursor
-"""A valid JSON string."""
+"""
+A valid JSON string.
+"""
 scalar JSON
 type Metadata implements Node @key(fields: "id") @key(fields: "nodeID") @prefixedID(prefix: "metadat") {
-  """ID for the metadata."""
+  """
+  ID for the metadata.
+  """
   id: ID!
   createdAt: Time!
   updatedAt: Time!
-  """ID of the node for this metadata"""
+  """
+  ID of the node for this metadata
+  """
   nodeID: ID!
   annotations(
-    """Returns the elements in the list that come after the specified cursor."""
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
     after: Cursor
 
-    """Returns the first _n_ elements from the list."""
+    """
+    Returns the first _n_ elements from the list.
+    """
     first: Int
 
-    """Returns the elements in the list that come before the specified cursor."""
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
     before: Cursor
 
-    """Returns the last _n_ elements from the list."""
+    """
+    Returns the last _n_ elements from the list.
+    """
     last: Int
 
-    """Ordering options for Annotations returned from the connection."""
+    """
+    Ordering options for Annotations returned from the connection.
+    """
     orderBy: AnnotationOrder
 
-    """Filtering options for Annotations returned from the connection."""
+    """
+    Filtering options for Annotations returned from the connection.
+    """
     where: AnnotationWhereInput
   ): AnnotationConnection!
   statuses(
-    """Returns the elements in the list that come after the specified cursor."""
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
     after: Cursor
 
-    """Returns the first _n_ elements from the list."""
+    """
+    Returns the first _n_ elements from the list.
+    """
     first: Int
 
-    """Returns the elements in the list that come before the specified cursor."""
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
     before: Cursor
 
-    """Returns the last _n_ elements from the list."""
+    """
+    Returns the last _n_ elements from the list.
+    """
     last: Int
 
-    """Ordering options for StatusSlice returned from the connection."""
+    """
+    Ordering options for StatusSlice returned from the connection.
+    """
     orderBy: StatusOrder
 
-    """Filtering options for StatusSlice returned from the connection."""
+    """
+    Filtering options for StatusSlice returned from the connection.
+    """
     where: StatusWhereInput
   ): StatusConnection!
 }
-"""A connection to a list of items."""
+"""
+A connection to a list of items.
+"""
 type MetadataConnection {
-  """A list of edges."""
+  """
+  A list of edges.
+  """
   edges: [MetadataEdge]
-  """Information to aid in pagination."""
+  """
+  Information to aid in pagination.
+  """
   pageInfo: PageInfo!
-  """Identifies the total count of items in the connection."""
+  """
+  Identifies the total count of items in the connection.
+  """
   totalCount: Int!
 }
-"""An edge in a connection."""
+"""
+An edge in a connection.
+"""
 type MetadataEdge {
-  """The item at the end of the edge."""
+  """
+  The item at the end of the edge.
+  """
   node: Metadata
-  """A cursor for use in pagination."""
+  """
+  A cursor for use in pagination.
+  """
   cursor: Cursor!
 }
-"""Ordering options for Metadata connections"""
+"""
+Ordering options for Metadata connections
+"""
 input MetadataOrder {
-  """The ordering direction."""
+  """
+  The ordering direction.
+  """
   direction: OrderDirection! = ASC
-  """The field by which to order MetadataSlice."""
+  """
+  The field by which to order MetadataSlice.
+  """
   field: MetadataOrderField!
 }
-"""Properties by which Metadata connections can be ordered."""
+"""
+Properties by which Metadata connections can be ordered.
+"""
 enum MetadataOrderField {
   CREATED_AT
   UPDATED_AT
@@ -1771,7 +1924,9 @@ input MetadataWhereInput {
   not: MetadataWhereInput
   and: [MetadataWhereInput!]
   or: [MetadataWhereInput!]
-  """id field predicates"""
+  """
+  id field predicates
+  """
   id: ID
   idNEQ: ID
   idIn: [ID!]
@@ -1780,7 +1935,9 @@ input MetadataWhereInput {
   idGTE: ID
   idLT: ID
   idLTE: ID
-  """created_at field predicates"""
+  """
+  created_at field predicates
+  """
   createdAt: Time
   createdAtNEQ: Time
   createdAtIn: [Time!]
@@ -1789,7 +1946,9 @@ input MetadataWhereInput {
   createdAtGTE: Time
   createdAtLT: Time
   createdAtLTE: Time
-  """updated_at field predicates"""
+  """
+  updated_at field predicates
+  """
   updatedAt: Time
   updatedAtNEQ: Time
   updatedAtIn: [Time!]
@@ -1798,10 +1957,14 @@ input MetadataWhereInput {
   updatedAtGTE: Time
   updatedAtLT: Time
   updatedAtLTE: Time
-  """annotations edge predicates"""
+  """
+  annotations edge predicates
+  """
   hasAnnotations: Boolean
   hasAnnotationsWith: [AnnotationWhereInput!]
-  """statuses edge predicates"""
+  """
+  statuses edge predicates
+  """
   hasStatuses: Boolean
   hasStatusesWith: [StatusWhereInput!]
 }
@@ -1810,14 +1973,22 @@ An object with an ID.
 Follows the [Relay Global Object Identification Specification](https://relay.dev/graphql/objectidentification.htm)
 """
 interface Node {
-  """The id of the object."""
+  """
+  The id of the object.
+  """
   id: ID!
 }
-"""Possible directions in which to order a list of items when provided an ` + "`" + `orderBy` + "`" + ` argument."""
+"""
+Possible directions in which to order a list of items when provided an ` + "`" + `orderBy` + "`" + ` argument.
+"""
 enum OrderDirection {
-  """Specifies an ascending order for a given ` + "`" + `orderBy` + "`" + ` argument."""
+  """
+  Specifies an ascending order for a given ` + "`" + `orderBy` + "`" + ` argument.
+  """
   ASC
-  """Specifies a descending order for a given ` + "`" + `orderBy` + "`" + ` argument."""
+  """
+  Specifies a descending order for a given ` + "`" + `orderBy` + "`" + ` argument.
+  """
   DESC
 }
 """
@@ -1825,13 +1996,21 @@ Information about pagination in a connection.
 https://relay.dev/graphql/connections.htm#sec-undefined.PageInfo
 """
 type PageInfo @shareable {
-  """When paginating forwards, are there more items?"""
+  """
+  When paginating forwards, are there more items?
+  """
   hasNextPage: Boolean!
-  """When paginating backwards, are there more items?"""
+  """
+  When paginating backwards, are there more items?
+  """
   hasPreviousPage: Boolean!
-  """When paginating backwards, the cursor to continue."""
+  """
+  When paginating backwards, the cursor to continue.
+  """
   startCursor: Cursor
-  """When paginating forwards, the cursor to continue."""
+  """
+  When paginating forwards, the cursor to continue.
+  """
   endCursor: Cursor
 }
 type Query
@@ -1839,65 +2018,111 @@ type Status implements Node @key(fields: "id") @prefixedID(prefix: "metasts") {
   id: ID!
   createdAt: Time!
   updatedAt: Time!
-  """ID of the metadata of this status"""
+  """
+  ID of the metadata of this status
+  """
   metadataID: ID!
   statusNamespaceID: ID!
   source: String!
-  """JSON formatted data of this annotation."""
+  """
+  JSON formatted data of this annotation.
+  """
   data: JSON!
   namespace: StatusNamespace!
   metadata: Metadata!
 }
-"""A connection to a list of items."""
+"""
+A connection to a list of items.
+"""
 type StatusConnection {
-  """A list of edges."""
+  """
+  A list of edges.
+  """
   edges: [StatusEdge]
-  """Information to aid in pagination."""
+  """
+  Information to aid in pagination.
+  """
   pageInfo: PageInfo!
-  """Identifies the total count of items in the connection."""
+  """
+  Identifies the total count of items in the connection.
+  """
   totalCount: Int!
 }
-"""An edge in a connection."""
+"""
+An edge in a connection.
+"""
 type StatusEdge {
-  """The item at the end of the edge."""
+  """
+  The item at the end of the edge.
+  """
   node: Status
-  """A cursor for use in pagination."""
+  """
+  A cursor for use in pagination.
+  """
   cursor: Cursor!
 }
 type StatusNamespace implements Node @key(fields: "id") @prefixedID(prefix: "metasns") {
-  """The ID for the status namespace."""
+  """
+  The ID for the status namespace.
+  """
   id: ID!
   createdAt: Time!
   updatedAt: Time!
-  """The name of the status namespace."""
+  """
+  The name of the status namespace.
+  """
   name: String!
-  """Flag for if this namespace is private."""
+  """
+  Flag for if this namespace is private.
+  """
   private: Boolean!
 }
-"""A connection to a list of items."""
+"""
+A connection to a list of items.
+"""
 type StatusNamespaceConnection {
-  """A list of edges."""
+  """
+  A list of edges.
+  """
   edges: [StatusNamespaceEdge]
-  """Information to aid in pagination."""
+  """
+  Information to aid in pagination.
+  """
   pageInfo: PageInfo!
-  """Identifies the total count of items in the connection."""
+  """
+  Identifies the total count of items in the connection.
+  """
   totalCount: Int!
 }
-"""An edge in a connection."""
+"""
+An edge in a connection.
+"""
 type StatusNamespaceEdge {
-  """The item at the end of the edge."""
+  """
+  The item at the end of the edge.
+  """
   node: StatusNamespace
-  """A cursor for use in pagination."""
+  """
+  A cursor for use in pagination.
+  """
   cursor: Cursor!
 }
-"""Ordering options for StatusNamespace connections"""
+"""
+Ordering options for StatusNamespace connections
+"""
 input StatusNamespaceOrder {
-  """The ordering direction."""
+  """
+  The ordering direction.
+  """
   direction: OrderDirection! = ASC
-  """The field by which to order StatusNamespaces."""
+  """
+  The field by which to order StatusNamespaces.
+  """
   field: StatusNamespaceOrderField!
 }
-"""Properties by which StatusNamespace connections can be ordered."""
+"""
+Properties by which StatusNamespace connections can be ordered.
+"""
 enum StatusNamespaceOrderField {
   ID
   CREATED_AT
@@ -1914,7 +2139,9 @@ input StatusNamespaceWhereInput {
   not: StatusNamespaceWhereInput
   and: [StatusNamespaceWhereInput!]
   or: [StatusNamespaceWhereInput!]
-  """id field predicates"""
+  """
+  id field predicates
+  """
   id: ID
   idNEQ: ID
   idIn: [ID!]
@@ -1923,7 +2150,9 @@ input StatusNamespaceWhereInput {
   idGTE: ID
   idLT: ID
   idLTE: ID
-  """created_at field predicates"""
+  """
+  created_at field predicates
+  """
   createdAt: Time
   createdAtNEQ: Time
   createdAtIn: [Time!]
@@ -1932,7 +2161,9 @@ input StatusNamespaceWhereInput {
   createdAtGTE: Time
   createdAtLT: Time
   createdAtLTE: Time
-  """updated_at field predicates"""
+  """
+  updated_at field predicates
+  """
   updatedAt: Time
   updatedAtNEQ: Time
   updatedAtIn: [Time!]
@@ -1941,7 +2172,9 @@ input StatusNamespaceWhereInput {
   updatedAtGTE: Time
   updatedAtLT: Time
   updatedAtLTE: Time
-  """name field predicates"""
+  """
+  name field predicates
+  """
   name: String
   nameNEQ: String
   nameIn: [String!]
@@ -1956,14 +2189,22 @@ input StatusNamespaceWhereInput {
   nameEqualFold: String
   nameContainsFold: String
 }
-"""Ordering options for Status connections"""
+"""
+Ordering options for Status connections
+"""
 input StatusOrder {
-  """The ordering direction."""
+  """
+  The ordering direction.
+  """
   direction: OrderDirection! = ASC
-  """The field by which to order StatusSlice."""
+  """
+  The field by which to order StatusSlice.
+  """
   field: StatusOrderField!
 }
-"""Properties by which Status connections can be ordered."""
+"""
+Properties by which Status connections can be ordered.
+"""
 enum StatusOrderField {
   CREATED_AT
   UPDATED_AT
@@ -1976,7 +2217,9 @@ input StatusWhereInput {
   not: StatusWhereInput
   and: [StatusWhereInput!]
   or: [StatusWhereInput!]
-  """id field predicates"""
+  """
+  id field predicates
+  """
   id: ID
   idNEQ: ID
   idIn: [ID!]
@@ -1985,7 +2228,9 @@ input StatusWhereInput {
   idGTE: ID
   idLT: ID
   idLTE: ID
-  """created_at field predicates"""
+  """
+  created_at field predicates
+  """
   createdAt: Time
   createdAtNEQ: Time
   createdAtIn: [Time!]
@@ -1994,7 +2239,9 @@ input StatusWhereInput {
   createdAtGTE: Time
   createdAtLT: Time
   createdAtLTE: Time
-  """updated_at field predicates"""
+  """
+  updated_at field predicates
+  """
   updatedAt: Time
   updatedAtNEQ: Time
   updatedAtIn: [Time!]
@@ -2003,7 +2250,9 @@ input StatusWhereInput {
   updatedAtGTE: Time
   updatedAtLT: Time
   updatedAtLTE: Time
-  """source field predicates"""
+  """
+  source field predicates
+  """
   source: String
   sourceNEQ: String
   sourceIn: [String!]
@@ -2017,33 +2266,55 @@ input StatusWhereInput {
   sourceHasSuffix: String
   sourceEqualFold: String
   sourceContainsFold: String
-  """namespace edge predicates"""
+  """
+  namespace edge predicates
+  """
   hasNamespace: Boolean
   hasNamespaceWith: [StatusNamespaceWhereInput!]
-  """metadata edge predicates"""
+  """
+  metadata edge predicates
+  """
   hasMetadata: Boolean
   hasMetadataWith: [MetadataWhereInput!]
 }
-"""The builtin Time type"""
+"""
+The builtin Time type
+"""
 scalar Time
-"""Input information to update an annotation namespace."""
+"""
+Input information to update an annotation namespace.
+"""
 input UpdateAnnotationNamespaceInput {
-  """The name of the annotation namespace."""
+  """
+  The name of the annotation namespace.
+  """
   name: String
-  """Flag for if this namespace is private."""
+  """
+  Flag for if this namespace is private.
+  """
   private: Boolean
 }
-"""Input information to update a status namespace."""
+"""
+Input information to update a status namespace.
+"""
 input UpdateStatusInput {
-  """JSON formatted data of this annotation."""
+  """
+  JSON formatted data of this annotation.
+  """
   data: JSON
   appendData: JSON
 }
-"""Input information to update a status namespace."""
+"""
+Input information to update a status namespace.
+"""
 input UpdateStatusNamespaceInput {
-  """The name of the status namespace."""
+  """
+  The name of the status namespace.
+  """
   name: String
-  """Flag for if this namespace is private."""
+  """
+  Flag for if this namespace is private.
+  """
   private: Boolean
 }
 `, BuiltIn: false},
@@ -2305,6 +2576,7 @@ extend type StatusNamespace {
 }
 `, BuiltIn: false},
 	{Name: "../../federation/directives.graphql", Input: `
+	directive @authenticated on FIELD_DEFINITION | OBJECT | INTERFACE | SCALAR | ENUM
 	directive @composeDirective(name: String!) repeatable on SCHEMA
 	directive @extends on OBJECT | INTERFACE
 	directive @external on OBJECT | FIELD_DEFINITION
@@ -2322,9 +2594,21 @@ extend type StatusNamespace {
 	  | UNION
 	directive @interfaceObject on OBJECT
 	directive @link(import: [String!], url: String!) repeatable on SCHEMA
-	directive @override(from: String!) on FIELD_DEFINITION
+	directive @override(from: String!, label: String) on FIELD_DEFINITION
+	directive @policy(policies: [[federation__Policy!]!]!) on
+	  | FIELD_DEFINITION
+	  | OBJECT
+	  | INTERFACE
+	  | SCALAR
+	  | ENUM
 	directive @provides(fields: FieldSet!) on FIELD_DEFINITION
 	directive @requires(fields: FieldSet!) on FIELD_DEFINITION
+	directive @requiresScopes(scopes: [[federation__Scope!]!]!) on
+	  | FIELD_DEFINITION
+	  | OBJECT
+	  | INTERFACE
+	  | SCALAR
+	  | ENUM
 	directive @shareable repeatable on FIELD_DEFINITION | OBJECT
 	directive @tag(name: String!) repeatable on
 	  | ARGUMENT_DEFINITION
@@ -2339,6 +2623,8 @@ extend type StatusNamespace {
 	  | UNION
 	scalar _Any
 	scalar FieldSet
+	scalar federation__Policy
+	scalar federation__Scope
 `, BuiltIn: true},
 	{Name: "../../federation/entity.graphql", Input: `
 # a union of all types that use the @key directive
@@ -2346,7 +2632,7 @@ union _Entity = Annotation | AnnotationNamespace | Metadata | MetadataNode | Res
 
 # fake type to build resolver interfaces for users to implement
 type Entity {
-		findAnnotationByID(id: ID!,): Annotation!
+	findAnnotationByID(id: ID!,): Annotation!
 	findAnnotationNamespaceByID(id: ID!,): AnnotationNamespace!
 	findMetadataByID(id: ID!,): Metadata!
 	findMetadataByNodeID(nodeID: ID!,): Metadata!
@@ -2355,7 +2641,6 @@ type Entity {
 	findStatusByID(id: ID!,): Status!
 	findStatusNamespaceByID(id: ID!,): StatusNamespace!
 	findStatusOwnerByID(id: ID!,): StatusOwner!
-
 }
 
 type _Service {
@@ -2374,655 +2659,1396 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
 // region    ***************************** args.gotpl *****************************
 
-func (ec *executionContext) dir_composeDirective_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Entity_findAnnotationByID_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["name"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["name"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Entity_findAnnotationByID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 gidx.PrefixedID
-	if tmp, ok := rawArgs["id"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	args := map[string]any{}
+	arg0, err := ec.field_Entity_findAnnotationByID_argsID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["id"] = arg0
 	return args, nil
 }
+func (ec *executionContext) field_Entity_findAnnotationByID_argsID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (gidx.PrefixedID, error) {
+	if _, ok := rawArgs["id"]; !ok {
+		var zeroVal gidx.PrefixedID
+		return zeroVal, nil
+	}
 
-func (ec *executionContext) field_Entity_findAnnotationNamespaceByID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 gidx.PrefixedID
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
 	if tmp, ok := rawArgs["id"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+		return ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, tmp)
+	}
+
+	var zeroVal gidx.PrefixedID
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Entity_findAnnotationNamespaceByID_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Entity_findAnnotationNamespaceByID_argsID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["id"] = arg0
 	return args, nil
 }
+func (ec *executionContext) field_Entity_findAnnotationNamespaceByID_argsID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (gidx.PrefixedID, error) {
+	if _, ok := rawArgs["id"]; !ok {
+		var zeroVal gidx.PrefixedID
+		return zeroVal, nil
+	}
 
-func (ec *executionContext) field_Entity_findMetadataByID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 gidx.PrefixedID
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
 	if tmp, ok := rawArgs["id"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+		return ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, tmp)
+	}
+
+	var zeroVal gidx.PrefixedID
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Entity_findMetadataByID_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Entity_findMetadataByID_argsID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["id"] = arg0
 	return args, nil
 }
+func (ec *executionContext) field_Entity_findMetadataByID_argsID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (gidx.PrefixedID, error) {
+	if _, ok := rawArgs["id"]; !ok {
+		var zeroVal gidx.PrefixedID
+		return zeroVal, nil
+	}
 
-func (ec *executionContext) field_Entity_findMetadataByNodeID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+	if tmp, ok := rawArgs["id"]; ok {
+		return ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, tmp)
+	}
+
+	var zeroVal gidx.PrefixedID
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Entity_findMetadataByNodeID_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
-	args := map[string]interface{}{}
-	var arg0 gidx.PrefixedID
-	if tmp, ok := rawArgs["nodeID"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nodeID"))
-		arg0, err = ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	args := map[string]any{}
+	arg0, err := ec.field_Entity_findMetadataByNodeID_argsNodeID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["nodeID"] = arg0
 	return args, nil
 }
+func (ec *executionContext) field_Entity_findMetadataByNodeID_argsNodeID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (gidx.PrefixedID, error) {
+	if _, ok := rawArgs["nodeID"]; !ok {
+		var zeroVal gidx.PrefixedID
+		return zeroVal, nil
+	}
 
-func (ec *executionContext) field_Entity_findMetadataNodeByID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("nodeID"))
+	if tmp, ok := rawArgs["nodeID"]; ok {
+		return ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, tmp)
+	}
+
+	var zeroVal gidx.PrefixedID
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Entity_findMetadataNodeByID_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
-	args := map[string]interface{}{}
-	var arg0 gidx.PrefixedID
-	if tmp, ok := rawArgs["id"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	args := map[string]any{}
+	arg0, err := ec.field_Entity_findMetadataNodeByID_argsID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["id"] = arg0
 	return args, nil
 }
+func (ec *executionContext) field_Entity_findMetadataNodeByID_argsID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (gidx.PrefixedID, error) {
+	if _, ok := rawArgs["id"]; !ok {
+		var zeroVal gidx.PrefixedID
+		return zeroVal, nil
+	}
 
-func (ec *executionContext) field_Entity_findResourceOwnerByID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 gidx.PrefixedID
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
 	if tmp, ok := rawArgs["id"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+		return ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, tmp)
+	}
+
+	var zeroVal gidx.PrefixedID
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Entity_findResourceOwnerByID_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Entity_findResourceOwnerByID_argsID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["id"] = arg0
 	return args, nil
 }
+func (ec *executionContext) field_Entity_findResourceOwnerByID_argsID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (gidx.PrefixedID, error) {
+	if _, ok := rawArgs["id"]; !ok {
+		var zeroVal gidx.PrefixedID
+		return zeroVal, nil
+	}
 
-func (ec *executionContext) field_Entity_findStatusByID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 gidx.PrefixedID
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
 	if tmp, ok := rawArgs["id"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+		return ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, tmp)
+	}
+
+	var zeroVal gidx.PrefixedID
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Entity_findStatusByID_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Entity_findStatusByID_argsID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["id"] = arg0
 	return args, nil
 }
+func (ec *executionContext) field_Entity_findStatusByID_argsID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (gidx.PrefixedID, error) {
+	if _, ok := rawArgs["id"]; !ok {
+		var zeroVal gidx.PrefixedID
+		return zeroVal, nil
+	}
 
-func (ec *executionContext) field_Entity_findStatusNamespaceByID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 gidx.PrefixedID
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
 	if tmp, ok := rawArgs["id"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+		return ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, tmp)
+	}
+
+	var zeroVal gidx.PrefixedID
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Entity_findStatusNamespaceByID_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Entity_findStatusNamespaceByID_argsID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["id"] = arg0
 	return args, nil
 }
+func (ec *executionContext) field_Entity_findStatusNamespaceByID_argsID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (gidx.PrefixedID, error) {
+	if _, ok := rawArgs["id"]; !ok {
+		var zeroVal gidx.PrefixedID
+		return zeroVal, nil
+	}
 
-func (ec *executionContext) field_Entity_findStatusOwnerByID_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 gidx.PrefixedID
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
 	if tmp, ok := rawArgs["id"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+		return ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, tmp)
+	}
+
+	var zeroVal gidx.PrefixedID
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Entity_findStatusOwnerByID_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Entity_findStatusOwnerByID_argsID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["id"] = arg0
 	return args, nil
 }
+func (ec *executionContext) field_Entity_findStatusOwnerByID_argsID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (gidx.PrefixedID, error) {
+	if _, ok := rawArgs["id"]; !ok {
+		var zeroVal gidx.PrefixedID
+		return zeroVal, nil
+	}
 
-func (ec *executionContext) field_Metadata_annotations_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+	if tmp, ok := rawArgs["id"]; ok {
+		return ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, tmp)
+	}
+
+	var zeroVal gidx.PrefixedID
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Metadata_annotations_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
-	args := map[string]interface{}{}
-	var arg0 *entgql.Cursor[gidx.PrefixedID]
-	if tmp, ok := rawArgs["after"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-		arg0, err = ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	args := map[string]any{}
+	arg0, err := ec.field_Metadata_annotations_argsAfter(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["after"] = arg0
-	var arg1 *int
-	if tmp, ok := rawArgs["first"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	arg1, err := ec.field_Metadata_annotations_argsFirst(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["first"] = arg1
-	var arg2 *entgql.Cursor[gidx.PrefixedID]
-	if tmp, ok := rawArgs["before"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-		arg2, err = ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	arg2, err := ec.field_Metadata_annotations_argsBefore(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["before"] = arg2
-	var arg3 *int
-	if tmp, ok := rawArgs["last"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-		arg3, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	arg3, err := ec.field_Metadata_annotations_argsLast(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["last"] = arg3
-	var arg4 *generated.AnnotationOrder
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-		arg4, err = ec.unmarshalOAnnotationOrder2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationOrder(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	arg4, err := ec.field_Metadata_annotations_argsOrderBy(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["orderBy"] = arg4
-	var arg5 *generated.AnnotationWhereInput
-	if tmp, ok := rawArgs["where"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-		arg5, err = ec.unmarshalOAnnotationWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationWhereInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	arg5, err := ec.field_Metadata_annotations_argsWhere(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["where"] = arg5
 	return args, nil
 }
+func (ec *executionContext) field_Metadata_annotations_argsAfter(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*entgql.Cursor[gidx.PrefixedID], error) {
+	if _, ok := rawArgs["after"]; !ok {
+		var zeroVal *entgql.Cursor[gidx.PrefixedID]
+		return zeroVal, nil
+	}
 
-func (ec *executionContext) field_Metadata_statuses_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 *entgql.Cursor[gidx.PrefixedID]
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
 	if tmp, ok := rawArgs["after"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-		arg0, err = ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
+	}
+
+	var zeroVal *entgql.Cursor[gidx.PrefixedID]
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Metadata_annotations_argsFirst(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	if _, ok := rawArgs["first"]; !ok {
+		var zeroVal *int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
+	if tmp, ok := rawArgs["first"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Metadata_annotations_argsBefore(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*entgql.Cursor[gidx.PrefixedID], error) {
+	if _, ok := rawArgs["before"]; !ok {
+		var zeroVal *entgql.Cursor[gidx.PrefixedID]
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
+	if tmp, ok := rawArgs["before"]; ok {
+		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
+	}
+
+	var zeroVal *entgql.Cursor[gidx.PrefixedID]
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Metadata_annotations_argsLast(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	if _, ok := rawArgs["last"]; !ok {
+		var zeroVal *int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
+	if tmp, ok := rawArgs["last"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Metadata_annotations_argsOrderBy(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*generated.AnnotationOrder, error) {
+	if _, ok := rawArgs["orderBy"]; !ok {
+		var zeroVal *generated.AnnotationOrder
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
+	if tmp, ok := rawArgs["orderBy"]; ok {
+		return ec.unmarshalOAnnotationOrder2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationOrder(ctx, tmp)
+	}
+
+	var zeroVal *generated.AnnotationOrder
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Metadata_annotations_argsWhere(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*generated.AnnotationWhereInput, error) {
+	if _, ok := rawArgs["where"]; !ok {
+		var zeroVal *generated.AnnotationWhereInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
+	if tmp, ok := rawArgs["where"]; ok {
+		return ec.unmarshalOAnnotationWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationWhereInput(ctx, tmp)
+	}
+
+	var zeroVal *generated.AnnotationWhereInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Metadata_statuses_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Metadata_statuses_argsAfter(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["after"] = arg0
-	var arg1 *int
-	if tmp, ok := rawArgs["first"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	arg1, err := ec.field_Metadata_statuses_argsFirst(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["first"] = arg1
-	var arg2 *entgql.Cursor[gidx.PrefixedID]
-	if tmp, ok := rawArgs["before"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-		arg2, err = ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	arg2, err := ec.field_Metadata_statuses_argsBefore(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["before"] = arg2
-	var arg3 *int
-	if tmp, ok := rawArgs["last"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-		arg3, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	arg3, err := ec.field_Metadata_statuses_argsLast(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["last"] = arg3
-	var arg4 *generated.StatusOrder
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-		arg4, err = ec.unmarshalOStatusOrder2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusOrder(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	arg4, err := ec.field_Metadata_statuses_argsOrderBy(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["orderBy"] = arg4
-	var arg5 *generated.StatusWhereInput
-	if tmp, ok := rawArgs["where"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-		arg5, err = ec.unmarshalOStatusWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusWhereInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	arg5, err := ec.field_Metadata_statuses_argsWhere(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["where"] = arg5
 	return args, nil
 }
+func (ec *executionContext) field_Metadata_statuses_argsAfter(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*entgql.Cursor[gidx.PrefixedID], error) {
+	if _, ok := rawArgs["after"]; !ok {
+		var zeroVal *entgql.Cursor[gidx.PrefixedID]
+		return zeroVal, nil
+	}
 
-func (ec *executionContext) field_Mutation_annotationDelete_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
+	if tmp, ok := rawArgs["after"]; ok {
+		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
+	}
+
+	var zeroVal *entgql.Cursor[gidx.PrefixedID]
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Metadata_statuses_argsFirst(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	if _, ok := rawArgs["first"]; !ok {
+		var zeroVal *int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
+	if tmp, ok := rawArgs["first"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Metadata_statuses_argsBefore(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*entgql.Cursor[gidx.PrefixedID], error) {
+	if _, ok := rawArgs["before"]; !ok {
+		var zeroVal *entgql.Cursor[gidx.PrefixedID]
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
+	if tmp, ok := rawArgs["before"]; ok {
+		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
+	}
+
+	var zeroVal *entgql.Cursor[gidx.PrefixedID]
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Metadata_statuses_argsLast(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	if _, ok := rawArgs["last"]; !ok {
+		var zeroVal *int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
+	if tmp, ok := rawArgs["last"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Metadata_statuses_argsOrderBy(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*generated.StatusOrder, error) {
+	if _, ok := rawArgs["orderBy"]; !ok {
+		var zeroVal *generated.StatusOrder
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
+	if tmp, ok := rawArgs["orderBy"]; ok {
+		return ec.unmarshalOStatusOrder2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusOrder(ctx, tmp)
+	}
+
+	var zeroVal *generated.StatusOrder
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Metadata_statuses_argsWhere(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*generated.StatusWhereInput, error) {
+	if _, ok := rawArgs["where"]; !ok {
+		var zeroVal *generated.StatusWhereInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
+	if tmp, ok := rawArgs["where"]; ok {
+		return ec.unmarshalOStatusWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusWhereInput(ctx, tmp)
+	}
+
+	var zeroVal *generated.StatusWhereInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_annotationDelete_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
-	args := map[string]interface{}{}
-	var arg0 AnnotationDeleteInput
-	if tmp, ok := rawArgs["input"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalNAnnotationDeleteInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋgraphapiᚐAnnotationDeleteInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_annotationDelete_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["input"] = arg0
 	return args, nil
 }
+func (ec *executionContext) field_Mutation_annotationDelete_argsInput(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (AnnotationDeleteInput, error) {
+	if _, ok := rawArgs["input"]; !ok {
+		var zeroVal AnnotationDeleteInput
+		return zeroVal, nil
+	}
 
-func (ec *executionContext) field_Mutation_annotationNamespaceCreate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 generated.CreateAnnotationNamespaceInput
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 	if tmp, ok := rawArgs["input"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalNCreateAnnotationNamespaceInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐCreateAnnotationNamespaceInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+		return ec.unmarshalNAnnotationDeleteInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋgraphapiᚐAnnotationDeleteInput(ctx, tmp)
+	}
+
+	var zeroVal AnnotationDeleteInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_annotationNamespaceCreate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_annotationNamespaceCreate_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["input"] = arg0
 	return args, nil
 }
+func (ec *executionContext) field_Mutation_annotationNamespaceCreate_argsInput(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (generated.CreateAnnotationNamespaceInput, error) {
+	if _, ok := rawArgs["input"]; !ok {
+		var zeroVal generated.CreateAnnotationNamespaceInput
+		return zeroVal, nil
+	}
 
-func (ec *executionContext) field_Mutation_annotationNamespaceDelete_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+	if tmp, ok := rawArgs["input"]; ok {
+		return ec.unmarshalNCreateAnnotationNamespaceInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐCreateAnnotationNamespaceInput(ctx, tmp)
+	}
+
+	var zeroVal generated.CreateAnnotationNamespaceInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_annotationNamespaceDelete_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
-	args := map[string]interface{}{}
-	var arg0 gidx.PrefixedID
-	if tmp, ok := rawArgs["id"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_annotationNamespaceDelete_argsID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["id"] = arg0
-	var arg1 bool
-	if tmp, ok := rawArgs["force"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("force"))
-		arg1, err = ec.unmarshalNBoolean2bool(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	arg1, err := ec.field_Mutation_annotationNamespaceDelete_argsForce(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["force"] = arg1
 	return args, nil
 }
+func (ec *executionContext) field_Mutation_annotationNamespaceDelete_argsID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (gidx.PrefixedID, error) {
+	if _, ok := rawArgs["id"]; !ok {
+		var zeroVal gidx.PrefixedID
+		return zeroVal, nil
+	}
 
-func (ec *executionContext) field_Mutation_annotationNamespaceUpdate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 gidx.PrefixedID
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
 	if tmp, ok := rawArgs["id"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+		return ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, tmp)
+	}
+
+	var zeroVal gidx.PrefixedID
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_annotationNamespaceDelete_argsForce(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (bool, error) {
+	if _, ok := rawArgs["force"]; !ok {
+		var zeroVal bool
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("force"))
+	if tmp, ok := rawArgs["force"]; ok {
+		return ec.unmarshalNBoolean2bool(ctx, tmp)
+	}
+
+	var zeroVal bool
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_annotationNamespaceUpdate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_annotationNamespaceUpdate_argsID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["id"] = arg0
-	var arg1 generated.UpdateAnnotationNamespaceInput
-	if tmp, ok := rawArgs["input"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg1, err = ec.unmarshalNUpdateAnnotationNamespaceInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐUpdateAnnotationNamespaceInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	arg1, err := ec.field_Mutation_annotationNamespaceUpdate_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["input"] = arg1
 	return args, nil
 }
-
-func (ec *executionContext) field_Mutation_annotationUpdate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 AnnotationUpdateInput
-	if tmp, ok := rawArgs["input"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalNAnnotationUpdateInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋgraphapiᚐAnnotationUpdateInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+func (ec *executionContext) field_Mutation_annotationNamespaceUpdate_argsID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (gidx.PrefixedID, error) {
+	if _, ok := rawArgs["id"]; !ok {
+		var zeroVal gidx.PrefixedID
+		return zeroVal, nil
 	}
-	args["input"] = arg0
-	return args, nil
-}
 
-func (ec *executionContext) field_Mutation_statusDelete_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 StatusDeleteInput
-	if tmp, ok := rawArgs["input"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalNStatusDeleteInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋgraphapiᚐStatusDeleteInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["input"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_statusNamespaceCreate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 generated.CreateStatusNamespaceInput
-	if tmp, ok := rawArgs["input"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalNCreateStatusNamespaceInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐCreateStatusNamespaceInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["input"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Mutation_statusNamespaceDelete_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 gidx.PrefixedID
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
 	if tmp, ok := rawArgs["id"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+		return ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, tmp)
+	}
+
+	var zeroVal gidx.PrefixedID
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_annotationNamespaceUpdate_argsInput(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (generated.UpdateAnnotationNamespaceInput, error) {
+	if _, ok := rawArgs["input"]; !ok {
+		var zeroVal generated.UpdateAnnotationNamespaceInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+	if tmp, ok := rawArgs["input"]; ok {
+		return ec.unmarshalNUpdateAnnotationNamespaceInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐUpdateAnnotationNamespaceInput(ctx, tmp)
+	}
+
+	var zeroVal generated.UpdateAnnotationNamespaceInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_annotationUpdate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_annotationUpdate_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_annotationUpdate_argsInput(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (AnnotationUpdateInput, error) {
+	if _, ok := rawArgs["input"]; !ok {
+		var zeroVal AnnotationUpdateInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+	if tmp, ok := rawArgs["input"]; ok {
+		return ec.unmarshalNAnnotationUpdateInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋgraphapiᚐAnnotationUpdateInput(ctx, tmp)
+	}
+
+	var zeroVal AnnotationUpdateInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_statusDelete_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_statusDelete_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_statusDelete_argsInput(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (StatusDeleteInput, error) {
+	if _, ok := rawArgs["input"]; !ok {
+		var zeroVal StatusDeleteInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+	if tmp, ok := rawArgs["input"]; ok {
+		return ec.unmarshalNStatusDeleteInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋgraphapiᚐStatusDeleteInput(ctx, tmp)
+	}
+
+	var zeroVal StatusDeleteInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_statusNamespaceCreate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_statusNamespaceCreate_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_statusNamespaceCreate_argsInput(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (generated.CreateStatusNamespaceInput, error) {
+	if _, ok := rawArgs["input"]; !ok {
+		var zeroVal generated.CreateStatusNamespaceInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+	if tmp, ok := rawArgs["input"]; ok {
+		return ec.unmarshalNCreateStatusNamespaceInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐCreateStatusNamespaceInput(ctx, tmp)
+	}
+
+	var zeroVal generated.CreateStatusNamespaceInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_statusNamespaceDelete_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_statusNamespaceDelete_argsID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["id"] = arg0
-	var arg1 bool
-	if tmp, ok := rawArgs["force"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("force"))
-		arg1, err = ec.unmarshalNBoolean2bool(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	arg1, err := ec.field_Mutation_statusNamespaceDelete_argsForce(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["force"] = arg1
 	return args, nil
 }
+func (ec *executionContext) field_Mutation_statusNamespaceDelete_argsID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (gidx.PrefixedID, error) {
+	if _, ok := rawArgs["id"]; !ok {
+		var zeroVal gidx.PrefixedID
+		return zeroVal, nil
+	}
 
-func (ec *executionContext) field_Mutation_statusNamespaceUpdate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 gidx.PrefixedID
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
 	if tmp, ok := rawArgs["id"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+		return ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, tmp)
+	}
+
+	var zeroVal gidx.PrefixedID
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_statusNamespaceDelete_argsForce(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (bool, error) {
+	if _, ok := rawArgs["force"]; !ok {
+		var zeroVal bool
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("force"))
+	if tmp, ok := rawArgs["force"]; ok {
+		return ec.unmarshalNBoolean2bool(ctx, tmp)
+	}
+
+	var zeroVal bool
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_statusNamespaceUpdate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_statusNamespaceUpdate_argsID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["id"] = arg0
-	var arg1 generated.UpdateStatusNamespaceInput
-	if tmp, ok := rawArgs["input"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg1, err = ec.unmarshalNUpdateStatusNamespaceInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐUpdateStatusNamespaceInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	arg1, err := ec.field_Mutation_statusNamespaceUpdate_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["input"] = arg1
 	return args, nil
 }
+func (ec *executionContext) field_Mutation_statusNamespaceUpdate_argsID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (gidx.PrefixedID, error) {
+	if _, ok := rawArgs["id"]; !ok {
+		var zeroVal gidx.PrefixedID
+		return zeroVal, nil
+	}
 
-func (ec *executionContext) field_Mutation_statusUpdate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 StatusUpdateInput
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+	if tmp, ok := rawArgs["id"]; ok {
+		return ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, tmp)
+	}
+
+	var zeroVal gidx.PrefixedID
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_statusNamespaceUpdate_argsInput(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (generated.UpdateStatusNamespaceInput, error) {
+	if _, ok := rawArgs["input"]; !ok {
+		var zeroVal generated.UpdateStatusNamespaceInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 	if tmp, ok := rawArgs["input"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalNStatusUpdateInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋgraphapiᚐStatusUpdateInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+		return ec.unmarshalNUpdateStatusNamespaceInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐUpdateStatusNamespaceInput(ctx, tmp)
+	}
+
+	var zeroVal generated.UpdateStatusNamespaceInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_statusUpdate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_statusUpdate_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["input"] = arg0
 	return args, nil
 }
+func (ec *executionContext) field_Mutation_statusUpdate_argsInput(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (StatusUpdateInput, error) {
+	if _, ok := rawArgs["input"]; !ok {
+		var zeroVal StatusUpdateInput
+		return zeroVal, nil
+	}
 
-func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+	if tmp, ok := rawArgs["input"]; ok {
+		return ec.unmarshalNStatusUpdateInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋgraphapiᚐStatusUpdateInput(ctx, tmp)
+	}
+
+	var zeroVal StatusUpdateInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["name"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	args := map[string]any{}
+	arg0, err := ec.field_Query___type_argsName(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["name"] = arg0
 	return args, nil
 }
+func (ec *executionContext) field_Query___type_argsName(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (string, error) {
+	if _, ok := rawArgs["name"]; !ok {
+		var zeroVal string
+		return zeroVal, nil
+	}
 
-func (ec *executionContext) field_Query__entities_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+	if tmp, ok := rawArgs["name"]; ok {
+		return ec.unmarshalNString2string(ctx, tmp)
+	}
+
+	var zeroVal string
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query__entities_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
-	args := map[string]interface{}{}
-	var arg0 []map[string]interface{}
-	if tmp, ok := rawArgs["representations"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("representations"))
-		arg0, err = ec.unmarshalN_Any2ᚕmapᚄ(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	args := map[string]any{}
+	arg0, err := ec.field_Query__entities_argsRepresentations(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["representations"] = arg0
 	return args, nil
 }
+func (ec *executionContext) field_Query__entities_argsRepresentations(
+	ctx context.Context,
+	rawArgs map[string]any,
+) ([]map[string]any, error) {
+	if _, ok := rawArgs["representations"]; !ok {
+		var zeroVal []map[string]any
+		return zeroVal, nil
+	}
 
-func (ec *executionContext) field_Query_annotationNamespace_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("representations"))
+	if tmp, ok := rawArgs["representations"]; ok {
+		return ec.unmarshalN_Any2ᚕmapᚄ(ctx, tmp)
+	}
+
+	var zeroVal []map[string]any
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Query_annotationNamespace_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
-	args := map[string]interface{}{}
-	var arg0 gidx.PrefixedID
-	if tmp, ok := rawArgs["id"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-		arg0, err = ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	args := map[string]any{}
+	arg0, err := ec.field_Query_annotationNamespace_argsID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["id"] = arg0
 	return args, nil
 }
+func (ec *executionContext) field_Query_annotationNamespace_argsID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (gidx.PrefixedID, error) {
+	if _, ok := rawArgs["id"]; !ok {
+		var zeroVal gidx.PrefixedID
+		return zeroVal, nil
+	}
 
-func (ec *executionContext) field_ResourceOwner_annotationNamespaces_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+	if tmp, ok := rawArgs["id"]; ok {
+		return ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, tmp)
+	}
+
+	var zeroVal gidx.PrefixedID
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_ResourceOwner_annotationNamespaces_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
-	args := map[string]interface{}{}
-	var arg0 *entgql.Cursor[gidx.PrefixedID]
-	if tmp, ok := rawArgs["after"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-		arg0, err = ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	args := map[string]any{}
+	arg0, err := ec.field_ResourceOwner_annotationNamespaces_argsAfter(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["after"] = arg0
-	var arg1 *int
-	if tmp, ok := rawArgs["first"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	arg1, err := ec.field_ResourceOwner_annotationNamespaces_argsFirst(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["first"] = arg1
-	var arg2 *entgql.Cursor[gidx.PrefixedID]
-	if tmp, ok := rawArgs["before"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-		arg2, err = ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	arg2, err := ec.field_ResourceOwner_annotationNamespaces_argsBefore(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["before"] = arg2
-	var arg3 *int
-	if tmp, ok := rawArgs["last"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-		arg3, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	arg3, err := ec.field_ResourceOwner_annotationNamespaces_argsLast(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["last"] = arg3
-	var arg4 *generated.AnnotationNamespaceOrder
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-		arg4, err = ec.unmarshalOAnnotationNamespaceOrder2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationNamespaceOrder(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	arg4, err := ec.field_ResourceOwner_annotationNamespaces_argsOrderBy(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["orderBy"] = arg4
-	var arg5 *generated.AnnotationNamespaceWhereInput
-	if tmp, ok := rawArgs["where"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-		arg5, err = ec.unmarshalOAnnotationNamespaceWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationNamespaceWhereInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	arg5, err := ec.field_ResourceOwner_annotationNamespaces_argsWhere(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["where"] = arg5
 	return args, nil
 }
+func (ec *executionContext) field_ResourceOwner_annotationNamespaces_argsAfter(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*entgql.Cursor[gidx.PrefixedID], error) {
+	if _, ok := rawArgs["after"]; !ok {
+		var zeroVal *entgql.Cursor[gidx.PrefixedID]
+		return zeroVal, nil
+	}
 
-func (ec *executionContext) field_StatusOwner_statusNamespaces_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 *entgql.Cursor[gidx.PrefixedID]
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
 	if tmp, ok := rawArgs["after"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-		arg0, err = ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
+	}
+
+	var zeroVal *entgql.Cursor[gidx.PrefixedID]
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_ResourceOwner_annotationNamespaces_argsFirst(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	if _, ok := rawArgs["first"]; !ok {
+		var zeroVal *int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
+	if tmp, ok := rawArgs["first"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_ResourceOwner_annotationNamespaces_argsBefore(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*entgql.Cursor[gidx.PrefixedID], error) {
+	if _, ok := rawArgs["before"]; !ok {
+		var zeroVal *entgql.Cursor[gidx.PrefixedID]
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
+	if tmp, ok := rawArgs["before"]; ok {
+		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
+	}
+
+	var zeroVal *entgql.Cursor[gidx.PrefixedID]
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_ResourceOwner_annotationNamespaces_argsLast(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	if _, ok := rawArgs["last"]; !ok {
+		var zeroVal *int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
+	if tmp, ok := rawArgs["last"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_ResourceOwner_annotationNamespaces_argsOrderBy(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*generated.AnnotationNamespaceOrder, error) {
+	if _, ok := rawArgs["orderBy"]; !ok {
+		var zeroVal *generated.AnnotationNamespaceOrder
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
+	if tmp, ok := rawArgs["orderBy"]; ok {
+		return ec.unmarshalOAnnotationNamespaceOrder2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationNamespaceOrder(ctx, tmp)
+	}
+
+	var zeroVal *generated.AnnotationNamespaceOrder
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_ResourceOwner_annotationNamespaces_argsWhere(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*generated.AnnotationNamespaceWhereInput, error) {
+	if _, ok := rawArgs["where"]; !ok {
+		var zeroVal *generated.AnnotationNamespaceWhereInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
+	if tmp, ok := rawArgs["where"]; ok {
+		return ec.unmarshalOAnnotationNamespaceWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationNamespaceWhereInput(ctx, tmp)
+	}
+
+	var zeroVal *generated.AnnotationNamespaceWhereInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_StatusOwner_statusNamespaces_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_StatusOwner_statusNamespaces_argsAfter(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["after"] = arg0
-	var arg1 *int
-	if tmp, ok := rawArgs["first"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	arg1, err := ec.field_StatusOwner_statusNamespaces_argsFirst(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["first"] = arg1
-	var arg2 *entgql.Cursor[gidx.PrefixedID]
-	if tmp, ok := rawArgs["before"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-		arg2, err = ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	arg2, err := ec.field_StatusOwner_statusNamespaces_argsBefore(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["before"] = arg2
-	var arg3 *int
-	if tmp, ok := rawArgs["last"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-		arg3, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	arg3, err := ec.field_StatusOwner_statusNamespaces_argsLast(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["last"] = arg3
-	var arg4 *generated.StatusNamespaceOrder
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-		arg4, err = ec.unmarshalOStatusNamespaceOrder2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusNamespaceOrder(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	arg4, err := ec.field_StatusOwner_statusNamespaces_argsOrderBy(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["orderBy"] = arg4
-	var arg5 *generated.StatusNamespaceWhereInput
-	if tmp, ok := rawArgs["where"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-		arg5, err = ec.unmarshalOStatusNamespaceWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusNamespaceWhereInput(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	arg5, err := ec.field_StatusOwner_statusNamespaces_argsWhere(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["where"] = arg5
 	return args, nil
 }
+func (ec *executionContext) field_StatusOwner_statusNamespaces_argsAfter(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*entgql.Cursor[gidx.PrefixedID], error) {
+	if _, ok := rawArgs["after"]; !ok {
+		var zeroVal *entgql.Cursor[gidx.PrefixedID]
+		return zeroVal, nil
+	}
 
-func (ec *executionContext) field___Type_enumValues_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
+	if tmp, ok := rawArgs["after"]; ok {
+		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
+	}
+
+	var zeroVal *entgql.Cursor[gidx.PrefixedID]
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_StatusOwner_statusNamespaces_argsFirst(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	if _, ok := rawArgs["first"]; !ok {
+		var zeroVal *int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
+	if tmp, ok := rawArgs["first"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_StatusOwner_statusNamespaces_argsBefore(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*entgql.Cursor[gidx.PrefixedID], error) {
+	if _, ok := rawArgs["before"]; !ok {
+		var zeroVal *entgql.Cursor[gidx.PrefixedID]
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
+	if tmp, ok := rawArgs["before"]; ok {
+		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
+	}
+
+	var zeroVal *entgql.Cursor[gidx.PrefixedID]
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_StatusOwner_statusNamespaces_argsLast(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*int, error) {
+	if _, ok := rawArgs["last"]; !ok {
+		var zeroVal *int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
+	if tmp, ok := rawArgs["last"]; ok {
+		return ec.unmarshalOInt2ᚖint(ctx, tmp)
+	}
+
+	var zeroVal *int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_StatusOwner_statusNamespaces_argsOrderBy(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*generated.StatusNamespaceOrder, error) {
+	if _, ok := rawArgs["orderBy"]; !ok {
+		var zeroVal *generated.StatusNamespaceOrder
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
+	if tmp, ok := rawArgs["orderBy"]; ok {
+		return ec.unmarshalOStatusNamespaceOrder2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusNamespaceOrder(ctx, tmp)
+	}
+
+	var zeroVal *generated.StatusNamespaceOrder
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_StatusOwner_statusNamespaces_argsWhere(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*generated.StatusNamespaceWhereInput, error) {
+	if _, ok := rawArgs["where"]; !ok {
+		var zeroVal *generated.StatusNamespaceWhereInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
+	if tmp, ok := rawArgs["where"]; ok {
+		return ec.unmarshalOStatusNamespaceWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusNamespaceWhereInput(ctx, tmp)
+	}
+
+	var zeroVal *generated.StatusNamespaceWhereInput
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field___Directive_args_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
-	args := map[string]interface{}{}
-	var arg0 bool
-	if tmp, ok := rawArgs["includeDeprecated"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("includeDeprecated"))
-		arg0, err = ec.unmarshalOBoolean2bool(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+	args := map[string]any{}
+	arg0, err := ec.field___Directive_args_argsIncludeDeprecated(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["includeDeprecated"] = arg0
 	return args, nil
 }
+func (ec *executionContext) field___Directive_args_argsIncludeDeprecated(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*bool, error) {
+	if _, ok := rawArgs["includeDeprecated"]; !ok {
+		var zeroVal *bool
+		return zeroVal, nil
+	}
 
-func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 bool
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("includeDeprecated"))
 	if tmp, ok := rawArgs["includeDeprecated"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("includeDeprecated"))
-		arg0, err = ec.unmarshalOBoolean2bool(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
+		return ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+	}
+
+	var zeroVal *bool
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field___Field_args_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field___Field_args_argsIncludeDeprecated(ctx, rawArgs)
+	if err != nil {
+		return nil, err
 	}
 	args["includeDeprecated"] = arg0
 	return args, nil
+}
+func (ec *executionContext) field___Field_args_argsIncludeDeprecated(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*bool, error) {
+	if _, ok := rawArgs["includeDeprecated"]; !ok {
+		var zeroVal *bool
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("includeDeprecated"))
+	if tmp, ok := rawArgs["includeDeprecated"]; ok {
+		return ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
+	}
+
+	var zeroVal *bool
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field___Type_enumValues_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field___Type_enumValues_argsIncludeDeprecated(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["includeDeprecated"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field___Type_enumValues_argsIncludeDeprecated(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (bool, error) {
+	if _, ok := rawArgs["includeDeprecated"]; !ok {
+		var zeroVal bool
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("includeDeprecated"))
+	if tmp, ok := rawArgs["includeDeprecated"]; ok {
+		return ec.unmarshalOBoolean2bool(ctx, tmp)
+	}
+
+	var zeroVal bool
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field___Type_fields_argsIncludeDeprecated(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["includeDeprecated"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field___Type_fields_argsIncludeDeprecated(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (bool, error) {
+	if _, ok := rawArgs["includeDeprecated"]; !ok {
+		var zeroVal bool
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("includeDeprecated"))
+	if tmp, ok := rawArgs["includeDeprecated"]; ok {
+		return ec.unmarshalOBoolean2bool(ctx, tmp)
+	}
+
+	var zeroVal bool
+	return zeroVal, nil
 }
 
 // endregion ***************************** args.gotpl *****************************
@@ -3045,7 +4071,7 @@ func (ec *executionContext) _Annotation_id(ctx context.Context, field graphql.Co
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.ID, nil
 	})
@@ -3064,7 +4090,7 @@ func (ec *executionContext) _Annotation_id(ctx context.Context, field graphql.Co
 	return ec.marshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Annotation_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Annotation_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Annotation",
 		Field:      field,
@@ -3089,7 +4115,7 @@ func (ec *executionContext) _Annotation_createdAt(ctx context.Context, field gra
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.CreatedAt, nil
 	})
@@ -3108,7 +4134,7 @@ func (ec *executionContext) _Annotation_createdAt(ctx context.Context, field gra
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Annotation_createdAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Annotation_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Annotation",
 		Field:      field,
@@ -3133,7 +4159,7 @@ func (ec *executionContext) _Annotation_updatedAt(ctx context.Context, field gra
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.UpdatedAt, nil
 	})
@@ -3152,7 +4178,7 @@ func (ec *executionContext) _Annotation_updatedAt(ctx context.Context, field gra
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Annotation_updatedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Annotation_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Annotation",
 		Field:      field,
@@ -3177,7 +4203,7 @@ func (ec *executionContext) _Annotation_metadataID(ctx context.Context, field gr
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.MetadataID, nil
 	})
@@ -3196,7 +4222,7 @@ func (ec *executionContext) _Annotation_metadataID(ctx context.Context, field gr
 	return ec.marshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Annotation_metadataID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Annotation_metadataID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Annotation",
 		Field:      field,
@@ -3221,7 +4247,7 @@ func (ec *executionContext) _Annotation_data(ctx context.Context, field graphql.
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Data, nil
 	})
@@ -3240,7 +4266,7 @@ func (ec *executionContext) _Annotation_data(ctx context.Context, field graphql.
 	return ec.marshalNJSON2encodingᚋjsonᚐRawMessage(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Annotation_data(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Annotation_data(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Annotation",
 		Field:      field,
@@ -3265,7 +4291,7 @@ func (ec *executionContext) _Annotation_namespace(ctx context.Context, field gra
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Namespace(ctx)
 	})
@@ -3284,7 +4310,7 @@ func (ec *executionContext) _Annotation_namespace(ctx context.Context, field gra
 	return ec.marshalNAnnotationNamespace2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationNamespace(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Annotation_namespace(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Annotation_namespace(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Annotation",
 		Field:      field,
@@ -3325,7 +4351,7 @@ func (ec *executionContext) _Annotation_metadata(ctx context.Context, field grap
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Metadata(ctx)
 	})
@@ -3344,7 +4370,7 @@ func (ec *executionContext) _Annotation_metadata(ctx context.Context, field grap
 	return ec.marshalNMetadata2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐMetadata(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Annotation_metadata(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Annotation_metadata(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Annotation",
 		Field:      field,
@@ -3385,7 +4411,7 @@ func (ec *executionContext) _AnnotationConnection_edges(ctx context.Context, fie
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Edges, nil
 	})
@@ -3401,7 +4427,7 @@ func (ec *executionContext) _AnnotationConnection_edges(ctx context.Context, fie
 	return ec.marshalOAnnotationEdge2ᚕᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationEdge(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_AnnotationConnection_edges(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AnnotationConnection_edges(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "AnnotationConnection",
 		Field:      field,
@@ -3432,7 +4458,7 @@ func (ec *executionContext) _AnnotationConnection_pageInfo(ctx context.Context, 
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.PageInfo, nil
 	})
@@ -3451,7 +4477,7 @@ func (ec *executionContext) _AnnotationConnection_pageInfo(ctx context.Context, 
 	return ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_AnnotationConnection_pageInfo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AnnotationConnection_pageInfo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "AnnotationConnection",
 		Field:      field,
@@ -3486,7 +4512,7 @@ func (ec *executionContext) _AnnotationConnection_totalCount(ctx context.Context
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.TotalCount, nil
 	})
@@ -3505,7 +4531,7 @@ func (ec *executionContext) _AnnotationConnection_totalCount(ctx context.Context
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_AnnotationConnection_totalCount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AnnotationConnection_totalCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "AnnotationConnection",
 		Field:      field,
@@ -3530,7 +4556,7 @@ func (ec *executionContext) _AnnotationDeleteResponse_deletedID(ctx context.Cont
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.DeletedID, nil
 	})
@@ -3549,7 +4575,7 @@ func (ec *executionContext) _AnnotationDeleteResponse_deletedID(ctx context.Cont
 	return ec.marshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_AnnotationDeleteResponse_deletedID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AnnotationDeleteResponse_deletedID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "AnnotationDeleteResponse",
 		Field:      field,
@@ -3574,7 +4600,7 @@ func (ec *executionContext) _AnnotationEdge_node(ctx context.Context, field grap
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Node, nil
 	})
@@ -3590,7 +4616,7 @@ func (ec *executionContext) _AnnotationEdge_node(ctx context.Context, field grap
 	return ec.marshalOAnnotation2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotation(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_AnnotationEdge_node(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AnnotationEdge_node(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "AnnotationEdge",
 		Field:      field,
@@ -3631,7 +4657,7 @@ func (ec *executionContext) _AnnotationEdge_cursor(ctx context.Context, field gr
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Cursor, nil
 	})
@@ -3650,7 +4676,7 @@ func (ec *executionContext) _AnnotationEdge_cursor(ctx context.Context, field gr
 	return ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_AnnotationEdge_cursor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AnnotationEdge_cursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "AnnotationEdge",
 		Field:      field,
@@ -3675,7 +4701,7 @@ func (ec *executionContext) _AnnotationNamespace_id(ctx context.Context, field g
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.ID, nil
 	})
@@ -3694,7 +4720,7 @@ func (ec *executionContext) _AnnotationNamespace_id(ctx context.Context, field g
 	return ec.marshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_AnnotationNamespace_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AnnotationNamespace_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "AnnotationNamespace",
 		Field:      field,
@@ -3719,7 +4745,7 @@ func (ec *executionContext) _AnnotationNamespace_createdAt(ctx context.Context, 
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.CreatedAt, nil
 	})
@@ -3738,7 +4764,7 @@ func (ec *executionContext) _AnnotationNamespace_createdAt(ctx context.Context, 
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_AnnotationNamespace_createdAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AnnotationNamespace_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "AnnotationNamespace",
 		Field:      field,
@@ -3763,7 +4789,7 @@ func (ec *executionContext) _AnnotationNamespace_updatedAt(ctx context.Context, 
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.UpdatedAt, nil
 	})
@@ -3782,7 +4808,7 @@ func (ec *executionContext) _AnnotationNamespace_updatedAt(ctx context.Context, 
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_AnnotationNamespace_updatedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AnnotationNamespace_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "AnnotationNamespace",
 		Field:      field,
@@ -3807,7 +4833,7 @@ func (ec *executionContext) _AnnotationNamespace_name(ctx context.Context, field
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Name, nil
 	})
@@ -3826,7 +4852,7 @@ func (ec *executionContext) _AnnotationNamespace_name(ctx context.Context, field
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_AnnotationNamespace_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AnnotationNamespace_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "AnnotationNamespace",
 		Field:      field,
@@ -3851,7 +4877,7 @@ func (ec *executionContext) _AnnotationNamespace_private(ctx context.Context, fi
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Private, nil
 	})
@@ -3870,7 +4896,7 @@ func (ec *executionContext) _AnnotationNamespace_private(ctx context.Context, fi
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_AnnotationNamespace_private(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AnnotationNamespace_private(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "AnnotationNamespace",
 		Field:      field,
@@ -3895,7 +4921,7 @@ func (ec *executionContext) _AnnotationNamespace_annotations(ctx context.Context
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Annotations(ctx)
 	})
@@ -3911,7 +4937,7 @@ func (ec *executionContext) _AnnotationNamespace_annotations(ctx context.Context
 	return ec.marshalOAnnotation2ᚕᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_AnnotationNamespace_annotations(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AnnotationNamespace_annotations(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "AnnotationNamespace",
 		Field:      field,
@@ -3952,7 +4978,7 @@ func (ec *executionContext) _AnnotationNamespace_owner(ctx context.Context, fiel
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.AnnotationNamespace().Owner(rctx, obj)
 	})
@@ -3971,7 +4997,7 @@ func (ec *executionContext) _AnnotationNamespace_owner(ctx context.Context, fiel
 	return ec.marshalNResourceOwner2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋgraphapiᚐResourceOwner(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_AnnotationNamespace_owner(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AnnotationNamespace_owner(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "AnnotationNamespace",
 		Field:      field,
@@ -4004,7 +5030,7 @@ func (ec *executionContext) _AnnotationNamespaceConnection_edges(ctx context.Con
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Edges, nil
 	})
@@ -4020,7 +5046,7 @@ func (ec *executionContext) _AnnotationNamespaceConnection_edges(ctx context.Con
 	return ec.marshalOAnnotationNamespaceEdge2ᚕᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationNamespaceEdge(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_AnnotationNamespaceConnection_edges(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AnnotationNamespaceConnection_edges(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "AnnotationNamespaceConnection",
 		Field:      field,
@@ -4051,7 +5077,7 @@ func (ec *executionContext) _AnnotationNamespaceConnection_pageInfo(ctx context.
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.PageInfo, nil
 	})
@@ -4070,7 +5096,7 @@ func (ec *executionContext) _AnnotationNamespaceConnection_pageInfo(ctx context.
 	return ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_AnnotationNamespaceConnection_pageInfo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AnnotationNamespaceConnection_pageInfo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "AnnotationNamespaceConnection",
 		Field:      field,
@@ -4105,7 +5131,7 @@ func (ec *executionContext) _AnnotationNamespaceConnection_totalCount(ctx contex
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.TotalCount, nil
 	})
@@ -4124,7 +5150,7 @@ func (ec *executionContext) _AnnotationNamespaceConnection_totalCount(ctx contex
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_AnnotationNamespaceConnection_totalCount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AnnotationNamespaceConnection_totalCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "AnnotationNamespaceConnection",
 		Field:      field,
@@ -4149,7 +5175,7 @@ func (ec *executionContext) _AnnotationNamespaceCreatePayload_annotationNamespac
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.AnnotationNamespace, nil
 	})
@@ -4168,7 +5194,7 @@ func (ec *executionContext) _AnnotationNamespaceCreatePayload_annotationNamespac
 	return ec.marshalNAnnotationNamespace2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationNamespace(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_AnnotationNamespaceCreatePayload_annotationNamespace(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AnnotationNamespaceCreatePayload_annotationNamespace(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "AnnotationNamespaceCreatePayload",
 		Field:      field,
@@ -4209,7 +5235,7 @@ func (ec *executionContext) _AnnotationNamespaceDeletePayload_deletedID(ctx cont
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.DeletedID, nil
 	})
@@ -4228,7 +5254,7 @@ func (ec *executionContext) _AnnotationNamespaceDeletePayload_deletedID(ctx cont
 	return ec.marshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_AnnotationNamespaceDeletePayload_deletedID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AnnotationNamespaceDeletePayload_deletedID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "AnnotationNamespaceDeletePayload",
 		Field:      field,
@@ -4253,7 +5279,7 @@ func (ec *executionContext) _AnnotationNamespaceDeletePayload_annotationDeletedC
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.AnnotationDeletedCount, nil
 	})
@@ -4272,7 +5298,7 @@ func (ec *executionContext) _AnnotationNamespaceDeletePayload_annotationDeletedC
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_AnnotationNamespaceDeletePayload_annotationDeletedCount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AnnotationNamespaceDeletePayload_annotationDeletedCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "AnnotationNamespaceDeletePayload",
 		Field:      field,
@@ -4297,7 +5323,7 @@ func (ec *executionContext) _AnnotationNamespaceEdge_node(ctx context.Context, f
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Node, nil
 	})
@@ -4313,7 +5339,7 @@ func (ec *executionContext) _AnnotationNamespaceEdge_node(ctx context.Context, f
 	return ec.marshalOAnnotationNamespace2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationNamespace(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_AnnotationNamespaceEdge_node(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AnnotationNamespaceEdge_node(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "AnnotationNamespaceEdge",
 		Field:      field,
@@ -4354,7 +5380,7 @@ func (ec *executionContext) _AnnotationNamespaceEdge_cursor(ctx context.Context,
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Cursor, nil
 	})
@@ -4373,7 +5399,7 @@ func (ec *executionContext) _AnnotationNamespaceEdge_cursor(ctx context.Context,
 	return ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_AnnotationNamespaceEdge_cursor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AnnotationNamespaceEdge_cursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "AnnotationNamespaceEdge",
 		Field:      field,
@@ -4398,7 +5424,7 @@ func (ec *executionContext) _AnnotationNamespaceUpdatePayload_annotationNamespac
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.AnnotationNamespace, nil
 	})
@@ -4417,7 +5443,7 @@ func (ec *executionContext) _AnnotationNamespaceUpdatePayload_annotationNamespac
 	return ec.marshalNAnnotationNamespace2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationNamespace(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_AnnotationNamespaceUpdatePayload_annotationNamespace(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AnnotationNamespaceUpdatePayload_annotationNamespace(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "AnnotationNamespaceUpdatePayload",
 		Field:      field,
@@ -4458,7 +5484,7 @@ func (ec *executionContext) _AnnotationUpdateResponse_annotation(ctx context.Con
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Annotation, nil
 	})
@@ -4477,7 +5503,7 @@ func (ec *executionContext) _AnnotationUpdateResponse_annotation(ctx context.Con
 	return ec.marshalNAnnotation2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotation(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_AnnotationUpdateResponse_annotation(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_AnnotationUpdateResponse_annotation(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "AnnotationUpdateResponse",
 		Field:      field,
@@ -4518,7 +5544,7 @@ func (ec *executionContext) _Entity_findAnnotationByID(ctx context.Context, fiel
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Entity().FindAnnotationByID(rctx, fc.Args["id"].(gidx.PrefixedID))
 	})
@@ -4589,7 +5615,7 @@ func (ec *executionContext) _Entity_findAnnotationNamespaceByID(ctx context.Cont
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Entity().FindAnnotationNamespaceByID(rctx, fc.Args["id"].(gidx.PrefixedID))
 	})
@@ -4660,7 +5686,7 @@ func (ec *executionContext) _Entity_findMetadataByID(ctx context.Context, field 
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Entity().FindMetadataByID(rctx, fc.Args["id"].(gidx.PrefixedID))
 	})
@@ -4731,7 +5757,7 @@ func (ec *executionContext) _Entity_findMetadataByNodeID(ctx context.Context, fi
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Entity().FindMetadataByNodeID(rctx, fc.Args["nodeID"].(gidx.PrefixedID))
 	})
@@ -4802,7 +5828,7 @@ func (ec *executionContext) _Entity_findMetadataNodeByID(ctx context.Context, fi
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Entity().FindMetadataNodeByID(rctx, fc.Args["id"].(gidx.PrefixedID))
 	})
@@ -4863,7 +5889,7 @@ func (ec *executionContext) _Entity_findResourceOwnerByID(ctx context.Context, f
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Entity().FindResourceOwnerByID(rctx, fc.Args["id"].(gidx.PrefixedID))
 	})
@@ -4926,7 +5952,7 @@ func (ec *executionContext) _Entity_findStatusByID(ctx context.Context, field gr
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Entity().FindStatusByID(rctx, fc.Args["id"].(gidx.PrefixedID))
 	})
@@ -5001,7 +6027,7 @@ func (ec *executionContext) _Entity_findStatusNamespaceByID(ctx context.Context,
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Entity().FindStatusNamespaceByID(rctx, fc.Args["id"].(gidx.PrefixedID))
 	})
@@ -5070,7 +6096,7 @@ func (ec *executionContext) _Entity_findStatusOwnerByID(ctx context.Context, fie
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Entity().FindStatusOwnerByID(rctx, fc.Args["id"].(gidx.PrefixedID))
 	})
@@ -5133,7 +6159,7 @@ func (ec *executionContext) _Metadata_id(ctx context.Context, field graphql.Coll
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.ID, nil
 	})
@@ -5152,7 +6178,7 @@ func (ec *executionContext) _Metadata_id(ctx context.Context, field graphql.Coll
 	return ec.marshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Metadata_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Metadata_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Metadata",
 		Field:      field,
@@ -5177,7 +6203,7 @@ func (ec *executionContext) _Metadata_createdAt(ctx context.Context, field graph
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.CreatedAt, nil
 	})
@@ -5196,7 +6222,7 @@ func (ec *executionContext) _Metadata_createdAt(ctx context.Context, field graph
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Metadata_createdAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Metadata_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Metadata",
 		Field:      field,
@@ -5221,7 +6247,7 @@ func (ec *executionContext) _Metadata_updatedAt(ctx context.Context, field graph
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.UpdatedAt, nil
 	})
@@ -5240,7 +6266,7 @@ func (ec *executionContext) _Metadata_updatedAt(ctx context.Context, field graph
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Metadata_updatedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Metadata_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Metadata",
 		Field:      field,
@@ -5265,7 +6291,7 @@ func (ec *executionContext) _Metadata_nodeID(ctx context.Context, field graphql.
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.NodeID, nil
 	})
@@ -5284,7 +6310,7 @@ func (ec *executionContext) _Metadata_nodeID(ctx context.Context, field graphql.
 	return ec.marshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Metadata_nodeID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Metadata_nodeID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Metadata",
 		Field:      field,
@@ -5309,7 +6335,7 @@ func (ec *executionContext) _Metadata_annotations(ctx context.Context, field gra
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Annotations(ctx, fc.Args["after"].(*entgql.Cursor[gidx.PrefixedID]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[gidx.PrefixedID]), fc.Args["last"].(*int), fc.Args["orderBy"].(*generated.AnnotationOrder), fc.Args["where"].(*generated.AnnotationWhereInput))
 	})
@@ -5372,7 +6398,7 @@ func (ec *executionContext) _Metadata_statuses(ctx context.Context, field graphq
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Statuses(ctx, fc.Args["after"].(*entgql.Cursor[gidx.PrefixedID]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[gidx.PrefixedID]), fc.Args["last"].(*int), fc.Args["orderBy"].(*generated.StatusOrder), fc.Args["where"].(*generated.StatusWhereInput))
 	})
@@ -5435,7 +6461,7 @@ func (ec *executionContext) _Metadata_node(ctx context.Context, field graphql.Co
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Metadata().Node(rctx, obj)
 	})
@@ -5454,7 +6480,7 @@ func (ec *executionContext) _Metadata_node(ctx context.Context, field graphql.Co
 	return ec.marshalNMetadataNode2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋgraphapiᚐMetadataNode(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Metadata_node(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Metadata_node(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Metadata",
 		Field:      field,
@@ -5485,7 +6511,7 @@ func (ec *executionContext) _MetadataConnection_edges(ctx context.Context, field
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Edges, nil
 	})
@@ -5501,7 +6527,7 @@ func (ec *executionContext) _MetadataConnection_edges(ctx context.Context, field
 	return ec.marshalOMetadataEdge2ᚕᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐMetadataEdge(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_MetadataConnection_edges(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_MetadataConnection_edges(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "MetadataConnection",
 		Field:      field,
@@ -5532,7 +6558,7 @@ func (ec *executionContext) _MetadataConnection_pageInfo(ctx context.Context, fi
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.PageInfo, nil
 	})
@@ -5551,7 +6577,7 @@ func (ec *executionContext) _MetadataConnection_pageInfo(ctx context.Context, fi
 	return ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_MetadataConnection_pageInfo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_MetadataConnection_pageInfo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "MetadataConnection",
 		Field:      field,
@@ -5586,7 +6612,7 @@ func (ec *executionContext) _MetadataConnection_totalCount(ctx context.Context, 
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.TotalCount, nil
 	})
@@ -5605,7 +6631,7 @@ func (ec *executionContext) _MetadataConnection_totalCount(ctx context.Context, 
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_MetadataConnection_totalCount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_MetadataConnection_totalCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "MetadataConnection",
 		Field:      field,
@@ -5630,7 +6656,7 @@ func (ec *executionContext) _MetadataEdge_node(ctx context.Context, field graphq
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Node, nil
 	})
@@ -5646,7 +6672,7 @@ func (ec *executionContext) _MetadataEdge_node(ctx context.Context, field graphq
 	return ec.marshalOMetadata2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐMetadata(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_MetadataEdge_node(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_MetadataEdge_node(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "MetadataEdge",
 		Field:      field,
@@ -5687,7 +6713,7 @@ func (ec *executionContext) _MetadataEdge_cursor(ctx context.Context, field grap
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Cursor, nil
 	})
@@ -5706,7 +6732,7 @@ func (ec *executionContext) _MetadataEdge_cursor(ctx context.Context, field grap
 	return ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_MetadataEdge_cursor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_MetadataEdge_cursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "MetadataEdge",
 		Field:      field,
@@ -5731,7 +6757,7 @@ func (ec *executionContext) _MetadataNode_id(ctx context.Context, field graphql.
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.ID, nil
 	})
@@ -5750,7 +6776,7 @@ func (ec *executionContext) _MetadataNode_id(ctx context.Context, field graphql.
 	return ec.marshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_MetadataNode_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_MetadataNode_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "MetadataNode",
 		Field:      field,
@@ -5775,7 +6801,7 @@ func (ec *executionContext) _MetadataNode_metadata(ctx context.Context, field gr
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.MetadataNode().Metadata(rctx, obj)
 	})
@@ -5791,7 +6817,7 @@ func (ec *executionContext) _MetadataNode_metadata(ctx context.Context, field gr
 	return ec.marshalOMetadata2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐMetadata(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_MetadataNode_metadata(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_MetadataNode_metadata(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "MetadataNode",
 		Field:      field,
@@ -5832,7 +6858,7 @@ func (ec *executionContext) _Mutation_annotationUpdate(ctx context.Context, fiel
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().AnnotationUpdate(rctx, fc.Args["input"].(AnnotationUpdateInput))
 	})
@@ -5891,7 +6917,7 @@ func (ec *executionContext) _Mutation_annotationDelete(ctx context.Context, fiel
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().AnnotationDelete(rctx, fc.Args["input"].(AnnotationDeleteInput))
 	})
@@ -5950,7 +6976,7 @@ func (ec *executionContext) _Mutation_annotationNamespaceCreate(ctx context.Cont
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().AnnotationNamespaceCreate(rctx, fc.Args["input"].(generated.CreateAnnotationNamespaceInput))
 	})
@@ -6009,7 +7035,7 @@ func (ec *executionContext) _Mutation_annotationNamespaceDelete(ctx context.Cont
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().AnnotationNamespaceDelete(rctx, fc.Args["id"].(gidx.PrefixedID), fc.Args["force"].(bool))
 	})
@@ -6070,7 +7096,7 @@ func (ec *executionContext) _Mutation_annotationNamespaceUpdate(ctx context.Cont
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().AnnotationNamespaceUpdate(rctx, fc.Args["id"].(gidx.PrefixedID), fc.Args["input"].(generated.UpdateAnnotationNamespaceInput))
 	})
@@ -6129,7 +7155,7 @@ func (ec *executionContext) _Mutation_statusUpdate(ctx context.Context, field gr
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().StatusUpdate(rctx, fc.Args["input"].(StatusUpdateInput))
 	})
@@ -6188,7 +7214,7 @@ func (ec *executionContext) _Mutation_statusDelete(ctx context.Context, field gr
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().StatusDelete(rctx, fc.Args["input"].(StatusDeleteInput))
 	})
@@ -6247,7 +7273,7 @@ func (ec *executionContext) _Mutation_statusNamespaceCreate(ctx context.Context,
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().StatusNamespaceCreate(rctx, fc.Args["input"].(generated.CreateStatusNamespaceInput))
 	})
@@ -6306,7 +7332,7 @@ func (ec *executionContext) _Mutation_statusNamespaceDelete(ctx context.Context,
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().StatusNamespaceDelete(rctx, fc.Args["id"].(gidx.PrefixedID), fc.Args["force"].(bool))
 	})
@@ -6367,7 +7393,7 @@ func (ec *executionContext) _Mutation_statusNamespaceUpdate(ctx context.Context,
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Mutation().StatusNamespaceUpdate(rctx, fc.Args["id"].(gidx.PrefixedID), fc.Args["input"].(generated.UpdateStatusNamespaceInput))
 	})
@@ -6426,7 +7452,7 @@ func (ec *executionContext) _PageInfo_hasNextPage(ctx context.Context, field gra
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.HasNextPage, nil
 	})
@@ -6445,7 +7471,7 @@ func (ec *executionContext) _PageInfo_hasNextPage(ctx context.Context, field gra
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_PageInfo_hasNextPage(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_PageInfo_hasNextPage(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "PageInfo",
 		Field:      field,
@@ -6470,7 +7496,7 @@ func (ec *executionContext) _PageInfo_hasPreviousPage(ctx context.Context, field
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.HasPreviousPage, nil
 	})
@@ -6489,7 +7515,7 @@ func (ec *executionContext) _PageInfo_hasPreviousPage(ctx context.Context, field
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_PageInfo_hasPreviousPage(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_PageInfo_hasPreviousPage(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "PageInfo",
 		Field:      field,
@@ -6514,7 +7540,7 @@ func (ec *executionContext) _PageInfo_startCursor(ctx context.Context, field gra
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.StartCursor, nil
 	})
@@ -6530,7 +7556,7 @@ func (ec *executionContext) _PageInfo_startCursor(ctx context.Context, field gra
 	return ec.marshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_PageInfo_startCursor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_PageInfo_startCursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "PageInfo",
 		Field:      field,
@@ -6555,7 +7581,7 @@ func (ec *executionContext) _PageInfo_endCursor(ctx context.Context, field graph
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.EndCursor, nil
 	})
@@ -6571,7 +7597,7 @@ func (ec *executionContext) _PageInfo_endCursor(ctx context.Context, field graph
 	return ec.marshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_PageInfo_endCursor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_PageInfo_endCursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "PageInfo",
 		Field:      field,
@@ -6596,7 +7622,7 @@ func (ec *executionContext) _Query_annotationNamespace(ctx context.Context, fiel
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.Query().AnnotationNamespace(rctx, fc.Args["id"].(gidx.PrefixedID))
 	})
@@ -6667,9 +7693,9 @@ func (ec *executionContext) _Query__entities(ctx context.Context, field graphql.
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.__resolve_entities(ctx, fc.Args["representations"].([]map[string]interface{})), nil
+		return ec.__resolve_entities(ctx, fc.Args["representations"].([]map[string]any)), nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6722,7 +7748,7 @@ func (ec *executionContext) _Query__service(ctx context.Context, field graphql.C
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.__resolve__service(ctx)
 	})
@@ -6741,7 +7767,7 @@ func (ec *executionContext) _Query__service(ctx context.Context, field graphql.C
 	return ec.marshalN_Service2githubᚗcomᚋ99designsᚋgqlgenᚋpluginᚋfederationᚋfedruntimeᚐService(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query__service(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query__service(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -6770,7 +7796,7 @@ func (ec *executionContext) _Query___type(ctx context.Context, field graphql.Col
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.introspectType(fc.Args["name"].(string))
 	})
@@ -6800,6 +7826,8 @@ func (ec *executionContext) fieldContext_Query___type(ctx context.Context, field
 				return ec.fieldContext___Type_name(ctx, field)
 			case "description":
 				return ec.fieldContext___Type_description(ctx, field)
+			case "specifiedByURL":
+				return ec.fieldContext___Type_specifiedByURL(ctx, field)
 			case "fields":
 				return ec.fieldContext___Type_fields(ctx, field)
 			case "interfaces":
@@ -6812,8 +7840,8 @@ func (ec *executionContext) fieldContext_Query___type(ctx context.Context, field
 				return ec.fieldContext___Type_inputFields(ctx, field)
 			case "ofType":
 				return ec.fieldContext___Type_ofType(ctx, field)
-			case "specifiedByURL":
-				return ec.fieldContext___Type_specifiedByURL(ctx, field)
+			case "isOneOf":
+				return ec.fieldContext___Type_isOneOf(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Type", field.Name)
 		},
@@ -6844,7 +7872,7 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.introspectSchema()
 	})
@@ -6860,7 +7888,7 @@ func (ec *executionContext) _Query___schema(ctx context.Context, field graphql.C
 	return ec.marshalO__Schema2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐSchema(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query___schema(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query___schema(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -6899,7 +7927,7 @@ func (ec *executionContext) _ResourceOwner_id(ctx context.Context, field graphql
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.ID, nil
 	})
@@ -6918,7 +7946,7 @@ func (ec *executionContext) _ResourceOwner_id(ctx context.Context, field graphql
 	return ec.marshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_ResourceOwner_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ResourceOwner_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "ResourceOwner",
 		Field:      field,
@@ -6943,7 +7971,7 @@ func (ec *executionContext) _ResourceOwner_annotationNamespaces(ctx context.Cont
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.ResourceOwner().AnnotationNamespaces(rctx, obj, fc.Args["after"].(*entgql.Cursor[gidx.PrefixedID]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[gidx.PrefixedID]), fc.Args["last"].(*int), fc.Args["orderBy"].(*generated.AnnotationNamespaceOrder), fc.Args["where"].(*generated.AnnotationNamespaceWhereInput))
 	})
@@ -7006,7 +8034,7 @@ func (ec *executionContext) _ResourceOwner_metadata(ctx context.Context, field g
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.ResourceOwner().Metadata(rctx, obj)
 	})
@@ -7022,7 +8050,7 @@ func (ec *executionContext) _ResourceOwner_metadata(ctx context.Context, field g
 	return ec.marshalOMetadata2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐMetadata(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_ResourceOwner_metadata(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_ResourceOwner_metadata(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "ResourceOwner",
 		Field:      field,
@@ -7063,7 +8091,7 @@ func (ec *executionContext) _Status_id(ctx context.Context, field graphql.Collec
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.ID, nil
 	})
@@ -7082,7 +8110,7 @@ func (ec *executionContext) _Status_id(ctx context.Context, field graphql.Collec
 	return ec.marshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Status_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Status_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Status",
 		Field:      field,
@@ -7107,7 +8135,7 @@ func (ec *executionContext) _Status_createdAt(ctx context.Context, field graphql
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.CreatedAt, nil
 	})
@@ -7126,7 +8154,7 @@ func (ec *executionContext) _Status_createdAt(ctx context.Context, field graphql
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Status_createdAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Status_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Status",
 		Field:      field,
@@ -7151,7 +8179,7 @@ func (ec *executionContext) _Status_updatedAt(ctx context.Context, field graphql
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.UpdatedAt, nil
 	})
@@ -7170,7 +8198,7 @@ func (ec *executionContext) _Status_updatedAt(ctx context.Context, field graphql
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Status_updatedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Status_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Status",
 		Field:      field,
@@ -7195,7 +8223,7 @@ func (ec *executionContext) _Status_metadataID(ctx context.Context, field graphq
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.MetadataID, nil
 	})
@@ -7214,7 +8242,7 @@ func (ec *executionContext) _Status_metadataID(ctx context.Context, field graphq
 	return ec.marshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Status_metadataID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Status_metadataID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Status",
 		Field:      field,
@@ -7239,7 +8267,7 @@ func (ec *executionContext) _Status_statusNamespaceID(ctx context.Context, field
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.StatusNamespaceID, nil
 	})
@@ -7258,7 +8286,7 @@ func (ec *executionContext) _Status_statusNamespaceID(ctx context.Context, field
 	return ec.marshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Status_statusNamespaceID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Status_statusNamespaceID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Status",
 		Field:      field,
@@ -7283,7 +8311,7 @@ func (ec *executionContext) _Status_source(ctx context.Context, field graphql.Co
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Source, nil
 	})
@@ -7302,7 +8330,7 @@ func (ec *executionContext) _Status_source(ctx context.Context, field graphql.Co
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Status_source(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Status_source(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Status",
 		Field:      field,
@@ -7327,7 +8355,7 @@ func (ec *executionContext) _Status_data(ctx context.Context, field graphql.Coll
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Data, nil
 	})
@@ -7346,7 +8374,7 @@ func (ec *executionContext) _Status_data(ctx context.Context, field graphql.Coll
 	return ec.marshalNJSON2encodingᚋjsonᚐRawMessage(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Status_data(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Status_data(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Status",
 		Field:      field,
@@ -7371,7 +8399,7 @@ func (ec *executionContext) _Status_namespace(ctx context.Context, field graphql
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Namespace(ctx)
 	})
@@ -7390,7 +8418,7 @@ func (ec *executionContext) _Status_namespace(ctx context.Context, field graphql
 	return ec.marshalNStatusNamespace2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusNamespace(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Status_namespace(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Status_namespace(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Status",
 		Field:      field,
@@ -7429,7 +8457,7 @@ func (ec *executionContext) _Status_metadata(ctx context.Context, field graphql.
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Metadata(ctx)
 	})
@@ -7448,7 +8476,7 @@ func (ec *executionContext) _Status_metadata(ctx context.Context, field graphql.
 	return ec.marshalNMetadata2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐMetadata(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Status_metadata(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Status_metadata(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Status",
 		Field:      field,
@@ -7489,7 +8517,7 @@ func (ec *executionContext) _StatusConnection_edges(ctx context.Context, field g
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Edges, nil
 	})
@@ -7505,7 +8533,7 @@ func (ec *executionContext) _StatusConnection_edges(ctx context.Context, field g
 	return ec.marshalOStatusEdge2ᚕᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusEdge(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_StatusConnection_edges(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_StatusConnection_edges(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "StatusConnection",
 		Field:      field,
@@ -7536,7 +8564,7 @@ func (ec *executionContext) _StatusConnection_pageInfo(ctx context.Context, fiel
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.PageInfo, nil
 	})
@@ -7555,7 +8583,7 @@ func (ec *executionContext) _StatusConnection_pageInfo(ctx context.Context, fiel
 	return ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_StatusConnection_pageInfo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_StatusConnection_pageInfo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "StatusConnection",
 		Field:      field,
@@ -7590,7 +8618,7 @@ func (ec *executionContext) _StatusConnection_totalCount(ctx context.Context, fi
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.TotalCount, nil
 	})
@@ -7609,7 +8637,7 @@ func (ec *executionContext) _StatusConnection_totalCount(ctx context.Context, fi
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_StatusConnection_totalCount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_StatusConnection_totalCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "StatusConnection",
 		Field:      field,
@@ -7634,7 +8662,7 @@ func (ec *executionContext) _StatusDeleteResponse_deletedID(ctx context.Context,
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.DeletedID, nil
 	})
@@ -7653,7 +8681,7 @@ func (ec *executionContext) _StatusDeleteResponse_deletedID(ctx context.Context,
 	return ec.marshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_StatusDeleteResponse_deletedID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_StatusDeleteResponse_deletedID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "StatusDeleteResponse",
 		Field:      field,
@@ -7678,7 +8706,7 @@ func (ec *executionContext) _StatusEdge_node(ctx context.Context, field graphql.
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Node, nil
 	})
@@ -7694,7 +8722,7 @@ func (ec *executionContext) _StatusEdge_node(ctx context.Context, field graphql.
 	return ec.marshalOStatus2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatus(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_StatusEdge_node(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_StatusEdge_node(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "StatusEdge",
 		Field:      field,
@@ -7739,7 +8767,7 @@ func (ec *executionContext) _StatusEdge_cursor(ctx context.Context, field graphq
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Cursor, nil
 	})
@@ -7758,7 +8786,7 @@ func (ec *executionContext) _StatusEdge_cursor(ctx context.Context, field graphq
 	return ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_StatusEdge_cursor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_StatusEdge_cursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "StatusEdge",
 		Field:      field,
@@ -7783,7 +8811,7 @@ func (ec *executionContext) _StatusNamespace_id(ctx context.Context, field graph
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.ID, nil
 	})
@@ -7802,7 +8830,7 @@ func (ec *executionContext) _StatusNamespace_id(ctx context.Context, field graph
 	return ec.marshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_StatusNamespace_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_StatusNamespace_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "StatusNamespace",
 		Field:      field,
@@ -7827,7 +8855,7 @@ func (ec *executionContext) _StatusNamespace_createdAt(ctx context.Context, fiel
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.CreatedAt, nil
 	})
@@ -7846,7 +8874,7 @@ func (ec *executionContext) _StatusNamespace_createdAt(ctx context.Context, fiel
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_StatusNamespace_createdAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_StatusNamespace_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "StatusNamespace",
 		Field:      field,
@@ -7871,7 +8899,7 @@ func (ec *executionContext) _StatusNamespace_updatedAt(ctx context.Context, fiel
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.UpdatedAt, nil
 	})
@@ -7890,7 +8918,7 @@ func (ec *executionContext) _StatusNamespace_updatedAt(ctx context.Context, fiel
 	return ec.marshalNTime2timeᚐTime(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_StatusNamespace_updatedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_StatusNamespace_updatedAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "StatusNamespace",
 		Field:      field,
@@ -7915,7 +8943,7 @@ func (ec *executionContext) _StatusNamespace_name(ctx context.Context, field gra
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Name, nil
 	})
@@ -7934,7 +8962,7 @@ func (ec *executionContext) _StatusNamespace_name(ctx context.Context, field gra
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_StatusNamespace_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_StatusNamespace_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "StatusNamespace",
 		Field:      field,
@@ -7959,7 +8987,7 @@ func (ec *executionContext) _StatusNamespace_private(ctx context.Context, field 
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Private, nil
 	})
@@ -7978,7 +9006,7 @@ func (ec *executionContext) _StatusNamespace_private(ctx context.Context, field 
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_StatusNamespace_private(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_StatusNamespace_private(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "StatusNamespace",
 		Field:      field,
@@ -8003,7 +9031,7 @@ func (ec *executionContext) _StatusNamespace_owner(ctx context.Context, field gr
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.StatusNamespace().Owner(rctx, obj)
 	})
@@ -8022,7 +9050,7 @@ func (ec *executionContext) _StatusNamespace_owner(ctx context.Context, field gr
 	return ec.marshalNStatusOwner2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋgraphapiᚐStatusOwner(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_StatusNamespace_owner(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_StatusNamespace_owner(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "StatusNamespace",
 		Field:      field,
@@ -8055,7 +9083,7 @@ func (ec *executionContext) _StatusNamespaceConnection_edges(ctx context.Context
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Edges, nil
 	})
@@ -8071,7 +9099,7 @@ func (ec *executionContext) _StatusNamespaceConnection_edges(ctx context.Context
 	return ec.marshalOStatusNamespaceEdge2ᚕᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusNamespaceEdge(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_StatusNamespaceConnection_edges(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_StatusNamespaceConnection_edges(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "StatusNamespaceConnection",
 		Field:      field,
@@ -8102,7 +9130,7 @@ func (ec *executionContext) _StatusNamespaceConnection_pageInfo(ctx context.Cont
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.PageInfo, nil
 	})
@@ -8121,7 +9149,7 @@ func (ec *executionContext) _StatusNamespaceConnection_pageInfo(ctx context.Cont
 	return ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_StatusNamespaceConnection_pageInfo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_StatusNamespaceConnection_pageInfo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "StatusNamespaceConnection",
 		Field:      field,
@@ -8156,7 +9184,7 @@ func (ec *executionContext) _StatusNamespaceConnection_totalCount(ctx context.Co
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.TotalCount, nil
 	})
@@ -8175,7 +9203,7 @@ func (ec *executionContext) _StatusNamespaceConnection_totalCount(ctx context.Co
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_StatusNamespaceConnection_totalCount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_StatusNamespaceConnection_totalCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "StatusNamespaceConnection",
 		Field:      field,
@@ -8200,7 +9228,7 @@ func (ec *executionContext) _StatusNamespaceCreatePayload_statusNamespace(ctx co
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.StatusNamespace, nil
 	})
@@ -8219,7 +9247,7 @@ func (ec *executionContext) _StatusNamespaceCreatePayload_statusNamespace(ctx co
 	return ec.marshalNStatusNamespace2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusNamespace(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_StatusNamespaceCreatePayload_statusNamespace(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_StatusNamespaceCreatePayload_statusNamespace(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "StatusNamespaceCreatePayload",
 		Field:      field,
@@ -8258,7 +9286,7 @@ func (ec *executionContext) _StatusNamespaceDeletePayload_deletedID(ctx context.
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.DeletedID, nil
 	})
@@ -8277,7 +9305,7 @@ func (ec *executionContext) _StatusNamespaceDeletePayload_deletedID(ctx context.
 	return ec.marshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_StatusNamespaceDeletePayload_deletedID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_StatusNamespaceDeletePayload_deletedID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "StatusNamespaceDeletePayload",
 		Field:      field,
@@ -8302,7 +9330,7 @@ func (ec *executionContext) _StatusNamespaceDeletePayload_statusDeletedCount(ctx
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.StatusDeletedCount, nil
 	})
@@ -8321,7 +9349,7 @@ func (ec *executionContext) _StatusNamespaceDeletePayload_statusDeletedCount(ctx
 	return ec.marshalNInt2int(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_StatusNamespaceDeletePayload_statusDeletedCount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_StatusNamespaceDeletePayload_statusDeletedCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "StatusNamespaceDeletePayload",
 		Field:      field,
@@ -8346,7 +9374,7 @@ func (ec *executionContext) _StatusNamespaceEdge_node(ctx context.Context, field
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Node, nil
 	})
@@ -8362,7 +9390,7 @@ func (ec *executionContext) _StatusNamespaceEdge_node(ctx context.Context, field
 	return ec.marshalOStatusNamespace2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusNamespace(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_StatusNamespaceEdge_node(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_StatusNamespaceEdge_node(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "StatusNamespaceEdge",
 		Field:      field,
@@ -8401,7 +9429,7 @@ func (ec *executionContext) _StatusNamespaceEdge_cursor(ctx context.Context, fie
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Cursor, nil
 	})
@@ -8420,7 +9448,7 @@ func (ec *executionContext) _StatusNamespaceEdge_cursor(ctx context.Context, fie
 	return ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_StatusNamespaceEdge_cursor(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_StatusNamespaceEdge_cursor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "StatusNamespaceEdge",
 		Field:      field,
@@ -8445,7 +9473,7 @@ func (ec *executionContext) _StatusNamespaceUpdatePayload_statusNamespace(ctx co
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.StatusNamespace, nil
 	})
@@ -8464,7 +9492,7 @@ func (ec *executionContext) _StatusNamespaceUpdatePayload_statusNamespace(ctx co
 	return ec.marshalNStatusNamespace2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusNamespace(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_StatusNamespaceUpdatePayload_statusNamespace(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_StatusNamespaceUpdatePayload_statusNamespace(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "StatusNamespaceUpdatePayload",
 		Field:      field,
@@ -8503,7 +9531,7 @@ func (ec *executionContext) _StatusOwner_id(ctx context.Context, field graphql.C
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.ID, nil
 	})
@@ -8522,7 +9550,7 @@ func (ec *executionContext) _StatusOwner_id(ctx context.Context, field graphql.C
 	return ec.marshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_StatusOwner_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_StatusOwner_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "StatusOwner",
 		Field:      field,
@@ -8547,7 +9575,7 @@ func (ec *executionContext) _StatusOwner_statusNamespaces(ctx context.Context, f
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.StatusOwner().StatusNamespaces(rctx, obj, fc.Args["after"].(*entgql.Cursor[gidx.PrefixedID]), fc.Args["first"].(*int), fc.Args["before"].(*entgql.Cursor[gidx.PrefixedID]), fc.Args["last"].(*int), fc.Args["orderBy"].(*generated.StatusNamespaceOrder), fc.Args["where"].(*generated.StatusNamespaceWhereInput))
 	})
@@ -8610,7 +9638,7 @@ func (ec *executionContext) _StatusOwner_metadata(ctx context.Context, field gra
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return ec.resolvers.StatusOwner().Metadata(rctx, obj)
 	})
@@ -8626,7 +9654,7 @@ func (ec *executionContext) _StatusOwner_metadata(ctx context.Context, field gra
 	return ec.marshalOMetadata2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐMetadata(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_StatusOwner_metadata(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_StatusOwner_metadata(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "StatusOwner",
 		Field:      field,
@@ -8667,7 +9695,7 @@ func (ec *executionContext) _StatusUpdateResponse_status(ctx context.Context, fi
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Status, nil
 	})
@@ -8686,7 +9714,7 @@ func (ec *executionContext) _StatusUpdateResponse_status(ctx context.Context, fi
 	return ec.marshalNStatus2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatus(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_StatusUpdateResponse_status(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_StatusUpdateResponse_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "StatusUpdateResponse",
 		Field:      field,
@@ -8731,7 +9759,7 @@ func (ec *executionContext) __Service_sdl(ctx context.Context, field graphql.Col
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.SDL, nil
 	})
@@ -8747,7 +9775,7 @@ func (ec *executionContext) __Service_sdl(ctx context.Context, field graphql.Col
 	return ec.marshalOString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext__Service_sdl(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext__Service_sdl(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "_Service",
 		Field:      field,
@@ -8772,7 +9800,7 @@ func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Name, nil
 	})
@@ -8791,7 +9819,7 @@ func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Directive_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Directive_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Directive",
 		Field:      field,
@@ -8816,7 +9844,7 @@ func (ec *executionContext) ___Directive_description(ctx context.Context, field 
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Description(), nil
 	})
@@ -8832,7 +9860,7 @@ func (ec *executionContext) ___Directive_description(ctx context.Context, field 
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Directive_description(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Directive_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Directive",
 		Field:      field,
@@ -8840,6 +9868,50 @@ func (ec *executionContext) fieldContext___Directive_description(ctx context.Con
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) ___Directive_isRepeatable(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext___Directive_isRepeatable(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsRepeatable, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext___Directive_isRepeatable(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "__Directive",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -8857,7 +9929,7 @@ func (ec *executionContext) ___Directive_locations(ctx context.Context, field gr
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Locations, nil
 	})
@@ -8876,7 +9948,7 @@ func (ec *executionContext) ___Directive_locations(ctx context.Context, field gr
 	return ec.marshalN__DirectiveLocation2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Directive_locations(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Directive_locations(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Directive",
 		Field:      field,
@@ -8901,7 +9973,7 @@ func (ec *executionContext) ___Directive_args(ctx context.Context, field graphql
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Args, nil
 	})
@@ -8936,53 +10008,24 @@ func (ec *executionContext) fieldContext___Directive_args(ctx context.Context, f
 				return ec.fieldContext___InputValue_type(ctx, field)
 			case "defaultValue":
 				return ec.fieldContext___InputValue_defaultValue(ctx, field)
+			case "isDeprecated":
+				return ec.fieldContext___InputValue_isDeprecated(ctx, field)
+			case "deprecationReason":
+				return ec.fieldContext___InputValue_deprecationReason(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __InputValue", field.Name)
 		},
 	}
-	return fc, nil
-}
-
-func (ec *executionContext) ___Directive_isRepeatable(ctx context.Context, field graphql.CollectedField, obj *introspection.Directive) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext___Directive_isRepeatable(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
 	defer func() {
 		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.IsRepeatable, nil
-	})
-	if err != nil {
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field___Directive_args_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext___Directive_isRepeatable(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "__Directive",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
+		return fc, err
 	}
 	return fc, nil
 }
@@ -8999,7 +10042,7 @@ func (ec *executionContext) ___EnumValue_name(ctx context.Context, field graphql
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Name, nil
 	})
@@ -9018,7 +10061,7 @@ func (ec *executionContext) ___EnumValue_name(ctx context.Context, field graphql
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___EnumValue_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___EnumValue_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__EnumValue",
 		Field:      field,
@@ -9043,7 +10086,7 @@ func (ec *executionContext) ___EnumValue_description(ctx context.Context, field 
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Description(), nil
 	})
@@ -9059,7 +10102,7 @@ func (ec *executionContext) ___EnumValue_description(ctx context.Context, field 
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___EnumValue_description(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___EnumValue_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__EnumValue",
 		Field:      field,
@@ -9084,7 +10127,7 @@ func (ec *executionContext) ___EnumValue_isDeprecated(ctx context.Context, field
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.IsDeprecated(), nil
 	})
@@ -9103,7 +10146,7 @@ func (ec *executionContext) ___EnumValue_isDeprecated(ctx context.Context, field
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___EnumValue_isDeprecated(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___EnumValue_isDeprecated(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__EnumValue",
 		Field:      field,
@@ -9128,7 +10171,7 @@ func (ec *executionContext) ___EnumValue_deprecationReason(ctx context.Context, 
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.DeprecationReason(), nil
 	})
@@ -9144,7 +10187,7 @@ func (ec *executionContext) ___EnumValue_deprecationReason(ctx context.Context, 
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___EnumValue_deprecationReason(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___EnumValue_deprecationReason(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__EnumValue",
 		Field:      field,
@@ -9169,7 +10212,7 @@ func (ec *executionContext) ___Field_name(ctx context.Context, field graphql.Col
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Name, nil
 	})
@@ -9188,7 +10231,7 @@ func (ec *executionContext) ___Field_name(ctx context.Context, field graphql.Col
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Field_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Field_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Field",
 		Field:      field,
@@ -9213,7 +10256,7 @@ func (ec *executionContext) ___Field_description(ctx context.Context, field grap
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Description(), nil
 	})
@@ -9229,7 +10272,7 @@ func (ec *executionContext) ___Field_description(ctx context.Context, field grap
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Field_description(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Field_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Field",
 		Field:      field,
@@ -9254,7 +10297,7 @@ func (ec *executionContext) ___Field_args(ctx context.Context, field graphql.Col
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Args, nil
 	})
@@ -9289,9 +10332,24 @@ func (ec *executionContext) fieldContext___Field_args(ctx context.Context, field
 				return ec.fieldContext___InputValue_type(ctx, field)
 			case "defaultValue":
 				return ec.fieldContext___InputValue_defaultValue(ctx, field)
+			case "isDeprecated":
+				return ec.fieldContext___InputValue_isDeprecated(ctx, field)
+			case "deprecationReason":
+				return ec.fieldContext___InputValue_deprecationReason(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __InputValue", field.Name)
 		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field___Field_args_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -9308,7 +10366,7 @@ func (ec *executionContext) ___Field_type(ctx context.Context, field graphql.Col
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Type, nil
 	})
@@ -9327,7 +10385,7 @@ func (ec *executionContext) ___Field_type(ctx context.Context, field graphql.Col
 	return ec.marshalN__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Field_type(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Field_type(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Field",
 		Field:      field,
@@ -9341,6 +10399,8 @@ func (ec *executionContext) fieldContext___Field_type(ctx context.Context, field
 				return ec.fieldContext___Type_name(ctx, field)
 			case "description":
 				return ec.fieldContext___Type_description(ctx, field)
+			case "specifiedByURL":
+				return ec.fieldContext___Type_specifiedByURL(ctx, field)
 			case "fields":
 				return ec.fieldContext___Type_fields(ctx, field)
 			case "interfaces":
@@ -9353,8 +10413,8 @@ func (ec *executionContext) fieldContext___Field_type(ctx context.Context, field
 				return ec.fieldContext___Type_inputFields(ctx, field)
 			case "ofType":
 				return ec.fieldContext___Type_ofType(ctx, field)
-			case "specifiedByURL":
-				return ec.fieldContext___Type_specifiedByURL(ctx, field)
+			case "isOneOf":
+				return ec.fieldContext___Type_isOneOf(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Type", field.Name)
 		},
@@ -9374,7 +10434,7 @@ func (ec *executionContext) ___Field_isDeprecated(ctx context.Context, field gra
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.IsDeprecated(), nil
 	})
@@ -9393,7 +10453,7 @@ func (ec *executionContext) ___Field_isDeprecated(ctx context.Context, field gra
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Field_isDeprecated(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Field_isDeprecated(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Field",
 		Field:      field,
@@ -9418,7 +10478,7 @@ func (ec *executionContext) ___Field_deprecationReason(ctx context.Context, fiel
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.DeprecationReason(), nil
 	})
@@ -9434,7 +10494,7 @@ func (ec *executionContext) ___Field_deprecationReason(ctx context.Context, fiel
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Field_deprecationReason(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Field_deprecationReason(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Field",
 		Field:      field,
@@ -9459,7 +10519,7 @@ func (ec *executionContext) ___InputValue_name(ctx context.Context, field graphq
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Name, nil
 	})
@@ -9478,7 +10538,7 @@ func (ec *executionContext) ___InputValue_name(ctx context.Context, field graphq
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___InputValue_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___InputValue_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__InputValue",
 		Field:      field,
@@ -9503,7 +10563,7 @@ func (ec *executionContext) ___InputValue_description(ctx context.Context, field
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Description(), nil
 	})
@@ -9519,7 +10579,7 @@ func (ec *executionContext) ___InputValue_description(ctx context.Context, field
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___InputValue_description(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___InputValue_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__InputValue",
 		Field:      field,
@@ -9544,7 +10604,7 @@ func (ec *executionContext) ___InputValue_type(ctx context.Context, field graphq
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Type, nil
 	})
@@ -9563,7 +10623,7 @@ func (ec *executionContext) ___InputValue_type(ctx context.Context, field graphq
 	return ec.marshalN__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___InputValue_type(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___InputValue_type(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__InputValue",
 		Field:      field,
@@ -9577,6 +10637,8 @@ func (ec *executionContext) fieldContext___InputValue_type(ctx context.Context, 
 				return ec.fieldContext___Type_name(ctx, field)
 			case "description":
 				return ec.fieldContext___Type_description(ctx, field)
+			case "specifiedByURL":
+				return ec.fieldContext___Type_specifiedByURL(ctx, field)
 			case "fields":
 				return ec.fieldContext___Type_fields(ctx, field)
 			case "interfaces":
@@ -9589,8 +10651,8 @@ func (ec *executionContext) fieldContext___InputValue_type(ctx context.Context, 
 				return ec.fieldContext___Type_inputFields(ctx, field)
 			case "ofType":
 				return ec.fieldContext___Type_ofType(ctx, field)
-			case "specifiedByURL":
-				return ec.fieldContext___Type_specifiedByURL(ctx, field)
+			case "isOneOf":
+				return ec.fieldContext___Type_isOneOf(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Type", field.Name)
 		},
@@ -9610,7 +10672,7 @@ func (ec *executionContext) ___InputValue_defaultValue(ctx context.Context, fiel
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.DefaultValue, nil
 	})
@@ -9626,11 +10688,96 @@ func (ec *executionContext) ___InputValue_defaultValue(ctx context.Context, fiel
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___InputValue_defaultValue(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___InputValue_defaultValue(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__InputValue",
 		Field:      field,
 		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) ___InputValue_isDeprecated(ctx context.Context, field graphql.CollectedField, obj *introspection.InputValue) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext___InputValue_isDeprecated(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.IsDeprecated(), nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext___InputValue_isDeprecated(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "__InputValue",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) ___InputValue_deprecationReason(ctx context.Context, field graphql.CollectedField, obj *introspection.InputValue) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext___InputValue_deprecationReason(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DeprecationReason(), nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext___InputValue_deprecationReason(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "__InputValue",
+		Field:      field,
+		IsMethod:   true,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
@@ -9651,7 +10798,7 @@ func (ec *executionContext) ___Schema_description(ctx context.Context, field gra
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Description(), nil
 	})
@@ -9667,7 +10814,7 @@ func (ec *executionContext) ___Schema_description(ctx context.Context, field gra
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Schema_description(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Schema_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Schema",
 		Field:      field,
@@ -9692,7 +10839,7 @@ func (ec *executionContext) ___Schema_types(ctx context.Context, field graphql.C
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Types(), nil
 	})
@@ -9711,7 +10858,7 @@ func (ec *executionContext) ___Schema_types(ctx context.Context, field graphql.C
 	return ec.marshalN__Type2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐTypeᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Schema_types(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Schema_types(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Schema",
 		Field:      field,
@@ -9725,6 +10872,8 @@ func (ec *executionContext) fieldContext___Schema_types(ctx context.Context, fie
 				return ec.fieldContext___Type_name(ctx, field)
 			case "description":
 				return ec.fieldContext___Type_description(ctx, field)
+			case "specifiedByURL":
+				return ec.fieldContext___Type_specifiedByURL(ctx, field)
 			case "fields":
 				return ec.fieldContext___Type_fields(ctx, field)
 			case "interfaces":
@@ -9737,8 +10886,8 @@ func (ec *executionContext) fieldContext___Schema_types(ctx context.Context, fie
 				return ec.fieldContext___Type_inputFields(ctx, field)
 			case "ofType":
 				return ec.fieldContext___Type_ofType(ctx, field)
-			case "specifiedByURL":
-				return ec.fieldContext___Type_specifiedByURL(ctx, field)
+			case "isOneOf":
+				return ec.fieldContext___Type_isOneOf(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Type", field.Name)
 		},
@@ -9758,7 +10907,7 @@ func (ec *executionContext) ___Schema_queryType(ctx context.Context, field graph
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.QueryType(), nil
 	})
@@ -9777,7 +10926,7 @@ func (ec *executionContext) ___Schema_queryType(ctx context.Context, field graph
 	return ec.marshalN__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Schema_queryType(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Schema_queryType(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Schema",
 		Field:      field,
@@ -9791,6 +10940,8 @@ func (ec *executionContext) fieldContext___Schema_queryType(ctx context.Context,
 				return ec.fieldContext___Type_name(ctx, field)
 			case "description":
 				return ec.fieldContext___Type_description(ctx, field)
+			case "specifiedByURL":
+				return ec.fieldContext___Type_specifiedByURL(ctx, field)
 			case "fields":
 				return ec.fieldContext___Type_fields(ctx, field)
 			case "interfaces":
@@ -9803,8 +10954,8 @@ func (ec *executionContext) fieldContext___Schema_queryType(ctx context.Context,
 				return ec.fieldContext___Type_inputFields(ctx, field)
 			case "ofType":
 				return ec.fieldContext___Type_ofType(ctx, field)
-			case "specifiedByURL":
-				return ec.fieldContext___Type_specifiedByURL(ctx, field)
+			case "isOneOf":
+				return ec.fieldContext___Type_isOneOf(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Type", field.Name)
 		},
@@ -9824,7 +10975,7 @@ func (ec *executionContext) ___Schema_mutationType(ctx context.Context, field gr
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.MutationType(), nil
 	})
@@ -9840,7 +10991,7 @@ func (ec *executionContext) ___Schema_mutationType(ctx context.Context, field gr
 	return ec.marshalO__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Schema_mutationType(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Schema_mutationType(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Schema",
 		Field:      field,
@@ -9854,6 +11005,8 @@ func (ec *executionContext) fieldContext___Schema_mutationType(ctx context.Conte
 				return ec.fieldContext___Type_name(ctx, field)
 			case "description":
 				return ec.fieldContext___Type_description(ctx, field)
+			case "specifiedByURL":
+				return ec.fieldContext___Type_specifiedByURL(ctx, field)
 			case "fields":
 				return ec.fieldContext___Type_fields(ctx, field)
 			case "interfaces":
@@ -9866,8 +11019,8 @@ func (ec *executionContext) fieldContext___Schema_mutationType(ctx context.Conte
 				return ec.fieldContext___Type_inputFields(ctx, field)
 			case "ofType":
 				return ec.fieldContext___Type_ofType(ctx, field)
-			case "specifiedByURL":
-				return ec.fieldContext___Type_specifiedByURL(ctx, field)
+			case "isOneOf":
+				return ec.fieldContext___Type_isOneOf(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Type", field.Name)
 		},
@@ -9887,7 +11040,7 @@ func (ec *executionContext) ___Schema_subscriptionType(ctx context.Context, fiel
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.SubscriptionType(), nil
 	})
@@ -9903,7 +11056,7 @@ func (ec *executionContext) ___Schema_subscriptionType(ctx context.Context, fiel
 	return ec.marshalO__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Schema_subscriptionType(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Schema_subscriptionType(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Schema",
 		Field:      field,
@@ -9917,6 +11070,8 @@ func (ec *executionContext) fieldContext___Schema_subscriptionType(ctx context.C
 				return ec.fieldContext___Type_name(ctx, field)
 			case "description":
 				return ec.fieldContext___Type_description(ctx, field)
+			case "specifiedByURL":
+				return ec.fieldContext___Type_specifiedByURL(ctx, field)
 			case "fields":
 				return ec.fieldContext___Type_fields(ctx, field)
 			case "interfaces":
@@ -9929,8 +11084,8 @@ func (ec *executionContext) fieldContext___Schema_subscriptionType(ctx context.C
 				return ec.fieldContext___Type_inputFields(ctx, field)
 			case "ofType":
 				return ec.fieldContext___Type_ofType(ctx, field)
-			case "specifiedByURL":
-				return ec.fieldContext___Type_specifiedByURL(ctx, field)
+			case "isOneOf":
+				return ec.fieldContext___Type_isOneOf(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Type", field.Name)
 		},
@@ -9950,7 +11105,7 @@ func (ec *executionContext) ___Schema_directives(ctx context.Context, field grap
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Directives(), nil
 	})
@@ -9969,7 +11124,7 @@ func (ec *executionContext) ___Schema_directives(ctx context.Context, field grap
 	return ec.marshalN__Directive2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirectiveᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Schema_directives(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Schema_directives(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Schema",
 		Field:      field,
@@ -9981,12 +11136,12 @@ func (ec *executionContext) fieldContext___Schema_directives(ctx context.Context
 				return ec.fieldContext___Directive_name(ctx, field)
 			case "description":
 				return ec.fieldContext___Directive_description(ctx, field)
+			case "isRepeatable":
+				return ec.fieldContext___Directive_isRepeatable(ctx, field)
 			case "locations":
 				return ec.fieldContext___Directive_locations(ctx, field)
 			case "args":
 				return ec.fieldContext___Directive_args(ctx, field)
-			case "isRepeatable":
-				return ec.fieldContext___Directive_isRepeatable(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Directive", field.Name)
 		},
@@ -10006,7 +11161,7 @@ func (ec *executionContext) ___Type_kind(ctx context.Context, field graphql.Coll
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Kind(), nil
 	})
@@ -10025,7 +11180,7 @@ func (ec *executionContext) ___Type_kind(ctx context.Context, field graphql.Coll
 	return ec.marshalN__TypeKind2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Type_kind(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Type_kind(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Type",
 		Field:      field,
@@ -10050,7 +11205,7 @@ func (ec *executionContext) ___Type_name(ctx context.Context, field graphql.Coll
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Name(), nil
 	})
@@ -10066,7 +11221,7 @@ func (ec *executionContext) ___Type_name(ctx context.Context, field graphql.Coll
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Type_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Type_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Type",
 		Field:      field,
@@ -10091,7 +11246,7 @@ func (ec *executionContext) ___Type_description(ctx context.Context, field graph
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Description(), nil
 	})
@@ -10107,7 +11262,48 @@ func (ec *executionContext) ___Type_description(ctx context.Context, field graph
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Type_description(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Type_description(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "__Type",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) ___Type_specifiedByURL(ctx context.Context, field graphql.CollectedField, obj *introspection.Type) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext___Type_specifiedByURL(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SpecifiedByURL(), nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext___Type_specifiedByURL(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Type",
 		Field:      field,
@@ -10132,7 +11328,7 @@ func (ec *executionContext) ___Type_fields(ctx context.Context, field graphql.Co
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Fields(fc.Args["includeDeprecated"].(bool)), nil
 	})
@@ -10198,7 +11394,7 @@ func (ec *executionContext) ___Type_interfaces(ctx context.Context, field graphq
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.Interfaces(), nil
 	})
@@ -10214,7 +11410,7 @@ func (ec *executionContext) ___Type_interfaces(ctx context.Context, field graphq
 	return ec.marshalO__Type2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐTypeᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Type_interfaces(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Type_interfaces(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Type",
 		Field:      field,
@@ -10228,6 +11424,8 @@ func (ec *executionContext) fieldContext___Type_interfaces(ctx context.Context, 
 				return ec.fieldContext___Type_name(ctx, field)
 			case "description":
 				return ec.fieldContext___Type_description(ctx, field)
+			case "specifiedByURL":
+				return ec.fieldContext___Type_specifiedByURL(ctx, field)
 			case "fields":
 				return ec.fieldContext___Type_fields(ctx, field)
 			case "interfaces":
@@ -10240,8 +11438,8 @@ func (ec *executionContext) fieldContext___Type_interfaces(ctx context.Context, 
 				return ec.fieldContext___Type_inputFields(ctx, field)
 			case "ofType":
 				return ec.fieldContext___Type_ofType(ctx, field)
-			case "specifiedByURL":
-				return ec.fieldContext___Type_specifiedByURL(ctx, field)
+			case "isOneOf":
+				return ec.fieldContext___Type_isOneOf(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Type", field.Name)
 		},
@@ -10261,7 +11459,7 @@ func (ec *executionContext) ___Type_possibleTypes(ctx context.Context, field gra
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.PossibleTypes(), nil
 	})
@@ -10277,7 +11475,7 @@ func (ec *executionContext) ___Type_possibleTypes(ctx context.Context, field gra
 	return ec.marshalO__Type2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐTypeᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Type_possibleTypes(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Type_possibleTypes(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Type",
 		Field:      field,
@@ -10291,6 +11489,8 @@ func (ec *executionContext) fieldContext___Type_possibleTypes(ctx context.Contex
 				return ec.fieldContext___Type_name(ctx, field)
 			case "description":
 				return ec.fieldContext___Type_description(ctx, field)
+			case "specifiedByURL":
+				return ec.fieldContext___Type_specifiedByURL(ctx, field)
 			case "fields":
 				return ec.fieldContext___Type_fields(ctx, field)
 			case "interfaces":
@@ -10303,8 +11503,8 @@ func (ec *executionContext) fieldContext___Type_possibleTypes(ctx context.Contex
 				return ec.fieldContext___Type_inputFields(ctx, field)
 			case "ofType":
 				return ec.fieldContext___Type_ofType(ctx, field)
-			case "specifiedByURL":
-				return ec.fieldContext___Type_specifiedByURL(ctx, field)
+			case "isOneOf":
+				return ec.fieldContext___Type_isOneOf(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Type", field.Name)
 		},
@@ -10324,7 +11524,7 @@ func (ec *executionContext) ___Type_enumValues(ctx context.Context, field graphq
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.EnumValues(fc.Args["includeDeprecated"].(bool)), nil
 	})
@@ -10386,7 +11586,7 @@ func (ec *executionContext) ___Type_inputFields(ctx context.Context, field graph
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.InputFields(), nil
 	})
@@ -10402,7 +11602,7 @@ func (ec *executionContext) ___Type_inputFields(ctx context.Context, field graph
 	return ec.marshalO__InputValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValueᚄ(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Type_inputFields(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Type_inputFields(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Type",
 		Field:      field,
@@ -10418,6 +11618,10 @@ func (ec *executionContext) fieldContext___Type_inputFields(ctx context.Context,
 				return ec.fieldContext___InputValue_type(ctx, field)
 			case "defaultValue":
 				return ec.fieldContext___InputValue_defaultValue(ctx, field)
+			case "isDeprecated":
+				return ec.fieldContext___InputValue_isDeprecated(ctx, field)
+			case "deprecationReason":
+				return ec.fieldContext___InputValue_deprecationReason(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __InputValue", field.Name)
 		},
@@ -10437,7 +11641,7 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
 		return obj.OfType(), nil
 	})
@@ -10453,7 +11657,7 @@ func (ec *executionContext) ___Type_ofType(ctx context.Context, field graphql.Co
 	return ec.marshalO__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Type_ofType(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Type_ofType(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Type",
 		Field:      field,
@@ -10467,6 +11671,8 @@ func (ec *executionContext) fieldContext___Type_ofType(ctx context.Context, fiel
 				return ec.fieldContext___Type_name(ctx, field)
 			case "description":
 				return ec.fieldContext___Type_description(ctx, field)
+			case "specifiedByURL":
+				return ec.fieldContext___Type_specifiedByURL(ctx, field)
 			case "fields":
 				return ec.fieldContext___Type_fields(ctx, field)
 			case "interfaces":
@@ -10479,8 +11685,8 @@ func (ec *executionContext) fieldContext___Type_ofType(ctx context.Context, fiel
 				return ec.fieldContext___Type_inputFields(ctx, field)
 			case "ofType":
 				return ec.fieldContext___Type_ofType(ctx, field)
-			case "specifiedByURL":
-				return ec.fieldContext___Type_specifiedByURL(ctx, field)
+			case "isOneOf":
+				return ec.fieldContext___Type_isOneOf(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Type", field.Name)
 		},
@@ -10488,8 +11694,8 @@ func (ec *executionContext) fieldContext___Type_ofType(ctx context.Context, fiel
 	return fc, nil
 }
 
-func (ec *executionContext) ___Type_specifiedByURL(ctx context.Context, field graphql.CollectedField, obj *introspection.Type) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext___Type_specifiedByURL(ctx, field)
+func (ec *executionContext) ___Type_isOneOf(ctx context.Context, field graphql.CollectedField, obj *introspection.Type) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext___Type_isOneOf(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -10500,9 +11706,9 @@ func (ec *executionContext) ___Type_specifiedByURL(ctx context.Context, field gr
 			ret = graphql.Null
 		}
 	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.SpecifiedByURL(), nil
+		return obj.IsOneOf(), nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -10511,19 +11717,19 @@ func (ec *executionContext) ___Type_specifiedByURL(ctx context.Context, field gr
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*string)
+	res := resTmp.(bool)
 	fc.Result = res
-	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+	return ec.marshalOBoolean2bool(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext___Type_specifiedByURL(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext___Type_isOneOf(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "__Type",
 		Field:      field,
 		IsMethod:   true,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			return nil, errors.New("field of type Boolean does not have child fields")
 		},
 	}
 	return fc, nil
@@ -10533,10 +11739,10 @@ func (ec *executionContext) fieldContext___Type_specifiedByURL(ctx context.Conte
 
 // region    **************************** input.gotpl *****************************
 
-func (ec *executionContext) unmarshalInputAnnotationDeleteInput(ctx context.Context, obj interface{}) (AnnotationDeleteInput, error) {
+func (ec *executionContext) unmarshalInputAnnotationDeleteInput(ctx context.Context, obj any) (AnnotationDeleteInput, error) {
 	var it AnnotationDeleteInput
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
 	}
 
@@ -10548,8 +11754,6 @@ func (ec *executionContext) unmarshalInputAnnotationDeleteInput(ctx context.Cont
 		}
 		switch k {
 		case "nodeID":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nodeID"))
 			data, err := ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, v)
 			if err != nil {
@@ -10557,8 +11761,6 @@ func (ec *executionContext) unmarshalInputAnnotationDeleteInput(ctx context.Cont
 			}
 			it.NodeID = data
 		case "namespaceID":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("namespaceID"))
 			data, err := ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, v)
 			if err != nil {
@@ -10571,10 +11773,10 @@ func (ec *executionContext) unmarshalInputAnnotationDeleteInput(ctx context.Cont
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputAnnotationNamespaceOrder(ctx context.Context, obj interface{}) (generated.AnnotationNamespaceOrder, error) {
+func (ec *executionContext) unmarshalInputAnnotationNamespaceOrder(ctx context.Context, obj any) (generated.AnnotationNamespaceOrder, error) {
 	var it generated.AnnotationNamespaceOrder
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
 	}
 
@@ -10590,8 +11792,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceOrder(ctx context.C
 		}
 		switch k {
 		case "direction":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("direction"))
 			data, err := ec.unmarshalNOrderDirection2entgoᚗioᚋcontribᚋentgqlᚐOrderDirection(ctx, v)
 			if err != nil {
@@ -10599,8 +11799,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceOrder(ctx context.C
 			}
 			it.Direction = data
 		case "field":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("field"))
 			data, err := ec.unmarshalNAnnotationNamespaceOrderField2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationNamespaceOrderField(ctx, v)
 			if err != nil {
@@ -10613,10 +11811,10 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceOrder(ctx context.C
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx context.Context, obj interface{}) (generated.AnnotationNamespaceWhereInput, error) {
+func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx context.Context, obj any) (generated.AnnotationNamespaceWhereInput, error) {
 	var it generated.AnnotationNamespaceWhereInput
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
 	}
 
@@ -10628,8 +11826,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 		}
 		switch k {
 		case "not":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("not"))
 			data, err := ec.unmarshalOAnnotationNamespaceWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationNamespaceWhereInput(ctx, v)
 			if err != nil {
@@ -10637,8 +11833,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 			}
 			it.Not = data
 		case "and":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("and"))
 			data, err := ec.unmarshalOAnnotationNamespaceWhereInput2ᚕᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationNamespaceWhereInputᚄ(ctx, v)
 			if err != nil {
@@ -10646,8 +11840,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 			}
 			it.And = data
 		case "or":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("or"))
 			data, err := ec.unmarshalOAnnotationNamespaceWhereInput2ᚕᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationNamespaceWhereInputᚄ(ctx, v)
 			if err != nil {
@@ -10655,8 +11847,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 			}
 			it.Or = data
 		case "id":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
 			data, err := ec.unmarshalOID2ᚖgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, v)
 			if err != nil {
@@ -10664,8 +11854,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 			}
 			it.ID = data
 		case "idNEQ":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idNEQ"))
 			data, err := ec.unmarshalOID2ᚖgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, v)
 			if err != nil {
@@ -10673,8 +11861,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 			}
 			it.IDNEQ = data
 		case "idIn":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idIn"))
 			data, err := ec.unmarshalOID2ᚕgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedIDᚄ(ctx, v)
 			if err != nil {
@@ -10682,8 +11868,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 			}
 			it.IDIn = data
 		case "idNotIn":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idNotIn"))
 			data, err := ec.unmarshalOID2ᚕgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedIDᚄ(ctx, v)
 			if err != nil {
@@ -10691,8 +11875,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 			}
 			it.IDNotIn = data
 		case "idGT":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idGT"))
 			data, err := ec.unmarshalOID2ᚖgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, v)
 			if err != nil {
@@ -10700,8 +11882,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 			}
 			it.IDGT = data
 		case "idGTE":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idGTE"))
 			data, err := ec.unmarshalOID2ᚖgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, v)
 			if err != nil {
@@ -10709,8 +11889,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 			}
 			it.IDGTE = data
 		case "idLT":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idLT"))
 			data, err := ec.unmarshalOID2ᚖgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, v)
 			if err != nil {
@@ -10718,8 +11896,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 			}
 			it.IDLT = data
 		case "idLTE":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idLTE"))
 			data, err := ec.unmarshalOID2ᚖgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, v)
 			if err != nil {
@@ -10727,8 +11903,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 			}
 			it.IDLTE = data
 		case "createdAt":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAt"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -10736,8 +11910,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 			}
 			it.CreatedAt = data
 		case "createdAtNEQ":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtNEQ"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -10745,8 +11917,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 			}
 			it.CreatedAtNEQ = data
 		case "createdAtIn":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtIn"))
 			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
 			if err != nil {
@@ -10754,8 +11924,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 			}
 			it.CreatedAtIn = data
 		case "createdAtNotIn":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtNotIn"))
 			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
 			if err != nil {
@@ -10763,8 +11931,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 			}
 			it.CreatedAtNotIn = data
 		case "createdAtGT":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtGT"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -10772,8 +11938,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 			}
 			it.CreatedAtGT = data
 		case "createdAtGTE":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtGTE"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -10781,8 +11945,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 			}
 			it.CreatedAtGTE = data
 		case "createdAtLT":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtLT"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -10790,8 +11952,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 			}
 			it.CreatedAtLT = data
 		case "createdAtLTE":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtLTE"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -10799,8 +11959,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 			}
 			it.CreatedAtLTE = data
 		case "updatedAt":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAt"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -10808,8 +11966,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 			}
 			it.UpdatedAt = data
 		case "updatedAtNEQ":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtNEQ"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -10817,8 +11973,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 			}
 			it.UpdatedAtNEQ = data
 		case "updatedAtIn":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtIn"))
 			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
 			if err != nil {
@@ -10826,8 +11980,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 			}
 			it.UpdatedAtIn = data
 		case "updatedAtNotIn":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtNotIn"))
 			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
 			if err != nil {
@@ -10835,8 +11987,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 			}
 			it.UpdatedAtNotIn = data
 		case "updatedAtGT":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtGT"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -10844,8 +11994,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 			}
 			it.UpdatedAtGT = data
 		case "updatedAtGTE":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtGTE"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -10853,8 +12001,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 			}
 			it.UpdatedAtGTE = data
 		case "updatedAtLT":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtLT"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -10862,8 +12008,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 			}
 			it.UpdatedAtLT = data
 		case "updatedAtLTE":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtLTE"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -10871,8 +12015,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 			}
 			it.UpdatedAtLTE = data
 		case "name":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -10880,8 +12022,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 			}
 			it.Name = data
 		case "nameNEQ":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameNEQ"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -10889,8 +12029,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 			}
 			it.NameNEQ = data
 		case "nameIn":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameIn"))
 			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
 			if err != nil {
@@ -10898,8 +12036,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 			}
 			it.NameIn = data
 		case "nameNotIn":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameNotIn"))
 			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
 			if err != nil {
@@ -10907,8 +12043,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 			}
 			it.NameNotIn = data
 		case "nameGT":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameGT"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -10916,8 +12050,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 			}
 			it.NameGT = data
 		case "nameGTE":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameGTE"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -10925,8 +12057,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 			}
 			it.NameGTE = data
 		case "nameLT":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameLT"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -10934,8 +12064,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 			}
 			it.NameLT = data
 		case "nameLTE":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameLTE"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -10943,8 +12071,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 			}
 			it.NameLTE = data
 		case "nameContains":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameContains"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -10952,8 +12078,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 			}
 			it.NameContains = data
 		case "nameHasPrefix":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameHasPrefix"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -10961,8 +12085,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 			}
 			it.NameHasPrefix = data
 		case "nameHasSuffix":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameHasSuffix"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -10970,8 +12092,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 			}
 			it.NameHasSuffix = data
 		case "nameEqualFold":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameEqualFold"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -10979,8 +12099,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 			}
 			it.NameEqualFold = data
 		case "nameContainsFold":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameContainsFold"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -10988,8 +12106,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 			}
 			it.NameContainsFold = data
 		case "hasAnnotations":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasAnnotations"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
@@ -10997,8 +12113,6 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 			}
 			it.HasAnnotations = data
 		case "hasAnnotationsWith":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasAnnotationsWith"))
 			data, err := ec.unmarshalOAnnotationWhereInput2ᚕᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationWhereInputᚄ(ctx, v)
 			if err != nil {
@@ -11011,10 +12125,10 @@ func (ec *executionContext) unmarshalInputAnnotationNamespaceWhereInput(ctx cont
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputAnnotationOrder(ctx context.Context, obj interface{}) (generated.AnnotationOrder, error) {
+func (ec *executionContext) unmarshalInputAnnotationOrder(ctx context.Context, obj any) (generated.AnnotationOrder, error) {
 	var it generated.AnnotationOrder
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
 	}
 
@@ -11030,8 +12144,6 @@ func (ec *executionContext) unmarshalInputAnnotationOrder(ctx context.Context, o
 		}
 		switch k {
 		case "direction":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("direction"))
 			data, err := ec.unmarshalNOrderDirection2entgoᚗioᚋcontribᚋentgqlᚐOrderDirection(ctx, v)
 			if err != nil {
@@ -11039,8 +12151,6 @@ func (ec *executionContext) unmarshalInputAnnotationOrder(ctx context.Context, o
 			}
 			it.Direction = data
 		case "field":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("field"))
 			data, err := ec.unmarshalNAnnotationOrderField2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationOrderField(ctx, v)
 			if err != nil {
@@ -11053,10 +12163,10 @@ func (ec *executionContext) unmarshalInputAnnotationOrder(ctx context.Context, o
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputAnnotationUpdateInput(ctx context.Context, obj interface{}) (AnnotationUpdateInput, error) {
+func (ec *executionContext) unmarshalInputAnnotationUpdateInput(ctx context.Context, obj any) (AnnotationUpdateInput, error) {
 	var it AnnotationUpdateInput
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
 	}
 
@@ -11068,8 +12178,6 @@ func (ec *executionContext) unmarshalInputAnnotationUpdateInput(ctx context.Cont
 		}
 		switch k {
 		case "nodeID":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nodeID"))
 			data, err := ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, v)
 			if err != nil {
@@ -11077,8 +12185,6 @@ func (ec *executionContext) unmarshalInputAnnotationUpdateInput(ctx context.Cont
 			}
 			it.NodeID = data
 		case "namespaceID":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("namespaceID"))
 			data, err := ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, v)
 			if err != nil {
@@ -11086,8 +12192,6 @@ func (ec *executionContext) unmarshalInputAnnotationUpdateInput(ctx context.Cont
 			}
 			it.NamespaceID = data
 		case "data":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("data"))
 			data, err := ec.unmarshalNJSON2encodingᚋjsonᚐRawMessage(ctx, v)
 			if err != nil {
@@ -11100,10 +12204,10 @@ func (ec *executionContext) unmarshalInputAnnotationUpdateInput(ctx context.Cont
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputAnnotationWhereInput(ctx context.Context, obj interface{}) (generated.AnnotationWhereInput, error) {
+func (ec *executionContext) unmarshalInputAnnotationWhereInput(ctx context.Context, obj any) (generated.AnnotationWhereInput, error) {
 	var it generated.AnnotationWhereInput
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
 	}
 
@@ -11115,8 +12219,6 @@ func (ec *executionContext) unmarshalInputAnnotationWhereInput(ctx context.Conte
 		}
 		switch k {
 		case "not":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("not"))
 			data, err := ec.unmarshalOAnnotationWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationWhereInput(ctx, v)
 			if err != nil {
@@ -11124,8 +12226,6 @@ func (ec *executionContext) unmarshalInputAnnotationWhereInput(ctx context.Conte
 			}
 			it.Not = data
 		case "and":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("and"))
 			data, err := ec.unmarshalOAnnotationWhereInput2ᚕᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationWhereInputᚄ(ctx, v)
 			if err != nil {
@@ -11133,8 +12233,6 @@ func (ec *executionContext) unmarshalInputAnnotationWhereInput(ctx context.Conte
 			}
 			it.And = data
 		case "or":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("or"))
 			data, err := ec.unmarshalOAnnotationWhereInput2ᚕᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationWhereInputᚄ(ctx, v)
 			if err != nil {
@@ -11142,8 +12240,6 @@ func (ec *executionContext) unmarshalInputAnnotationWhereInput(ctx context.Conte
 			}
 			it.Or = data
 		case "id":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
 			data, err := ec.unmarshalOID2ᚖgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, v)
 			if err != nil {
@@ -11151,8 +12247,6 @@ func (ec *executionContext) unmarshalInputAnnotationWhereInput(ctx context.Conte
 			}
 			it.ID = data
 		case "idNEQ":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idNEQ"))
 			data, err := ec.unmarshalOID2ᚖgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, v)
 			if err != nil {
@@ -11160,8 +12254,6 @@ func (ec *executionContext) unmarshalInputAnnotationWhereInput(ctx context.Conte
 			}
 			it.IDNEQ = data
 		case "idIn":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idIn"))
 			data, err := ec.unmarshalOID2ᚕgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedIDᚄ(ctx, v)
 			if err != nil {
@@ -11169,8 +12261,6 @@ func (ec *executionContext) unmarshalInputAnnotationWhereInput(ctx context.Conte
 			}
 			it.IDIn = data
 		case "idNotIn":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idNotIn"))
 			data, err := ec.unmarshalOID2ᚕgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedIDᚄ(ctx, v)
 			if err != nil {
@@ -11178,8 +12268,6 @@ func (ec *executionContext) unmarshalInputAnnotationWhereInput(ctx context.Conte
 			}
 			it.IDNotIn = data
 		case "idGT":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idGT"))
 			data, err := ec.unmarshalOID2ᚖgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, v)
 			if err != nil {
@@ -11187,8 +12275,6 @@ func (ec *executionContext) unmarshalInputAnnotationWhereInput(ctx context.Conte
 			}
 			it.IDGT = data
 		case "idGTE":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idGTE"))
 			data, err := ec.unmarshalOID2ᚖgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, v)
 			if err != nil {
@@ -11196,8 +12282,6 @@ func (ec *executionContext) unmarshalInputAnnotationWhereInput(ctx context.Conte
 			}
 			it.IDGTE = data
 		case "idLT":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idLT"))
 			data, err := ec.unmarshalOID2ᚖgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, v)
 			if err != nil {
@@ -11205,8 +12289,6 @@ func (ec *executionContext) unmarshalInputAnnotationWhereInput(ctx context.Conte
 			}
 			it.IDLT = data
 		case "idLTE":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idLTE"))
 			data, err := ec.unmarshalOID2ᚖgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, v)
 			if err != nil {
@@ -11214,8 +12296,6 @@ func (ec *executionContext) unmarshalInputAnnotationWhereInput(ctx context.Conte
 			}
 			it.IDLTE = data
 		case "createdAt":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAt"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -11223,8 +12303,6 @@ func (ec *executionContext) unmarshalInputAnnotationWhereInput(ctx context.Conte
 			}
 			it.CreatedAt = data
 		case "createdAtNEQ":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtNEQ"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -11232,8 +12310,6 @@ func (ec *executionContext) unmarshalInputAnnotationWhereInput(ctx context.Conte
 			}
 			it.CreatedAtNEQ = data
 		case "createdAtIn":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtIn"))
 			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
 			if err != nil {
@@ -11241,8 +12317,6 @@ func (ec *executionContext) unmarshalInputAnnotationWhereInput(ctx context.Conte
 			}
 			it.CreatedAtIn = data
 		case "createdAtNotIn":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtNotIn"))
 			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
 			if err != nil {
@@ -11250,8 +12324,6 @@ func (ec *executionContext) unmarshalInputAnnotationWhereInput(ctx context.Conte
 			}
 			it.CreatedAtNotIn = data
 		case "createdAtGT":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtGT"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -11259,8 +12331,6 @@ func (ec *executionContext) unmarshalInputAnnotationWhereInput(ctx context.Conte
 			}
 			it.CreatedAtGT = data
 		case "createdAtGTE":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtGTE"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -11268,8 +12338,6 @@ func (ec *executionContext) unmarshalInputAnnotationWhereInput(ctx context.Conte
 			}
 			it.CreatedAtGTE = data
 		case "createdAtLT":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtLT"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -11277,8 +12345,6 @@ func (ec *executionContext) unmarshalInputAnnotationWhereInput(ctx context.Conte
 			}
 			it.CreatedAtLT = data
 		case "createdAtLTE":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtLTE"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -11286,8 +12352,6 @@ func (ec *executionContext) unmarshalInputAnnotationWhereInput(ctx context.Conte
 			}
 			it.CreatedAtLTE = data
 		case "updatedAt":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAt"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -11295,8 +12359,6 @@ func (ec *executionContext) unmarshalInputAnnotationWhereInput(ctx context.Conte
 			}
 			it.UpdatedAt = data
 		case "updatedAtNEQ":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtNEQ"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -11304,8 +12366,6 @@ func (ec *executionContext) unmarshalInputAnnotationWhereInput(ctx context.Conte
 			}
 			it.UpdatedAtNEQ = data
 		case "updatedAtIn":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtIn"))
 			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
 			if err != nil {
@@ -11313,8 +12373,6 @@ func (ec *executionContext) unmarshalInputAnnotationWhereInput(ctx context.Conte
 			}
 			it.UpdatedAtIn = data
 		case "updatedAtNotIn":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtNotIn"))
 			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
 			if err != nil {
@@ -11322,8 +12380,6 @@ func (ec *executionContext) unmarshalInputAnnotationWhereInput(ctx context.Conte
 			}
 			it.UpdatedAtNotIn = data
 		case "updatedAtGT":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtGT"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -11331,8 +12387,6 @@ func (ec *executionContext) unmarshalInputAnnotationWhereInput(ctx context.Conte
 			}
 			it.UpdatedAtGT = data
 		case "updatedAtGTE":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtGTE"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -11340,8 +12394,6 @@ func (ec *executionContext) unmarshalInputAnnotationWhereInput(ctx context.Conte
 			}
 			it.UpdatedAtGTE = data
 		case "updatedAtLT":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtLT"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -11349,8 +12401,6 @@ func (ec *executionContext) unmarshalInputAnnotationWhereInput(ctx context.Conte
 			}
 			it.UpdatedAtLT = data
 		case "updatedAtLTE":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtLTE"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -11358,8 +12408,6 @@ func (ec *executionContext) unmarshalInputAnnotationWhereInput(ctx context.Conte
 			}
 			it.UpdatedAtLTE = data
 		case "hasNamespace":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasNamespace"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
@@ -11367,8 +12415,6 @@ func (ec *executionContext) unmarshalInputAnnotationWhereInput(ctx context.Conte
 			}
 			it.HasNamespace = data
 		case "hasNamespaceWith":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasNamespaceWith"))
 			data, err := ec.unmarshalOAnnotationNamespaceWhereInput2ᚕᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationNamespaceWhereInputᚄ(ctx, v)
 			if err != nil {
@@ -11376,8 +12422,6 @@ func (ec *executionContext) unmarshalInputAnnotationWhereInput(ctx context.Conte
 			}
 			it.HasNamespaceWith = data
 		case "hasMetadata":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasMetadata"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
@@ -11385,8 +12429,6 @@ func (ec *executionContext) unmarshalInputAnnotationWhereInput(ctx context.Conte
 			}
 			it.HasMetadata = data
 		case "hasMetadataWith":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasMetadataWith"))
 			data, err := ec.unmarshalOMetadataWhereInput2ᚕᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐMetadataWhereInputᚄ(ctx, v)
 			if err != nil {
@@ -11399,10 +12441,10 @@ func (ec *executionContext) unmarshalInputAnnotationWhereInput(ctx context.Conte
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputCreateAnnotationNamespaceInput(ctx context.Context, obj interface{}) (generated.CreateAnnotationNamespaceInput, error) {
+func (ec *executionContext) unmarshalInputCreateAnnotationNamespaceInput(ctx context.Context, obj any) (generated.CreateAnnotationNamespaceInput, error) {
 	var it generated.CreateAnnotationNamespaceInput
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
 	}
 
@@ -11414,8 +12456,6 @@ func (ec *executionContext) unmarshalInputCreateAnnotationNamespaceInput(ctx con
 		}
 		switch k {
 		case "name":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
 			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
@@ -11423,8 +12463,6 @@ func (ec *executionContext) unmarshalInputCreateAnnotationNamespaceInput(ctx con
 			}
 			it.Name = data
 		case "ownerID":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ownerID"))
 			data, err := ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, v)
 			if err != nil {
@@ -11432,8 +12470,6 @@ func (ec *executionContext) unmarshalInputCreateAnnotationNamespaceInput(ctx con
 			}
 			it.OwnerID = data
 		case "private":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("private"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
@@ -11446,10 +12482,10 @@ func (ec *executionContext) unmarshalInputCreateAnnotationNamespaceInput(ctx con
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputCreateStatusInput(ctx context.Context, obj interface{}) (generated.CreateStatusInput, error) {
+func (ec *executionContext) unmarshalInputCreateStatusInput(ctx context.Context, obj any) (generated.CreateStatusInput, error) {
 	var it generated.CreateStatusInput
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
 	}
 
@@ -11461,8 +12497,6 @@ func (ec *executionContext) unmarshalInputCreateStatusInput(ctx context.Context,
 		}
 		switch k {
 		case "source":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("source"))
 			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
@@ -11470,8 +12504,6 @@ func (ec *executionContext) unmarshalInputCreateStatusInput(ctx context.Context,
 			}
 			it.Source = data
 		case "data":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("data"))
 			data, err := ec.unmarshalNJSON2encodingᚋjsonᚐRawMessage(ctx, v)
 			if err != nil {
@@ -11479,8 +12511,6 @@ func (ec *executionContext) unmarshalInputCreateStatusInput(ctx context.Context,
 			}
 			it.Data = data
 		case "namespaceID":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("namespaceID"))
 			data, err := ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, v)
 			if err != nil {
@@ -11488,8 +12518,6 @@ func (ec *executionContext) unmarshalInputCreateStatusInput(ctx context.Context,
 			}
 			it.NamespaceID = data
 		case "metadataID":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("metadataID"))
 			data, err := ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, v)
 			if err != nil {
@@ -11502,10 +12530,10 @@ func (ec *executionContext) unmarshalInputCreateStatusInput(ctx context.Context,
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputCreateStatusNamespaceInput(ctx context.Context, obj interface{}) (generated.CreateStatusNamespaceInput, error) {
+func (ec *executionContext) unmarshalInputCreateStatusNamespaceInput(ctx context.Context, obj any) (generated.CreateStatusNamespaceInput, error) {
 	var it generated.CreateStatusNamespaceInput
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
 	}
 
@@ -11517,8 +12545,6 @@ func (ec *executionContext) unmarshalInputCreateStatusNamespaceInput(ctx context
 		}
 		switch k {
 		case "name":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
 			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
@@ -11526,8 +12552,6 @@ func (ec *executionContext) unmarshalInputCreateStatusNamespaceInput(ctx context
 			}
 			it.Name = data
 		case "resourceProviderID":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("resourceProviderID"))
 			data, err := ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, v)
 			if err != nil {
@@ -11535,8 +12559,6 @@ func (ec *executionContext) unmarshalInputCreateStatusNamespaceInput(ctx context
 			}
 			it.ResourceProviderID = data
 		case "private":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("private"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
@@ -11549,10 +12571,10 @@ func (ec *executionContext) unmarshalInputCreateStatusNamespaceInput(ctx context
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputMetadataOrder(ctx context.Context, obj interface{}) (generated.MetadataOrder, error) {
+func (ec *executionContext) unmarshalInputMetadataOrder(ctx context.Context, obj any) (generated.MetadataOrder, error) {
 	var it generated.MetadataOrder
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
 	}
 
@@ -11568,8 +12590,6 @@ func (ec *executionContext) unmarshalInputMetadataOrder(ctx context.Context, obj
 		}
 		switch k {
 		case "direction":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("direction"))
 			data, err := ec.unmarshalNOrderDirection2entgoᚗioᚋcontribᚋentgqlᚐOrderDirection(ctx, v)
 			if err != nil {
@@ -11577,8 +12597,6 @@ func (ec *executionContext) unmarshalInputMetadataOrder(ctx context.Context, obj
 			}
 			it.Direction = data
 		case "field":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("field"))
 			data, err := ec.unmarshalNMetadataOrderField2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐMetadataOrderField(ctx, v)
 			if err != nil {
@@ -11591,10 +12609,10 @@ func (ec *executionContext) unmarshalInputMetadataOrder(ctx context.Context, obj
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputMetadataWhereInput(ctx context.Context, obj interface{}) (generated.MetadataWhereInput, error) {
+func (ec *executionContext) unmarshalInputMetadataWhereInput(ctx context.Context, obj any) (generated.MetadataWhereInput, error) {
 	var it generated.MetadataWhereInput
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
 	}
 
@@ -11606,8 +12624,6 @@ func (ec *executionContext) unmarshalInputMetadataWhereInput(ctx context.Context
 		}
 		switch k {
 		case "not":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("not"))
 			data, err := ec.unmarshalOMetadataWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐMetadataWhereInput(ctx, v)
 			if err != nil {
@@ -11615,8 +12631,6 @@ func (ec *executionContext) unmarshalInputMetadataWhereInput(ctx context.Context
 			}
 			it.Not = data
 		case "and":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("and"))
 			data, err := ec.unmarshalOMetadataWhereInput2ᚕᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐMetadataWhereInputᚄ(ctx, v)
 			if err != nil {
@@ -11624,8 +12638,6 @@ func (ec *executionContext) unmarshalInputMetadataWhereInput(ctx context.Context
 			}
 			it.And = data
 		case "or":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("or"))
 			data, err := ec.unmarshalOMetadataWhereInput2ᚕᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐMetadataWhereInputᚄ(ctx, v)
 			if err != nil {
@@ -11633,8 +12645,6 @@ func (ec *executionContext) unmarshalInputMetadataWhereInput(ctx context.Context
 			}
 			it.Or = data
 		case "id":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
 			data, err := ec.unmarshalOID2ᚖgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, v)
 			if err != nil {
@@ -11642,8 +12652,6 @@ func (ec *executionContext) unmarshalInputMetadataWhereInput(ctx context.Context
 			}
 			it.ID = data
 		case "idNEQ":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idNEQ"))
 			data, err := ec.unmarshalOID2ᚖgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, v)
 			if err != nil {
@@ -11651,8 +12659,6 @@ func (ec *executionContext) unmarshalInputMetadataWhereInput(ctx context.Context
 			}
 			it.IDNEQ = data
 		case "idIn":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idIn"))
 			data, err := ec.unmarshalOID2ᚕgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedIDᚄ(ctx, v)
 			if err != nil {
@@ -11660,8 +12666,6 @@ func (ec *executionContext) unmarshalInputMetadataWhereInput(ctx context.Context
 			}
 			it.IDIn = data
 		case "idNotIn":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idNotIn"))
 			data, err := ec.unmarshalOID2ᚕgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedIDᚄ(ctx, v)
 			if err != nil {
@@ -11669,8 +12673,6 @@ func (ec *executionContext) unmarshalInputMetadataWhereInput(ctx context.Context
 			}
 			it.IDNotIn = data
 		case "idGT":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idGT"))
 			data, err := ec.unmarshalOID2ᚖgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, v)
 			if err != nil {
@@ -11678,8 +12680,6 @@ func (ec *executionContext) unmarshalInputMetadataWhereInput(ctx context.Context
 			}
 			it.IDGT = data
 		case "idGTE":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idGTE"))
 			data, err := ec.unmarshalOID2ᚖgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, v)
 			if err != nil {
@@ -11687,8 +12687,6 @@ func (ec *executionContext) unmarshalInputMetadataWhereInput(ctx context.Context
 			}
 			it.IDGTE = data
 		case "idLT":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idLT"))
 			data, err := ec.unmarshalOID2ᚖgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, v)
 			if err != nil {
@@ -11696,8 +12694,6 @@ func (ec *executionContext) unmarshalInputMetadataWhereInput(ctx context.Context
 			}
 			it.IDLT = data
 		case "idLTE":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idLTE"))
 			data, err := ec.unmarshalOID2ᚖgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, v)
 			if err != nil {
@@ -11705,8 +12701,6 @@ func (ec *executionContext) unmarshalInputMetadataWhereInput(ctx context.Context
 			}
 			it.IDLTE = data
 		case "createdAt":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAt"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -11714,8 +12708,6 @@ func (ec *executionContext) unmarshalInputMetadataWhereInput(ctx context.Context
 			}
 			it.CreatedAt = data
 		case "createdAtNEQ":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtNEQ"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -11723,8 +12715,6 @@ func (ec *executionContext) unmarshalInputMetadataWhereInput(ctx context.Context
 			}
 			it.CreatedAtNEQ = data
 		case "createdAtIn":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtIn"))
 			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
 			if err != nil {
@@ -11732,8 +12722,6 @@ func (ec *executionContext) unmarshalInputMetadataWhereInput(ctx context.Context
 			}
 			it.CreatedAtIn = data
 		case "createdAtNotIn":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtNotIn"))
 			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
 			if err != nil {
@@ -11741,8 +12729,6 @@ func (ec *executionContext) unmarshalInputMetadataWhereInput(ctx context.Context
 			}
 			it.CreatedAtNotIn = data
 		case "createdAtGT":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtGT"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -11750,8 +12736,6 @@ func (ec *executionContext) unmarshalInputMetadataWhereInput(ctx context.Context
 			}
 			it.CreatedAtGT = data
 		case "createdAtGTE":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtGTE"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -11759,8 +12743,6 @@ func (ec *executionContext) unmarshalInputMetadataWhereInput(ctx context.Context
 			}
 			it.CreatedAtGTE = data
 		case "createdAtLT":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtLT"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -11768,8 +12750,6 @@ func (ec *executionContext) unmarshalInputMetadataWhereInput(ctx context.Context
 			}
 			it.CreatedAtLT = data
 		case "createdAtLTE":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtLTE"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -11777,8 +12757,6 @@ func (ec *executionContext) unmarshalInputMetadataWhereInput(ctx context.Context
 			}
 			it.CreatedAtLTE = data
 		case "updatedAt":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAt"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -11786,8 +12764,6 @@ func (ec *executionContext) unmarshalInputMetadataWhereInput(ctx context.Context
 			}
 			it.UpdatedAt = data
 		case "updatedAtNEQ":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtNEQ"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -11795,8 +12771,6 @@ func (ec *executionContext) unmarshalInputMetadataWhereInput(ctx context.Context
 			}
 			it.UpdatedAtNEQ = data
 		case "updatedAtIn":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtIn"))
 			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
 			if err != nil {
@@ -11804,8 +12778,6 @@ func (ec *executionContext) unmarshalInputMetadataWhereInput(ctx context.Context
 			}
 			it.UpdatedAtIn = data
 		case "updatedAtNotIn":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtNotIn"))
 			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
 			if err != nil {
@@ -11813,8 +12785,6 @@ func (ec *executionContext) unmarshalInputMetadataWhereInput(ctx context.Context
 			}
 			it.UpdatedAtNotIn = data
 		case "updatedAtGT":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtGT"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -11822,8 +12792,6 @@ func (ec *executionContext) unmarshalInputMetadataWhereInput(ctx context.Context
 			}
 			it.UpdatedAtGT = data
 		case "updatedAtGTE":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtGTE"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -11831,8 +12799,6 @@ func (ec *executionContext) unmarshalInputMetadataWhereInput(ctx context.Context
 			}
 			it.UpdatedAtGTE = data
 		case "updatedAtLT":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtLT"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -11840,8 +12806,6 @@ func (ec *executionContext) unmarshalInputMetadataWhereInput(ctx context.Context
 			}
 			it.UpdatedAtLT = data
 		case "updatedAtLTE":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtLTE"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -11849,8 +12813,6 @@ func (ec *executionContext) unmarshalInputMetadataWhereInput(ctx context.Context
 			}
 			it.UpdatedAtLTE = data
 		case "hasAnnotations":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasAnnotations"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
@@ -11858,8 +12820,6 @@ func (ec *executionContext) unmarshalInputMetadataWhereInput(ctx context.Context
 			}
 			it.HasAnnotations = data
 		case "hasAnnotationsWith":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasAnnotationsWith"))
 			data, err := ec.unmarshalOAnnotationWhereInput2ᚕᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationWhereInputᚄ(ctx, v)
 			if err != nil {
@@ -11867,8 +12827,6 @@ func (ec *executionContext) unmarshalInputMetadataWhereInput(ctx context.Context
 			}
 			it.HasAnnotationsWith = data
 		case "hasStatuses":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasStatuses"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
@@ -11876,8 +12834,6 @@ func (ec *executionContext) unmarshalInputMetadataWhereInput(ctx context.Context
 			}
 			it.HasStatuses = data
 		case "hasStatusesWith":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasStatusesWith"))
 			data, err := ec.unmarshalOStatusWhereInput2ᚕᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusWhereInputᚄ(ctx, v)
 			if err != nil {
@@ -11890,10 +12846,10 @@ func (ec *executionContext) unmarshalInputMetadataWhereInput(ctx context.Context
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputStatusDeleteInput(ctx context.Context, obj interface{}) (StatusDeleteInput, error) {
+func (ec *executionContext) unmarshalInputStatusDeleteInput(ctx context.Context, obj any) (StatusDeleteInput, error) {
 	var it StatusDeleteInput
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
 	}
 
@@ -11905,8 +12861,6 @@ func (ec *executionContext) unmarshalInputStatusDeleteInput(ctx context.Context,
 		}
 		switch k {
 		case "nodeID":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nodeID"))
 			data, err := ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, v)
 			if err != nil {
@@ -11914,8 +12868,6 @@ func (ec *executionContext) unmarshalInputStatusDeleteInput(ctx context.Context,
 			}
 			it.NodeID = data
 		case "namespaceID":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("namespaceID"))
 			data, err := ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, v)
 			if err != nil {
@@ -11923,8 +12875,6 @@ func (ec *executionContext) unmarshalInputStatusDeleteInput(ctx context.Context,
 			}
 			it.NamespaceID = data
 		case "source":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("source"))
 			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
@@ -11937,10 +12887,10 @@ func (ec *executionContext) unmarshalInputStatusDeleteInput(ctx context.Context,
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputStatusNamespaceOrder(ctx context.Context, obj interface{}) (generated.StatusNamespaceOrder, error) {
+func (ec *executionContext) unmarshalInputStatusNamespaceOrder(ctx context.Context, obj any) (generated.StatusNamespaceOrder, error) {
 	var it generated.StatusNamespaceOrder
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
 	}
 
@@ -11956,8 +12906,6 @@ func (ec *executionContext) unmarshalInputStatusNamespaceOrder(ctx context.Conte
 		}
 		switch k {
 		case "direction":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("direction"))
 			data, err := ec.unmarshalNOrderDirection2entgoᚗioᚋcontribᚋentgqlᚐOrderDirection(ctx, v)
 			if err != nil {
@@ -11965,8 +12913,6 @@ func (ec *executionContext) unmarshalInputStatusNamespaceOrder(ctx context.Conte
 			}
 			it.Direction = data
 		case "field":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("field"))
 			data, err := ec.unmarshalNStatusNamespaceOrderField2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusNamespaceOrderField(ctx, v)
 			if err != nil {
@@ -11979,10 +12925,10 @@ func (ec *executionContext) unmarshalInputStatusNamespaceOrder(ctx context.Conte
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.Context, obj interface{}) (generated.StatusNamespaceWhereInput, error) {
+func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.Context, obj any) (generated.StatusNamespaceWhereInput, error) {
 	var it generated.StatusNamespaceWhereInput
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
 	}
 
@@ -11994,8 +12940,6 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 		}
 		switch k {
 		case "not":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("not"))
 			data, err := ec.unmarshalOStatusNamespaceWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusNamespaceWhereInput(ctx, v)
 			if err != nil {
@@ -12003,8 +12947,6 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 			}
 			it.Not = data
 		case "and":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("and"))
 			data, err := ec.unmarshalOStatusNamespaceWhereInput2ᚕᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusNamespaceWhereInputᚄ(ctx, v)
 			if err != nil {
@@ -12012,8 +12954,6 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 			}
 			it.And = data
 		case "or":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("or"))
 			data, err := ec.unmarshalOStatusNamespaceWhereInput2ᚕᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusNamespaceWhereInputᚄ(ctx, v)
 			if err != nil {
@@ -12021,8 +12961,6 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 			}
 			it.Or = data
 		case "id":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
 			data, err := ec.unmarshalOID2ᚖgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, v)
 			if err != nil {
@@ -12030,8 +12968,6 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 			}
 			it.ID = data
 		case "idNEQ":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idNEQ"))
 			data, err := ec.unmarshalOID2ᚖgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, v)
 			if err != nil {
@@ -12039,8 +12975,6 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 			}
 			it.IDNEQ = data
 		case "idIn":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idIn"))
 			data, err := ec.unmarshalOID2ᚕgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedIDᚄ(ctx, v)
 			if err != nil {
@@ -12048,8 +12982,6 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 			}
 			it.IDIn = data
 		case "idNotIn":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idNotIn"))
 			data, err := ec.unmarshalOID2ᚕgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedIDᚄ(ctx, v)
 			if err != nil {
@@ -12057,8 +12989,6 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 			}
 			it.IDNotIn = data
 		case "idGT":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idGT"))
 			data, err := ec.unmarshalOID2ᚖgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, v)
 			if err != nil {
@@ -12066,8 +12996,6 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 			}
 			it.IDGT = data
 		case "idGTE":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idGTE"))
 			data, err := ec.unmarshalOID2ᚖgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, v)
 			if err != nil {
@@ -12075,8 +13003,6 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 			}
 			it.IDGTE = data
 		case "idLT":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idLT"))
 			data, err := ec.unmarshalOID2ᚖgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, v)
 			if err != nil {
@@ -12084,8 +13010,6 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 			}
 			it.IDLT = data
 		case "idLTE":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idLTE"))
 			data, err := ec.unmarshalOID2ᚖgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, v)
 			if err != nil {
@@ -12093,8 +13017,6 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 			}
 			it.IDLTE = data
 		case "createdAt":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAt"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -12102,8 +13024,6 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 			}
 			it.CreatedAt = data
 		case "createdAtNEQ":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtNEQ"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -12111,8 +13031,6 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 			}
 			it.CreatedAtNEQ = data
 		case "createdAtIn":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtIn"))
 			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
 			if err != nil {
@@ -12120,8 +13038,6 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 			}
 			it.CreatedAtIn = data
 		case "createdAtNotIn":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtNotIn"))
 			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
 			if err != nil {
@@ -12129,8 +13045,6 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 			}
 			it.CreatedAtNotIn = data
 		case "createdAtGT":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtGT"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -12138,8 +13052,6 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 			}
 			it.CreatedAtGT = data
 		case "createdAtGTE":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtGTE"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -12147,8 +13059,6 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 			}
 			it.CreatedAtGTE = data
 		case "createdAtLT":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtLT"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -12156,8 +13066,6 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 			}
 			it.CreatedAtLT = data
 		case "createdAtLTE":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtLTE"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -12165,8 +13073,6 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 			}
 			it.CreatedAtLTE = data
 		case "updatedAt":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAt"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -12174,8 +13080,6 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 			}
 			it.UpdatedAt = data
 		case "updatedAtNEQ":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtNEQ"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -12183,8 +13087,6 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 			}
 			it.UpdatedAtNEQ = data
 		case "updatedAtIn":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtIn"))
 			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
 			if err != nil {
@@ -12192,8 +13094,6 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 			}
 			it.UpdatedAtIn = data
 		case "updatedAtNotIn":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtNotIn"))
 			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
 			if err != nil {
@@ -12201,8 +13101,6 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 			}
 			it.UpdatedAtNotIn = data
 		case "updatedAtGT":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtGT"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -12210,8 +13108,6 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 			}
 			it.UpdatedAtGT = data
 		case "updatedAtGTE":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtGTE"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -12219,8 +13115,6 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 			}
 			it.UpdatedAtGTE = data
 		case "updatedAtLT":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtLT"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -12228,8 +13122,6 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 			}
 			it.UpdatedAtLT = data
 		case "updatedAtLTE":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtLTE"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -12237,8 +13129,6 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 			}
 			it.UpdatedAtLTE = data
 		case "name":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -12246,8 +13136,6 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 			}
 			it.Name = data
 		case "nameNEQ":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameNEQ"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -12255,8 +13143,6 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 			}
 			it.NameNEQ = data
 		case "nameIn":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameIn"))
 			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
 			if err != nil {
@@ -12264,8 +13150,6 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 			}
 			it.NameIn = data
 		case "nameNotIn":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameNotIn"))
 			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
 			if err != nil {
@@ -12273,8 +13157,6 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 			}
 			it.NameNotIn = data
 		case "nameGT":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameGT"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -12282,8 +13164,6 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 			}
 			it.NameGT = data
 		case "nameGTE":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameGTE"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -12291,8 +13171,6 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 			}
 			it.NameGTE = data
 		case "nameLT":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameLT"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -12300,8 +13178,6 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 			}
 			it.NameLT = data
 		case "nameLTE":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameLTE"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -12309,8 +13185,6 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 			}
 			it.NameLTE = data
 		case "nameContains":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameContains"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -12318,8 +13192,6 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 			}
 			it.NameContains = data
 		case "nameHasPrefix":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameHasPrefix"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -12327,8 +13199,6 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 			}
 			it.NameHasPrefix = data
 		case "nameHasSuffix":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameHasSuffix"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -12336,8 +13206,6 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 			}
 			it.NameHasSuffix = data
 		case "nameEqualFold":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameEqualFold"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -12345,8 +13213,6 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 			}
 			it.NameEqualFold = data
 		case "nameContainsFold":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nameContainsFold"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -12359,10 +13225,10 @@ func (ec *executionContext) unmarshalInputStatusNamespaceWhereInput(ctx context.
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputStatusOrder(ctx context.Context, obj interface{}) (generated.StatusOrder, error) {
+func (ec *executionContext) unmarshalInputStatusOrder(ctx context.Context, obj any) (generated.StatusOrder, error) {
 	var it generated.StatusOrder
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
 	}
 
@@ -12378,8 +13244,6 @@ func (ec *executionContext) unmarshalInputStatusOrder(ctx context.Context, obj i
 		}
 		switch k {
 		case "direction":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("direction"))
 			data, err := ec.unmarshalNOrderDirection2entgoᚗioᚋcontribᚋentgqlᚐOrderDirection(ctx, v)
 			if err != nil {
@@ -12387,8 +13251,6 @@ func (ec *executionContext) unmarshalInputStatusOrder(ctx context.Context, obj i
 			}
 			it.Direction = data
 		case "field":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("field"))
 			data, err := ec.unmarshalNStatusOrderField2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusOrderField(ctx, v)
 			if err != nil {
@@ -12401,10 +13263,10 @@ func (ec *executionContext) unmarshalInputStatusOrder(ctx context.Context, obj i
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputStatusUpdateInput(ctx context.Context, obj interface{}) (StatusUpdateInput, error) {
+func (ec *executionContext) unmarshalInputStatusUpdateInput(ctx context.Context, obj any) (StatusUpdateInput, error) {
 	var it StatusUpdateInput
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
 	}
 
@@ -12416,8 +13278,6 @@ func (ec *executionContext) unmarshalInputStatusUpdateInput(ctx context.Context,
 		}
 		switch k {
 		case "nodeID":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("nodeID"))
 			data, err := ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, v)
 			if err != nil {
@@ -12425,8 +13285,6 @@ func (ec *executionContext) unmarshalInputStatusUpdateInput(ctx context.Context,
 			}
 			it.NodeID = data
 		case "namespaceID":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("namespaceID"))
 			data, err := ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, v)
 			if err != nil {
@@ -12434,8 +13292,6 @@ func (ec *executionContext) unmarshalInputStatusUpdateInput(ctx context.Context,
 			}
 			it.NamespaceID = data
 		case "source":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("source"))
 			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
@@ -12443,8 +13299,6 @@ func (ec *executionContext) unmarshalInputStatusUpdateInput(ctx context.Context,
 			}
 			it.Source = data
 		case "data":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("data"))
 			data, err := ec.unmarshalNJSON2encodingᚋjsonᚐRawMessage(ctx, v)
 			if err != nil {
@@ -12457,10 +13311,10 @@ func (ec *executionContext) unmarshalInputStatusUpdateInput(ctx context.Context,
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, obj interface{}) (generated.StatusWhereInput, error) {
+func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, obj any) (generated.StatusWhereInput, error) {
 	var it generated.StatusWhereInput
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
 	}
 
@@ -12472,8 +13326,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 		}
 		switch k {
 		case "not":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("not"))
 			data, err := ec.unmarshalOStatusWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusWhereInput(ctx, v)
 			if err != nil {
@@ -12481,8 +13333,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.Not = data
 		case "and":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("and"))
 			data, err := ec.unmarshalOStatusWhereInput2ᚕᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusWhereInputᚄ(ctx, v)
 			if err != nil {
@@ -12490,8 +13340,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.And = data
 		case "or":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("or"))
 			data, err := ec.unmarshalOStatusWhereInput2ᚕᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusWhereInputᚄ(ctx, v)
 			if err != nil {
@@ -12499,8 +13347,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.Or = data
 		case "id":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
 			data, err := ec.unmarshalOID2ᚖgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, v)
 			if err != nil {
@@ -12508,8 +13354,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.ID = data
 		case "idNEQ":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idNEQ"))
 			data, err := ec.unmarshalOID2ᚖgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, v)
 			if err != nil {
@@ -12517,8 +13361,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.IDNEQ = data
 		case "idIn":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idIn"))
 			data, err := ec.unmarshalOID2ᚕgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedIDᚄ(ctx, v)
 			if err != nil {
@@ -12526,8 +13368,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.IDIn = data
 		case "idNotIn":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idNotIn"))
 			data, err := ec.unmarshalOID2ᚕgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedIDᚄ(ctx, v)
 			if err != nil {
@@ -12535,8 +13375,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.IDNotIn = data
 		case "idGT":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idGT"))
 			data, err := ec.unmarshalOID2ᚖgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, v)
 			if err != nil {
@@ -12544,8 +13382,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.IDGT = data
 		case "idGTE":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idGTE"))
 			data, err := ec.unmarshalOID2ᚖgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, v)
 			if err != nil {
@@ -12553,8 +13389,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.IDGTE = data
 		case "idLT":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idLT"))
 			data, err := ec.unmarshalOID2ᚖgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, v)
 			if err != nil {
@@ -12562,8 +13396,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.IDLT = data
 		case "idLTE":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("idLTE"))
 			data, err := ec.unmarshalOID2ᚖgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, v)
 			if err != nil {
@@ -12571,8 +13403,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.IDLTE = data
 		case "createdAt":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAt"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -12580,8 +13410,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.CreatedAt = data
 		case "createdAtNEQ":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtNEQ"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -12589,8 +13417,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.CreatedAtNEQ = data
 		case "createdAtIn":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtIn"))
 			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
 			if err != nil {
@@ -12598,8 +13424,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.CreatedAtIn = data
 		case "createdAtNotIn":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtNotIn"))
 			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
 			if err != nil {
@@ -12607,8 +13431,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.CreatedAtNotIn = data
 		case "createdAtGT":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtGT"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -12616,8 +13438,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.CreatedAtGT = data
 		case "createdAtGTE":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtGTE"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -12625,8 +13445,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.CreatedAtGTE = data
 		case "createdAtLT":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtLT"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -12634,8 +13452,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.CreatedAtLT = data
 		case "createdAtLTE":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("createdAtLTE"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -12643,8 +13459,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.CreatedAtLTE = data
 		case "updatedAt":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAt"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -12652,8 +13466,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.UpdatedAt = data
 		case "updatedAtNEQ":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtNEQ"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -12661,8 +13473,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.UpdatedAtNEQ = data
 		case "updatedAtIn":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtIn"))
 			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
 			if err != nil {
@@ -12670,8 +13480,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.UpdatedAtIn = data
 		case "updatedAtNotIn":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtNotIn"))
 			data, err := ec.unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx, v)
 			if err != nil {
@@ -12679,8 +13487,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.UpdatedAtNotIn = data
 		case "updatedAtGT":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtGT"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -12688,8 +13494,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.UpdatedAtGT = data
 		case "updatedAtGTE":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtGTE"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -12697,8 +13501,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.UpdatedAtGTE = data
 		case "updatedAtLT":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtLT"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -12706,8 +13508,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.UpdatedAtLT = data
 		case "updatedAtLTE":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("updatedAtLTE"))
 			data, err := ec.unmarshalOTime2ᚖtimeᚐTime(ctx, v)
 			if err != nil {
@@ -12715,8 +13515,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.UpdatedAtLTE = data
 		case "source":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("source"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -12724,8 +13522,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.Source = data
 		case "sourceNEQ":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceNEQ"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -12733,8 +13529,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.SourceNEQ = data
 		case "sourceIn":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceIn"))
 			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
 			if err != nil {
@@ -12742,8 +13536,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.SourceIn = data
 		case "sourceNotIn":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceNotIn"))
 			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
 			if err != nil {
@@ -12751,8 +13543,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.SourceNotIn = data
 		case "sourceGT":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceGT"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -12760,8 +13550,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.SourceGT = data
 		case "sourceGTE":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceGTE"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -12769,8 +13557,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.SourceGTE = data
 		case "sourceLT":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceLT"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -12778,8 +13564,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.SourceLT = data
 		case "sourceLTE":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceLTE"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -12787,8 +13571,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.SourceLTE = data
 		case "sourceContains":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceContains"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -12796,8 +13578,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.SourceContains = data
 		case "sourceHasPrefix":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceHasPrefix"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -12805,8 +13585,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.SourceHasPrefix = data
 		case "sourceHasSuffix":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceHasSuffix"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -12814,8 +13592,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.SourceHasSuffix = data
 		case "sourceEqualFold":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceEqualFold"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -12823,8 +13599,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.SourceEqualFold = data
 		case "sourceContainsFold":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceContainsFold"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -12832,8 +13606,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.SourceContainsFold = data
 		case "hasNamespace":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasNamespace"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
@@ -12841,8 +13613,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.HasNamespace = data
 		case "hasNamespaceWith":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasNamespaceWith"))
 			data, err := ec.unmarshalOStatusNamespaceWhereInput2ᚕᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusNamespaceWhereInputᚄ(ctx, v)
 			if err != nil {
@@ -12850,8 +13620,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.HasNamespaceWith = data
 		case "hasMetadata":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasMetadata"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
@@ -12859,8 +13627,6 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 			}
 			it.HasMetadata = data
 		case "hasMetadataWith":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("hasMetadataWith"))
 			data, err := ec.unmarshalOMetadataWhereInput2ᚕᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐMetadataWhereInputᚄ(ctx, v)
 			if err != nil {
@@ -12873,10 +13639,10 @@ func (ec *executionContext) unmarshalInputStatusWhereInput(ctx context.Context, 
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputUpdateAnnotationNamespaceInput(ctx context.Context, obj interface{}) (generated.UpdateAnnotationNamespaceInput, error) {
+func (ec *executionContext) unmarshalInputUpdateAnnotationNamespaceInput(ctx context.Context, obj any) (generated.UpdateAnnotationNamespaceInput, error) {
 	var it generated.UpdateAnnotationNamespaceInput
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
 	}
 
@@ -12888,8 +13654,6 @@ func (ec *executionContext) unmarshalInputUpdateAnnotationNamespaceInput(ctx con
 		}
 		switch k {
 		case "name":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -12897,8 +13661,6 @@ func (ec *executionContext) unmarshalInputUpdateAnnotationNamespaceInput(ctx con
 			}
 			it.Name = data
 		case "private":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("private"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
@@ -12911,10 +13673,10 @@ func (ec *executionContext) unmarshalInputUpdateAnnotationNamespaceInput(ctx con
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputUpdateStatusInput(ctx context.Context, obj interface{}) (generated.UpdateStatusInput, error) {
+func (ec *executionContext) unmarshalInputUpdateStatusInput(ctx context.Context, obj any) (generated.UpdateStatusInput, error) {
 	var it generated.UpdateStatusInput
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
 	}
 
@@ -12926,8 +13688,6 @@ func (ec *executionContext) unmarshalInputUpdateStatusInput(ctx context.Context,
 		}
 		switch k {
 		case "data":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("data"))
 			data, err := ec.unmarshalOJSON2encodingᚋjsonᚐRawMessage(ctx, v)
 			if err != nil {
@@ -12935,8 +13695,6 @@ func (ec *executionContext) unmarshalInputUpdateStatusInput(ctx context.Context,
 			}
 			it.Data = data
 		case "appendData":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("appendData"))
 			data, err := ec.unmarshalOJSON2encodingᚋjsonᚐRawMessage(ctx, v)
 			if err != nil {
@@ -12949,10 +13707,10 @@ func (ec *executionContext) unmarshalInputUpdateStatusInput(ctx context.Context,
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputUpdateStatusNamespaceInput(ctx context.Context, obj interface{}) (generated.UpdateStatusNamespaceInput, error) {
+func (ec *executionContext) unmarshalInputUpdateStatusNamespaceInput(ctx context.Context, obj any) (generated.UpdateStatusNamespaceInput, error) {
 	var it generated.UpdateStatusNamespaceInput
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
 		asMap[k] = v
 	}
 
@@ -12964,8 +13722,6 @@ func (ec *executionContext) unmarshalInputUpdateStatusNamespaceInput(ctx context
 		}
 		switch k {
 		case "name":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
 			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
@@ -12973,8 +13729,6 @@ func (ec *executionContext) unmarshalInputUpdateStatusNamespaceInput(ctx context
 			}
 			it.Name = data
 		case "private":
-			var err error
-
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("private"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
 			if err != nil {
@@ -12995,31 +13749,31 @@ func (ec *executionContext) _Node(ctx context.Context, sel ast.SelectionSet, obj
 	switch obj := (obj).(type) {
 	case nil:
 		return graphql.Null
-	case *generated.Annotation:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Annotation(ctx, sel, obj)
-	case *generated.AnnotationNamespace:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._AnnotationNamespace(ctx, sel, obj)
-	case *generated.Metadata:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Metadata(ctx, sel, obj)
-	case *generated.Status:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Status(ctx, sel, obj)
 	case *generated.StatusNamespace:
 		if obj == nil {
 			return graphql.Null
 		}
 		return ec._StatusNamespace(ctx, sel, obj)
+	case *generated.Status:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Status(ctx, sel, obj)
+	case *generated.Metadata:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Metadata(ctx, sel, obj)
+	case *generated.AnnotationNamespace:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._AnnotationNamespace(ctx, sel, obj)
+	case *generated.Annotation:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Annotation(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -13029,48 +13783,6 @@ func (ec *executionContext) __Entity(ctx context.Context, sel ast.SelectionSet, 
 	switch obj := (obj).(type) {
 	case nil:
 		return graphql.Null
-	case generated.Annotation:
-		return ec._Annotation(ctx, sel, &obj)
-	case *generated.Annotation:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Annotation(ctx, sel, obj)
-	case generated.AnnotationNamespace:
-		return ec._AnnotationNamespace(ctx, sel, &obj)
-	case *generated.AnnotationNamespace:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._AnnotationNamespace(ctx, sel, obj)
-	case generated.Metadata:
-		return ec._Metadata(ctx, sel, &obj)
-	case *generated.Metadata:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Metadata(ctx, sel, obj)
-	case MetadataNode:
-		return ec._MetadataNode(ctx, sel, &obj)
-	case *MetadataNode:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._MetadataNode(ctx, sel, obj)
-	case ResourceOwner:
-		return ec._ResourceOwner(ctx, sel, &obj)
-	case *ResourceOwner:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._ResourceOwner(ctx, sel, obj)
-	case generated.Status:
-		return ec._Status(ctx, sel, &obj)
-	case *generated.Status:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._Status(ctx, sel, obj)
 	case generated.StatusNamespace:
 		return ec._StatusNamespace(ctx, sel, &obj)
 	case *generated.StatusNamespace:
@@ -13078,6 +13790,34 @@ func (ec *executionContext) __Entity(ctx context.Context, sel ast.SelectionSet, 
 			return graphql.Null
 		}
 		return ec._StatusNamespace(ctx, sel, obj)
+	case generated.Status:
+		return ec._Status(ctx, sel, &obj)
+	case *generated.Status:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Status(ctx, sel, obj)
+	case generated.Metadata:
+		return ec._Metadata(ctx, sel, &obj)
+	case *generated.Metadata:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Metadata(ctx, sel, obj)
+	case generated.AnnotationNamespace:
+		return ec._AnnotationNamespace(ctx, sel, &obj)
+	case *generated.AnnotationNamespace:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._AnnotationNamespace(ctx, sel, obj)
+	case generated.Annotation:
+		return ec._Annotation(ctx, sel, &obj)
+	case *generated.Annotation:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Annotation(ctx, sel, obj)
 	case StatusOwner:
 		return ec._StatusOwner(ctx, sel, &obj)
 	case *StatusOwner:
@@ -13085,6 +13825,20 @@ func (ec *executionContext) __Entity(ctx context.Context, sel ast.SelectionSet, 
 			return graphql.Null
 		}
 		return ec._StatusOwner(ctx, sel, obj)
+	case ResourceOwner:
+		return ec._ResourceOwner(ctx, sel, &obj)
+	case *ResourceOwner:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._ResourceOwner(ctx, sel, obj)
+	case MetadataNode:
+		return ec._MetadataNode(ctx, sel, &obj)
+	case *MetadataNode:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._MetadataNode(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -13390,7 +14144,7 @@ func (ec *executionContext) _AnnotationNamespace(ctx context.Context, sel ast.Se
 		case "annotations":
 			field := field
 
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
@@ -14235,7 +14989,7 @@ func (ec *executionContext) _MetadataNode(ctx context.Context, sel ast.Selection
 		case "metadata":
 			field := field
 
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
@@ -14619,7 +15373,7 @@ func (ec *executionContext) _ResourceOwner(ctx context.Context, sel ast.Selectio
 		case "metadata":
 			field := field
 
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
@@ -15298,7 +16052,7 @@ func (ec *executionContext) _StatusOwner(ctx context.Context, sel ast.SelectionS
 		case "metadata":
 			field := field
 
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
 				defer func() {
 					if r := recover(); r != nil {
 						ec.Error(ctx, ec.Recover(ctx, r))
@@ -15444,6 +16198,11 @@ func (ec *executionContext) ___Directive(ctx context.Context, sel ast.SelectionS
 			}
 		case "description":
 			out.Values[i] = ec.___Directive_description(ctx, field, obj)
+		case "isRepeatable":
+			out.Values[i] = ec.___Directive_isRepeatable(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "locations":
 			out.Values[i] = ec.___Directive_locations(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -15451,11 +16210,6 @@ func (ec *executionContext) ___Directive(ctx context.Context, sel ast.SelectionS
 			}
 		case "args":
 			out.Values[i] = ec.___Directive_args(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		case "isRepeatable":
-			out.Values[i] = ec.___Directive_isRepeatable(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -15613,6 +16367,13 @@ func (ec *executionContext) ___InputValue(ctx context.Context, sel ast.Selection
 			}
 		case "defaultValue":
 			out.Values[i] = ec.___InputValue_defaultValue(ctx, field, obj)
+		case "isDeprecated":
+			out.Values[i] = ec.___InputValue_isDeprecated(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deprecationReason":
+			out.Values[i] = ec.___InputValue_deprecationReason(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -15711,6 +16472,8 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 			out.Values[i] = ec.___Type_name(ctx, field, obj)
 		case "description":
 			out.Values[i] = ec.___Type_description(ctx, field, obj)
+		case "specifiedByURL":
+			out.Values[i] = ec.___Type_specifiedByURL(ctx, field, obj)
 		case "fields":
 			out.Values[i] = ec.___Type_fields(ctx, field, obj)
 		case "interfaces":
@@ -15723,8 +16486,8 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 			out.Values[i] = ec.___Type_inputFields(ctx, field, obj)
 		case "ofType":
 			out.Values[i] = ec.___Type_ofType(ctx, field, obj)
-		case "specifiedByURL":
-			out.Values[i] = ec.___Type_specifiedByURL(ctx, field, obj)
+		case "isOneOf":
+			out.Values[i] = ec.___Type_isOneOf(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -15776,7 +16539,7 @@ func (ec *executionContext) marshalNAnnotationConnection2ᚖgoᚗinfratographer�
 	return ec._AnnotationConnection(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNAnnotationDeleteInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋgraphapiᚐAnnotationDeleteInput(ctx context.Context, v interface{}) (AnnotationDeleteInput, error) {
+func (ec *executionContext) unmarshalNAnnotationDeleteInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋgraphapiᚐAnnotationDeleteInput(ctx context.Context, v any) (AnnotationDeleteInput, error) {
 	res, err := ec.unmarshalInputAnnotationDeleteInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
@@ -15851,7 +16614,7 @@ func (ec *executionContext) marshalNAnnotationNamespaceDeletePayload2ᚖgoᚗinf
 	return ec._AnnotationNamespaceDeletePayload(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNAnnotationNamespaceOrderField2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationNamespaceOrderField(ctx context.Context, v interface{}) (*generated.AnnotationNamespaceOrderField, error) {
+func (ec *executionContext) unmarshalNAnnotationNamespaceOrderField2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationNamespaceOrderField(ctx context.Context, v any) (*generated.AnnotationNamespaceOrderField, error) {
 	var res = new(generated.AnnotationNamespaceOrderField)
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -15881,12 +16644,12 @@ func (ec *executionContext) marshalNAnnotationNamespaceUpdatePayload2ᚖgoᚗinf
 	return ec._AnnotationNamespaceUpdatePayload(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNAnnotationNamespaceWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationNamespaceWhereInput(ctx context.Context, v interface{}) (*generated.AnnotationNamespaceWhereInput, error) {
+func (ec *executionContext) unmarshalNAnnotationNamespaceWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationNamespaceWhereInput(ctx context.Context, v any) (*generated.AnnotationNamespaceWhereInput, error) {
 	res, err := ec.unmarshalInputAnnotationNamespaceWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNAnnotationOrderField2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationOrderField(ctx context.Context, v interface{}) (*generated.AnnotationOrderField, error) {
+func (ec *executionContext) unmarshalNAnnotationOrderField2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationOrderField(ctx context.Context, v any) (*generated.AnnotationOrderField, error) {
 	var res = new(generated.AnnotationOrderField)
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -15902,7 +16665,7 @@ func (ec *executionContext) marshalNAnnotationOrderField2ᚖgoᚗinfratographer�
 	return v
 }
 
-func (ec *executionContext) unmarshalNAnnotationUpdateInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋgraphapiᚐAnnotationUpdateInput(ctx context.Context, v interface{}) (AnnotationUpdateInput, error) {
+func (ec *executionContext) unmarshalNAnnotationUpdateInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋgraphapiᚐAnnotationUpdateInput(ctx context.Context, v any) (AnnotationUpdateInput, error) {
 	res, err := ec.unmarshalInputAnnotationUpdateInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
@@ -15921,12 +16684,12 @@ func (ec *executionContext) marshalNAnnotationUpdateResponse2ᚖgoᚗinfratograp
 	return ec._AnnotationUpdateResponse(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNAnnotationWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationWhereInput(ctx context.Context, v interface{}) (*generated.AnnotationWhereInput, error) {
+func (ec *executionContext) unmarshalNAnnotationWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationWhereInput(ctx context.Context, v any) (*generated.AnnotationWhereInput, error) {
 	res, err := ec.unmarshalInputAnnotationWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
+func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v any) (bool, error) {
 	res, err := graphql.UnmarshalBoolean(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
@@ -15941,17 +16704,17 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) unmarshalNCreateAnnotationNamespaceInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐCreateAnnotationNamespaceInput(ctx context.Context, v interface{}) (generated.CreateAnnotationNamespaceInput, error) {
+func (ec *executionContext) unmarshalNCreateAnnotationNamespaceInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐCreateAnnotationNamespaceInput(ctx context.Context, v any) (generated.CreateAnnotationNamespaceInput, error) {
 	res, err := ec.unmarshalInputCreateAnnotationNamespaceInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNCreateStatusNamespaceInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐCreateStatusNamespaceInput(ctx context.Context, v interface{}) (generated.CreateStatusNamespaceInput, error) {
+func (ec *executionContext) unmarshalNCreateStatusNamespaceInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐCreateStatusNamespaceInput(ctx context.Context, v any) (generated.CreateStatusNamespaceInput, error) {
 	res, err := ec.unmarshalInputCreateStatusNamespaceInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor(ctx context.Context, v interface{}) (entgql.Cursor[gidx.PrefixedID], error) {
+func (ec *executionContext) unmarshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor(ctx context.Context, v any) (entgql.Cursor[gidx.PrefixedID], error) {
 	var res entgql.Cursor[gidx.PrefixedID]
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -15961,7 +16724,7 @@ func (ec *executionContext) marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCurso
 	return v
 }
 
-func (ec *executionContext) unmarshalNFieldSet2string(ctx context.Context, v interface{}) (string, error) {
+func (ec *executionContext) unmarshalNFieldSet2string(ctx context.Context, v any) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
@@ -15976,7 +16739,7 @@ func (ec *executionContext) marshalNFieldSet2string(ctx context.Context, sel ast
 	return res
 }
 
-func (ec *executionContext) unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx context.Context, v interface{}) (gidx.PrefixedID, error) {
+func (ec *executionContext) unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx context.Context, v any) (gidx.PrefixedID, error) {
 	var res gidx.PrefixedID
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -15986,7 +16749,7 @@ func (ec *executionContext) marshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPr
 	return v
 }
 
-func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
+func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v any) (int, error) {
 	res, err := graphql.UnmarshalInt(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
@@ -16001,7 +16764,7 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 	return res
 }
 
-func (ec *executionContext) unmarshalNJSON2encodingᚋjsonᚐRawMessage(ctx context.Context, v interface{}) (json.RawMessage, error) {
+func (ec *executionContext) unmarshalNJSON2encodingᚋjsonᚐRawMessage(ctx context.Context, v any) (json.RawMessage, error) {
 	res, err := entx.UnmarshalRawMessage(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
@@ -16050,7 +16813,7 @@ func (ec *executionContext) marshalNMetadataNode2ᚖgoᚗinfratographerᚗcomᚋ
 	return ec._MetadataNode(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNMetadataOrderField2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐMetadataOrderField(ctx context.Context, v interface{}) (*generated.MetadataOrderField, error) {
+func (ec *executionContext) unmarshalNMetadataOrderField2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐMetadataOrderField(ctx context.Context, v any) (*generated.MetadataOrderField, error) {
 	var res = new(generated.MetadataOrderField)
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -16066,12 +16829,12 @@ func (ec *executionContext) marshalNMetadataOrderField2ᚖgoᚗinfratographerᚗ
 	return v
 }
 
-func (ec *executionContext) unmarshalNMetadataWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐMetadataWhereInput(ctx context.Context, v interface{}) (*generated.MetadataWhereInput, error) {
+func (ec *executionContext) unmarshalNMetadataWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐMetadataWhereInput(ctx context.Context, v any) (*generated.MetadataWhereInput, error) {
 	res, err := ec.unmarshalInputMetadataWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNOrderDirection2entgoᚗioᚋcontribᚋentgqlᚐOrderDirection(ctx context.Context, v interface{}) (entgql.OrderDirection, error) {
+func (ec *executionContext) unmarshalNOrderDirection2entgoᚗioᚋcontribᚋentgqlᚐOrderDirection(ctx context.Context, v any) (entgql.OrderDirection, error) {
 	var res entgql.OrderDirection
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -16123,7 +16886,7 @@ func (ec *executionContext) marshalNStatusConnection2ᚖgoᚗinfratographerᚗco
 	return ec._StatusConnection(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNStatusDeleteInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋgraphapiᚐStatusDeleteInput(ctx context.Context, v interface{}) (StatusDeleteInput, error) {
+func (ec *executionContext) unmarshalNStatusDeleteInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋgraphapiᚐStatusDeleteInput(ctx context.Context, v any) (StatusDeleteInput, error) {
 	res, err := ec.unmarshalInputStatusDeleteInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
@@ -16198,7 +16961,7 @@ func (ec *executionContext) marshalNStatusNamespaceDeletePayload2ᚖgoᚗinfrato
 	return ec._StatusNamespaceDeletePayload(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNStatusNamespaceOrderField2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusNamespaceOrderField(ctx context.Context, v interface{}) (*generated.StatusNamespaceOrderField, error) {
+func (ec *executionContext) unmarshalNStatusNamespaceOrderField2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusNamespaceOrderField(ctx context.Context, v any) (*generated.StatusNamespaceOrderField, error) {
 	var res = new(generated.StatusNamespaceOrderField)
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -16228,12 +16991,12 @@ func (ec *executionContext) marshalNStatusNamespaceUpdatePayload2ᚖgoᚗinfrato
 	return ec._StatusNamespaceUpdatePayload(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNStatusNamespaceWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusNamespaceWhereInput(ctx context.Context, v interface{}) (*generated.StatusNamespaceWhereInput, error) {
+func (ec *executionContext) unmarshalNStatusNamespaceWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusNamespaceWhereInput(ctx context.Context, v any) (*generated.StatusNamespaceWhereInput, error) {
 	res, err := ec.unmarshalInputStatusNamespaceWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNStatusOrderField2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusOrderField(ctx context.Context, v interface{}) (*generated.StatusOrderField, error) {
+func (ec *executionContext) unmarshalNStatusOrderField2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusOrderField(ctx context.Context, v any) (*generated.StatusOrderField, error) {
 	var res = new(generated.StatusOrderField)
 	err := res.UnmarshalGQL(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -16263,7 +17026,7 @@ func (ec *executionContext) marshalNStatusOwner2ᚖgoᚗinfratographerᚗcomᚋm
 	return ec._StatusOwner(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNStatusUpdateInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋgraphapiᚐStatusUpdateInput(ctx context.Context, v interface{}) (StatusUpdateInput, error) {
+func (ec *executionContext) unmarshalNStatusUpdateInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋgraphapiᚐStatusUpdateInput(ctx context.Context, v any) (StatusUpdateInput, error) {
 	res, err := ec.unmarshalInputStatusUpdateInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
@@ -16282,12 +17045,12 @@ func (ec *executionContext) marshalNStatusUpdateResponse2ᚖgoᚗinfratographer�
 	return ec._StatusUpdateResponse(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNStatusWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusWhereInput(ctx context.Context, v interface{}) (*generated.StatusWhereInput, error) {
+func (ec *executionContext) unmarshalNStatusWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusWhereInput(ctx context.Context, v any) (*generated.StatusWhereInput, error) {
 	res, err := ec.unmarshalInputStatusWhereInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
+func (ec *executionContext) unmarshalNString2string(ctx context.Context, v any) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
@@ -16302,7 +17065,7 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 	return res
 }
 
-func (ec *executionContext) unmarshalNTime2timeᚐTime(ctx context.Context, v interface{}) (time.Time, error) {
+func (ec *executionContext) unmarshalNTime2timeᚐTime(ctx context.Context, v any) (time.Time, error) {
 	res, err := graphql.UnmarshalTime(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
@@ -16317,22 +17080,22 @@ func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel as
 	return res
 }
 
-func (ec *executionContext) unmarshalNUpdateAnnotationNamespaceInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐUpdateAnnotationNamespaceInput(ctx context.Context, v interface{}) (generated.UpdateAnnotationNamespaceInput, error) {
+func (ec *executionContext) unmarshalNUpdateAnnotationNamespaceInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐUpdateAnnotationNamespaceInput(ctx context.Context, v any) (generated.UpdateAnnotationNamespaceInput, error) {
 	res, err := ec.unmarshalInputUpdateAnnotationNamespaceInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalNUpdateStatusNamespaceInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐUpdateStatusNamespaceInput(ctx context.Context, v interface{}) (generated.UpdateStatusNamespaceInput, error) {
+func (ec *executionContext) unmarshalNUpdateStatusNamespaceInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐUpdateStatusNamespaceInput(ctx context.Context, v any) (generated.UpdateStatusNamespaceInput, error) {
 	res, err := ec.unmarshalInputUpdateStatusNamespaceInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalN_Any2map(ctx context.Context, v interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) unmarshalN_Any2map(ctx context.Context, v any) (map[string]any, error) {
 	res, err := graphql.UnmarshalMap(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalN_Any2map(ctx context.Context, sel ast.SelectionSet, v map[string]interface{}) graphql.Marshaler {
+func (ec *executionContext) marshalN_Any2map(ctx context.Context, sel ast.SelectionSet, v map[string]any) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -16348,13 +17111,11 @@ func (ec *executionContext) marshalN_Any2map(ctx context.Context, sel ast.Select
 	return res
 }
 
-func (ec *executionContext) unmarshalN_Any2ᚕmapᚄ(ctx context.Context, v interface{}) ([]map[string]interface{}, error) {
-	var vSlice []interface{}
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+func (ec *executionContext) unmarshalN_Any2ᚕmapᚄ(ctx context.Context, v any) ([]map[string]any, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
 	var err error
-	res := make([]map[string]interface{}, len(vSlice))
+	res := make([]map[string]any, len(vSlice))
 	for i := range vSlice {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
 		res[i], err = ec.unmarshalN_Any2map(ctx, vSlice[i])
@@ -16365,7 +17126,7 @@ func (ec *executionContext) unmarshalN_Any2ᚕmapᚄ(ctx context.Context, v inte
 	return res, nil
 }
 
-func (ec *executionContext) marshalN_Any2ᚕmapᚄ(ctx context.Context, sel ast.SelectionSet, v []map[string]interface{}) graphql.Marshaler {
+func (ec *executionContext) marshalN_Any2ᚕmapᚄ(ctx context.Context, sel ast.SelectionSet, v []map[string]any) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	for i := range v {
 		ret[i] = ec.marshalN_Any2map(ctx, sel, v[i])
@@ -16470,7 +17231,7 @@ func (ec *executionContext) marshalN__Directive2ᚕgithubᚗcomᚋ99designsᚋgq
 	return ret
 }
 
-func (ec *executionContext) unmarshalN__DirectiveLocation2string(ctx context.Context, v interface{}) (string, error) {
+func (ec *executionContext) unmarshalN__DirectiveLocation2string(ctx context.Context, v any) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
@@ -16485,11 +17246,9 @@ func (ec *executionContext) marshalN__DirectiveLocation2string(ctx context.Conte
 	return res
 }
 
-func (ec *executionContext) unmarshalN__DirectiveLocation2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
-	var vSlice []interface{}
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+func (ec *executionContext) unmarshalN__DirectiveLocation2ᚕstringᚄ(ctx context.Context, v any) ([]string, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]string, len(vSlice))
 	for i := range vSlice {
@@ -16660,7 +17419,7 @@ func (ec *executionContext) marshalN__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgen�
 	return ec.___Type(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalN__TypeKind2string(ctx context.Context, v interface{}) (string, error) {
+func (ec *executionContext) unmarshalN__TypeKind2string(ctx context.Context, v any) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
@@ -16673,6 +17432,156 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNfederation__Policy2string(ctx context.Context, v any) (string, error) {
+	res, err := graphql.UnmarshalString(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNfederation__Policy2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
+	res := graphql.MarshalString(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) unmarshalNfederation__Policy2ᚕstringᚄ(ctx context.Context, v any) ([]string, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNfederation__Policy2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNfederation__Policy2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNfederation__Policy2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalNfederation__Policy2ᚕᚕstringᚄ(ctx context.Context, v any) ([][]string, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([][]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNfederation__Policy2ᚕstringᚄ(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNfederation__Policy2ᚕᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v [][]string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNfederation__Policy2ᚕstringᚄ(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalNfederation__Scope2string(ctx context.Context, v any) (string, error) {
+	res, err := graphql.UnmarshalString(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNfederation__Scope2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
+	res := graphql.MarshalString(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) unmarshalNfederation__Scope2ᚕstringᚄ(ctx context.Context, v any) ([]string, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNfederation__Scope2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNfederation__Scope2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNfederation__Scope2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) unmarshalNfederation__Scope2ᚕᚕstringᚄ(ctx context.Context, v any) ([][]string, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([][]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNfederation__Scope2ᚕstringᚄ(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNfederation__Scope2ᚕᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v [][]string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNfederation__Scope2ᚕstringᚄ(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalOAnnotation2ᚕᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationᚄ(ctx context.Context, sel ast.SelectionSet, v []*generated.Annotation) graphql.Marshaler {
@@ -16832,7 +17741,7 @@ func (ec *executionContext) marshalOAnnotationNamespaceEdge2ᚖgoᚗinfratograph
 	return ec._AnnotationNamespaceEdge(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOAnnotationNamespaceOrder2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationNamespaceOrder(ctx context.Context, v interface{}) (*generated.AnnotationNamespaceOrder, error) {
+func (ec *executionContext) unmarshalOAnnotationNamespaceOrder2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationNamespaceOrder(ctx context.Context, v any) (*generated.AnnotationNamespaceOrder, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -16840,14 +17749,12 @@ func (ec *executionContext) unmarshalOAnnotationNamespaceOrder2ᚖgoᚗinfratogr
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalOAnnotationNamespaceWhereInput2ᚕᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationNamespaceWhereInputᚄ(ctx context.Context, v interface{}) ([]*generated.AnnotationNamespaceWhereInput, error) {
+func (ec *executionContext) unmarshalOAnnotationNamespaceWhereInput2ᚕᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationNamespaceWhereInputᚄ(ctx context.Context, v any) ([]*generated.AnnotationNamespaceWhereInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	var vSlice []interface{}
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]*generated.AnnotationNamespaceWhereInput, len(vSlice))
 	for i := range vSlice {
@@ -16860,7 +17767,7 @@ func (ec *executionContext) unmarshalOAnnotationNamespaceWhereInput2ᚕᚖgoᚗi
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOAnnotationNamespaceWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationNamespaceWhereInput(ctx context.Context, v interface{}) (*generated.AnnotationNamespaceWhereInput, error) {
+func (ec *executionContext) unmarshalOAnnotationNamespaceWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationNamespaceWhereInput(ctx context.Context, v any) (*generated.AnnotationNamespaceWhereInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -16868,7 +17775,7 @@ func (ec *executionContext) unmarshalOAnnotationNamespaceWhereInput2ᚖgoᚗinfr
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalOAnnotationOrder2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationOrder(ctx context.Context, v interface{}) (*generated.AnnotationOrder, error) {
+func (ec *executionContext) unmarshalOAnnotationOrder2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationOrder(ctx context.Context, v any) (*generated.AnnotationOrder, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -16876,14 +17783,12 @@ func (ec *executionContext) unmarshalOAnnotationOrder2ᚖgoᚗinfratographerᚗc
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalOAnnotationWhereInput2ᚕᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationWhereInputᚄ(ctx context.Context, v interface{}) ([]*generated.AnnotationWhereInput, error) {
+func (ec *executionContext) unmarshalOAnnotationWhereInput2ᚕᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationWhereInputᚄ(ctx context.Context, v any) ([]*generated.AnnotationWhereInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	var vSlice []interface{}
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]*generated.AnnotationWhereInput, len(vSlice))
 	for i := range vSlice {
@@ -16896,7 +17801,7 @@ func (ec *executionContext) unmarshalOAnnotationWhereInput2ᚕᚖgoᚗinfratogra
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOAnnotationWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationWhereInput(ctx context.Context, v interface{}) (*generated.AnnotationWhereInput, error) {
+func (ec *executionContext) unmarshalOAnnotationWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationWhereInput(ctx context.Context, v any) (*generated.AnnotationWhereInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -16904,7 +17809,7 @@ func (ec *executionContext) unmarshalOAnnotationWhereInput2ᚖgoᚗinfratographe
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
+func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v any) (bool, error) {
 	res, err := graphql.UnmarshalBoolean(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
@@ -16914,7 +17819,7 @@ func (ec *executionContext) marshalOBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) unmarshalOBoolean2ᚖbool(ctx context.Context, v interface{}) (*bool, error) {
+func (ec *executionContext) unmarshalOBoolean2ᚖbool(ctx context.Context, v any) (*bool, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -16930,7 +17835,7 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	return res
 }
 
-func (ec *executionContext) unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx context.Context, v interface{}) (*entgql.Cursor[gidx.PrefixedID], error) {
+func (ec *executionContext) unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx context.Context, v any) (*entgql.Cursor[gidx.PrefixedID], error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -16946,14 +17851,12 @@ func (ec *executionContext) marshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCu
 	return v
 }
 
-func (ec *executionContext) unmarshalOID2ᚕgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedIDᚄ(ctx context.Context, v interface{}) ([]gidx.PrefixedID, error) {
+func (ec *executionContext) unmarshalOID2ᚕgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedIDᚄ(ctx context.Context, v any) ([]gidx.PrefixedID, error) {
 	if v == nil {
 		return nil, nil
 	}
-	var vSlice []interface{}
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]gidx.PrefixedID, len(vSlice))
 	for i := range vSlice {
@@ -16984,7 +17887,7 @@ func (ec *executionContext) marshalOID2ᚕgoᚗinfratographerᚗcomᚋxᚋgidx�
 	return ret
 }
 
-func (ec *executionContext) unmarshalOID2ᚖgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx context.Context, v interface{}) (*gidx.PrefixedID, error) {
+func (ec *executionContext) unmarshalOID2ᚖgoᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx context.Context, v any) (*gidx.PrefixedID, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -17000,7 +17903,7 @@ func (ec *executionContext) marshalOID2ᚖgoᚗinfratographerᚗcomᚋxᚋgidx�
 	return v
 }
 
-func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v interface{}) (*int, error) {
+func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v any) (*int, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -17016,7 +17919,7 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	return res
 }
 
-func (ec *executionContext) unmarshalOJSON2encodingᚋjsonᚐRawMessage(ctx context.Context, v interface{}) (json.RawMessage, error) {
+func (ec *executionContext) unmarshalOJSON2encodingᚋjsonᚐRawMessage(ctx context.Context, v any) (json.RawMessage, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -17087,14 +17990,12 @@ func (ec *executionContext) marshalOMetadataEdge2ᚖgoᚗinfratographerᚗcomᚋ
 	return ec._MetadataEdge(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOMetadataWhereInput2ᚕᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐMetadataWhereInputᚄ(ctx context.Context, v interface{}) ([]*generated.MetadataWhereInput, error) {
+func (ec *executionContext) unmarshalOMetadataWhereInput2ᚕᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐMetadataWhereInputᚄ(ctx context.Context, v any) ([]*generated.MetadataWhereInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	var vSlice []interface{}
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]*generated.MetadataWhereInput, len(vSlice))
 	for i := range vSlice {
@@ -17107,7 +18008,7 @@ func (ec *executionContext) unmarshalOMetadataWhereInput2ᚕᚖgoᚗinfratograph
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOMetadataWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐMetadataWhereInput(ctx context.Context, v interface{}) (*generated.MetadataWhereInput, error) {
+func (ec *executionContext) unmarshalOMetadataWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐMetadataWhereInput(ctx context.Context, v any) (*generated.MetadataWhereInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -17225,7 +18126,7 @@ func (ec *executionContext) marshalOStatusNamespaceEdge2ᚖgoᚗinfratographer�
 	return ec._StatusNamespaceEdge(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalOStatusNamespaceOrder2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusNamespaceOrder(ctx context.Context, v interface{}) (*generated.StatusNamespaceOrder, error) {
+func (ec *executionContext) unmarshalOStatusNamespaceOrder2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusNamespaceOrder(ctx context.Context, v any) (*generated.StatusNamespaceOrder, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -17233,14 +18134,12 @@ func (ec *executionContext) unmarshalOStatusNamespaceOrder2ᚖgoᚗinfratographe
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalOStatusNamespaceWhereInput2ᚕᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusNamespaceWhereInputᚄ(ctx context.Context, v interface{}) ([]*generated.StatusNamespaceWhereInput, error) {
+func (ec *executionContext) unmarshalOStatusNamespaceWhereInput2ᚕᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusNamespaceWhereInputᚄ(ctx context.Context, v any) ([]*generated.StatusNamespaceWhereInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	var vSlice []interface{}
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]*generated.StatusNamespaceWhereInput, len(vSlice))
 	for i := range vSlice {
@@ -17253,7 +18152,7 @@ func (ec *executionContext) unmarshalOStatusNamespaceWhereInput2ᚕᚖgoᚗinfra
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOStatusNamespaceWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusNamespaceWhereInput(ctx context.Context, v interface{}) (*generated.StatusNamespaceWhereInput, error) {
+func (ec *executionContext) unmarshalOStatusNamespaceWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusNamespaceWhereInput(ctx context.Context, v any) (*generated.StatusNamespaceWhereInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -17261,7 +18160,7 @@ func (ec *executionContext) unmarshalOStatusNamespaceWhereInput2ᚖgoᚗinfratog
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalOStatusOrder2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusOrder(ctx context.Context, v interface{}) (*generated.StatusOrder, error) {
+func (ec *executionContext) unmarshalOStatusOrder2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusOrder(ctx context.Context, v any) (*generated.StatusOrder, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -17269,14 +18168,12 @@ func (ec *executionContext) unmarshalOStatusOrder2ᚖgoᚗinfratographerᚗcom�
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalOStatusWhereInput2ᚕᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusWhereInputᚄ(ctx context.Context, v interface{}) ([]*generated.StatusWhereInput, error) {
+func (ec *executionContext) unmarshalOStatusWhereInput2ᚕᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusWhereInputᚄ(ctx context.Context, v any) ([]*generated.StatusWhereInput, error) {
 	if v == nil {
 		return nil, nil
 	}
-	var vSlice []interface{}
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]*generated.StatusWhereInput, len(vSlice))
 	for i := range vSlice {
@@ -17289,7 +18186,7 @@ func (ec *executionContext) unmarshalOStatusWhereInput2ᚕᚖgoᚗinfratographer
 	return res, nil
 }
 
-func (ec *executionContext) unmarshalOStatusWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusWhereInput(ctx context.Context, v interface{}) (*generated.StatusWhereInput, error) {
+func (ec *executionContext) unmarshalOStatusWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusWhereInput(ctx context.Context, v any) (*generated.StatusWhereInput, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -17297,7 +18194,7 @@ func (ec *executionContext) unmarshalOStatusWhereInput2ᚖgoᚗinfratographerᚗ
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
+func (ec *executionContext) unmarshalOString2string(ctx context.Context, v any) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
@@ -17307,14 +18204,12 @@ func (ec *executionContext) marshalOString2string(ctx context.Context, sel ast.S
 	return res
 }
 
-func (ec *executionContext) unmarshalOString2ᚕstringᚄ(ctx context.Context, v interface{}) ([]string, error) {
+func (ec *executionContext) unmarshalOString2ᚕstringᚄ(ctx context.Context, v any) ([]string, error) {
 	if v == nil {
 		return nil, nil
 	}
-	var vSlice []interface{}
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]string, len(vSlice))
 	for i := range vSlice {
@@ -17345,7 +18240,7 @@ func (ec *executionContext) marshalOString2ᚕstringᚄ(ctx context.Context, sel
 	return ret
 }
 
-func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
+func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v any) (*string, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -17361,14 +18256,12 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 	return res
 }
 
-func (ec *executionContext) unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx context.Context, v interface{}) ([]time.Time, error) {
+func (ec *executionContext) unmarshalOTime2ᚕtimeᚐTimeᚄ(ctx context.Context, v any) ([]time.Time, error) {
 	if v == nil {
 		return nil, nil
 	}
-	var vSlice []interface{}
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
 	var err error
 	res := make([]time.Time, len(vSlice))
 	for i := range vSlice {
@@ -17399,7 +18292,7 @@ func (ec *executionContext) marshalOTime2ᚕtimeᚐTimeᚄ(ctx context.Context, 
 	return ret
 }
 
-func (ec *executionContext) unmarshalOTime2ᚖtimeᚐTime(ctx context.Context, v interface{}) (*time.Time, error) {
+func (ec *executionContext) unmarshalOTime2ᚖtimeᚐTime(ctx context.Context, v any) (*time.Time, error) {
 	if v == nil {
 		return nil, nil
 	}

@@ -22,16 +22,16 @@ jobs:
         with:
           args: --timeout=5m
           version: latest
-      # - name: Install differ
-      #   run: go install github.com/kevinburke/differ@1.2
-      # - name: tidy
-      #   run: differ go mod tidy
-      # - name: Generate
-      #   run: |
-      #     go generate ./...
-      #     git checkout -- go.sum
-      #     differ true
-      # - name: DB Migrations
-      #   run: |
-      #     go run -mod=mod db/create_migrations.go lint
-      #     differ true
+      - name: Install differ
+        run: go install github.com/kevinburke/differ@1.2
+      - name: tidy
+        run: differ go mod tidy
+      - name: Generate
+        run: |
+          go generate ./...
+          git checkout -- go.sum
+          differ true
+      - name: DB Migrations
+        run: |
+          go run -mod=mod db/create_migrations.go lint
+          differ true
