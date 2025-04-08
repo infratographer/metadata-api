@@ -14,7 +14,7 @@ require (
 	github.com/hasura/go-graphql-client v0.10.2
 	github.com/labstack/echo/v4 v4.13.3
 	github.com/lib/pq v1.10.9
-	github.com/mattn/go-sqlite3 v1.14.24
+	github.com/mattn/go-sqlite3 v1.14.27
 	github.com/metal-toolbox/iam-runtime v0.4.1
 	github.com/metal-toolbox/iam-runtime-contrib v1.0.0
 	github.com/mitchellh/go-homedir v1.1.0
