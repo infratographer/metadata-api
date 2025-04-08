@@ -12,6 +12,22 @@ jobs:
   golangci:
     name: lint
     runs-on: ubuntu-latest
+    env:
+      ATLAS_DB_URI: "postgresql://atlas:t0t3sA-s3cur3pass@localhost:5432/atlas?sslmode=disable"
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_USER: atlas
+          POSTGRES_PASSWORD: t0t3sA-s3cur3pass
+          POSTGRES_DB: atlas
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
       - uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5
@@ -31,6 +47,10 @@ jobs:
           go generate ./...
           git checkout -- go.sum
           differ true
+      - name: Init PSQL Database
+        env:
+          PGPASSWORD: "t0t3sA-s3cur3pass"
+        run: psql -h localhost --username atlas --dbname atlas -c 'create extension btree_gin;'
       - name: DB Migrations
         run: |
           go run -mod=mod db/create_migration.go lint
