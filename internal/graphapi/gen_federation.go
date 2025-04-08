@@ -36,436 +36,615 @@ func (ec *executionContext) __resolve__service(ctx context.Context) (fedruntime.
 	}, nil
 }
 
-func (ec *executionContext) __resolve_entities(ctx context.Context, representations []map[string]interface{}) []fedruntime.Entity {
+func (ec *executionContext) __resolve_entities(ctx context.Context, representations []map[string]any) []fedruntime.Entity {
 	list := make([]fedruntime.Entity, len(representations))
 
-	repsMap := map[string]struct {
-		i []int
-		r []map[string]interface{}
-	}{}
-
-	// We group entities by typename so that we can parallelize their resolution.
-	// This is particularly helpful when there are entity groups in multi mode.
-	buildRepresentationGroups := func(reps []map[string]interface{}) {
-		for i, rep := range reps {
-			typeName, ok := rep["__typename"].(string)
-			if !ok {
-				// If there is no __typename, we just skip the representation;
-				// we just won't be resolving these unknown types.
-				ec.Error(ctx, errors.New("__typename must be an existing string"))
-				continue
-			}
-
-			_r := repsMap[typeName]
-			_r.i = append(_r.i, i)
-			_r.r = append(_r.r, rep)
-			repsMap[typeName] = _r
-		}
-	}
-
-	isMulti := func(typeName string) bool {
-		switch typeName {
-		default:
-			return false
-		}
-	}
-
-	resolveEntity := func(ctx context.Context, typeName string, rep map[string]interface{}, idx []int, i int) (err error) {
-		// we need to do our own panic handling, because we may be called in a
-		// goroutine, where the usual panic handling can't catch us
-		defer func() {
-			if r := recover(); r != nil {
-				err = ec.Recover(ctx, r)
-			}
-		}()
-
-		switch typeName {
-		case "Annotation":
-			resolverName, err := entityResolverNameForAnnotation(ctx, rep)
-			if err != nil {
-				return fmt.Errorf(`finding resolver for Entity "Annotation": %w`, err)
-			}
-			switch resolverName {
-
-			case "findAnnotationByID":
-				id0, err := ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, rep["id"])
-				if err != nil {
-					return fmt.Errorf(`unmarshalling param 0 for findAnnotationByID(): %w`, err)
-				}
-				entity, err := ec.resolvers.Entity().FindAnnotationByID(ctx, id0)
-				if err != nil {
-					return fmt.Errorf(`resolving Entity "Annotation": %w`, err)
-				}
-
-				list[idx[i]] = entity
-				return nil
-			}
-		case "AnnotationNamespace":
-			resolverName, err := entityResolverNameForAnnotationNamespace(ctx, rep)
-			if err != nil {
-				return fmt.Errorf(`finding resolver for Entity "AnnotationNamespace": %w`, err)
-			}
-			switch resolverName {
-
-			case "findAnnotationNamespaceByID":
-				id0, err := ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, rep["id"])
-				if err != nil {
-					return fmt.Errorf(`unmarshalling param 0 for findAnnotationNamespaceByID(): %w`, err)
-				}
-				entity, err := ec.resolvers.Entity().FindAnnotationNamespaceByID(ctx, id0)
-				if err != nil {
-					return fmt.Errorf(`resolving Entity "AnnotationNamespace": %w`, err)
-				}
-
-				list[idx[i]] = entity
-				return nil
-			}
-		case "Metadata":
-			resolverName, err := entityResolverNameForMetadata(ctx, rep)
-			if err != nil {
-				return fmt.Errorf(`finding resolver for Entity "Metadata": %w`, err)
-			}
-			switch resolverName {
-
-			case "findMetadataByID":
-				id0, err := ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, rep["id"])
-				if err != nil {
-					return fmt.Errorf(`unmarshalling param 0 for findMetadataByID(): %w`, err)
-				}
-				entity, err := ec.resolvers.Entity().FindMetadataByID(ctx, id0)
-				if err != nil {
-					return fmt.Errorf(`resolving Entity "Metadata": %w`, err)
-				}
-
-				list[idx[i]] = entity
-				return nil
-			case "findMetadataByNodeID":
-				id0, err := ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, rep["nodeID"])
-				if err != nil {
-					return fmt.Errorf(`unmarshalling param 0 for findMetadataByNodeID(): %w`, err)
-				}
-				entity, err := ec.resolvers.Entity().FindMetadataByNodeID(ctx, id0)
-				if err != nil {
-					return fmt.Errorf(`resolving Entity "Metadata": %w`, err)
-				}
-
-				list[idx[i]] = entity
-				return nil
-			}
-		case "MetadataNode":
-			resolverName, err := entityResolverNameForMetadataNode(ctx, rep)
-			if err != nil {
-				return fmt.Errorf(`finding resolver for Entity "MetadataNode": %w`, err)
-			}
-			switch resolverName {
-
-			case "findMetadataNodeByID":
-				id0, err := ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, rep["id"])
-				if err != nil {
-					return fmt.Errorf(`unmarshalling param 0 for findMetadataNodeByID(): %w`, err)
-				}
-				entity, err := ec.resolvers.Entity().FindMetadataNodeByID(ctx, id0)
-				if err != nil {
-					return fmt.Errorf(`resolving Entity "MetadataNode": %w`, err)
-				}
-
-				list[idx[i]] = entity
-				return nil
-			}
-		case "ResourceOwner":
-			resolverName, err := entityResolverNameForResourceOwner(ctx, rep)
-			if err != nil {
-				return fmt.Errorf(`finding resolver for Entity "ResourceOwner": %w`, err)
-			}
-			switch resolverName {
-
-			case "findResourceOwnerByID":
-				id0, err := ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, rep["id"])
-				if err != nil {
-					return fmt.Errorf(`unmarshalling param 0 for findResourceOwnerByID(): %w`, err)
-				}
-				entity, err := ec.resolvers.Entity().FindResourceOwnerByID(ctx, id0)
-				if err != nil {
-					return fmt.Errorf(`resolving Entity "ResourceOwner": %w`, err)
-				}
-
-				list[idx[i]] = entity
-				return nil
-			}
-		case "Status":
-			resolverName, err := entityResolverNameForStatus(ctx, rep)
-			if err != nil {
-				return fmt.Errorf(`finding resolver for Entity "Status": %w`, err)
-			}
-			switch resolverName {
-
-			case "findStatusByID":
-				id0, err := ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, rep["id"])
-				if err != nil {
-					return fmt.Errorf(`unmarshalling param 0 for findStatusByID(): %w`, err)
-				}
-				entity, err := ec.resolvers.Entity().FindStatusByID(ctx, id0)
-				if err != nil {
-					return fmt.Errorf(`resolving Entity "Status": %w`, err)
-				}
-
-				list[idx[i]] = entity
-				return nil
-			}
-		case "StatusNamespace":
-			resolverName, err := entityResolverNameForStatusNamespace(ctx, rep)
-			if err != nil {
-				return fmt.Errorf(`finding resolver for Entity "StatusNamespace": %w`, err)
-			}
-			switch resolverName {
-
-			case "findStatusNamespaceByID":
-				id0, err := ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, rep["id"])
-				if err != nil {
-					return fmt.Errorf(`unmarshalling param 0 for findStatusNamespaceByID(): %w`, err)
-				}
-				entity, err := ec.resolvers.Entity().FindStatusNamespaceByID(ctx, id0)
-				if err != nil {
-					return fmt.Errorf(`resolving Entity "StatusNamespace": %w`, err)
-				}
-
-				list[idx[i]] = entity
-				return nil
-			}
-		case "StatusOwner":
-			resolverName, err := entityResolverNameForStatusOwner(ctx, rep)
-			if err != nil {
-				return fmt.Errorf(`finding resolver for Entity "StatusOwner": %w`, err)
-			}
-			switch resolverName {
-
-			case "findStatusOwnerByID":
-				id0, err := ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, rep["id"])
-				if err != nil {
-					return fmt.Errorf(`unmarshalling param 0 for findStatusOwnerByID(): %w`, err)
-				}
-				entity, err := ec.resolvers.Entity().FindStatusOwnerByID(ctx, id0)
-				if err != nil {
-					return fmt.Errorf(`resolving Entity "StatusOwner": %w`, err)
-				}
-
-				list[idx[i]] = entity
-				return nil
-			}
-
-		}
-		return fmt.Errorf("%w: %s", ErrUnknownType, typeName)
-	}
-
-	resolveManyEntities := func(ctx context.Context, typeName string, reps []map[string]interface{}, idx []int) (err error) {
-		// we need to do our own panic handling, because we may be called in a
-		// goroutine, where the usual panic handling can't catch us
-		defer func() {
-			if r := recover(); r != nil {
-				err = ec.Recover(ctx, r)
-			}
-		}()
-
-		switch typeName {
-
-		default:
-			return errors.New("unknown type: " + typeName)
-		}
-	}
-
-	resolveEntityGroup := func(typeName string, reps []map[string]interface{}, idx []int) {
-		if isMulti(typeName) {
-			err := resolveManyEntities(ctx, typeName, reps, idx)
-			if err != nil {
-				ec.Error(ctx, err)
-			}
-		} else {
-			// if there are multiple entities to resolve, parallelize (similar to
-			// graphql.FieldSet.Dispatch)
-			var e sync.WaitGroup
-			e.Add(len(reps))
-			for i, rep := range reps {
-				i, rep := i, rep
-				go func(i int, rep map[string]interface{}) {
-					err := resolveEntity(ctx, typeName, rep, idx, i)
-					if err != nil {
-						ec.Error(ctx, err)
-					}
-					e.Done()
-				}(i, rep)
-			}
-			e.Wait()
-		}
-	}
-	buildRepresentationGroups(representations)
+	repsMap := ec.buildRepresentationGroups(ctx, representations)
 
 	switch len(repsMap) {
 	case 0:
 		return list
 	case 1:
 		for typeName, reps := range repsMap {
-			resolveEntityGroup(typeName, reps.r, reps.i)
+			ec.resolveEntityGroup(ctx, typeName, reps, list)
 		}
 		return list
 	default:
 		var g sync.WaitGroup
 		g.Add(len(repsMap))
 		for typeName, reps := range repsMap {
-			go func(typeName string, reps []map[string]interface{}, idx []int) {
-				resolveEntityGroup(typeName, reps, idx)
+			go func(typeName string, reps []EntityWithIndex) {
+				ec.resolveEntityGroup(ctx, typeName, reps, list)
 				g.Done()
-			}(typeName, reps.r, reps.i)
+			}(typeName, reps)
 		}
 		g.Wait()
 		return list
 	}
 }
 
-func entityResolverNameForAnnotation(ctx context.Context, rep map[string]interface{}) (string, error) {
+type EntityWithIndex struct {
+	// The index in the original representation array
+	index  int
+	entity EntityRepresentation
+}
+
+// EntityRepresentation is the JSON representation of an entity sent by the Router
+// used as the inputs for us to resolve.
+//
+// We make it a map because we know the top level JSON is always an object.
+type EntityRepresentation map[string]any
+
+// We group entities by typename so that we can parallelize their resolution.
+// This is particularly helpful when there are entity groups in multi mode.
+func (ec *executionContext) buildRepresentationGroups(
+	ctx context.Context,
+	representations []map[string]any,
+) map[string][]EntityWithIndex {
+	repsMap := make(map[string][]EntityWithIndex)
+	for i, rep := range representations {
+		typeName, ok := rep["__typename"].(string)
+		if !ok {
+			// If there is no __typename, we just skip the representation;
+			// we just won't be resolving these unknown types.
+			ec.Error(ctx, errors.New("__typename must be an existing string"))
+			continue
+		}
+
+		repsMap[typeName] = append(repsMap[typeName], EntityWithIndex{
+			index:  i,
+			entity: rep,
+		})
+	}
+
+	return repsMap
+}
+
+func (ec *executionContext) resolveEntityGroup(
+	ctx context.Context,
+	typeName string,
+	reps []EntityWithIndex,
+	list []fedruntime.Entity,
+) {
+	if isMulti(typeName) {
+		err := ec.resolveManyEntities(ctx, typeName, reps, list)
+		if err != nil {
+			ec.Error(ctx, err)
+		}
+	} else {
+		// if there are multiple entities to resolve, parallelize (similar to
+		// graphql.FieldSet.Dispatch)
+		var e sync.WaitGroup
+		e.Add(len(reps))
+		for i, rep := range reps {
+			i, rep := i, rep
+			go func(i int, rep EntityWithIndex) {
+				entity, err := ec.resolveEntity(ctx, typeName, rep.entity)
+				if err != nil {
+					ec.Error(ctx, err)
+				} else {
+					list[rep.index] = entity
+				}
+				e.Done()
+			}(i, rep)
+		}
+		e.Wait()
+	}
+}
+
+func isMulti(typeName string) bool {
+	switch typeName {
+	default:
+		return false
+	}
+}
+
+func (ec *executionContext) resolveEntity(
+	ctx context.Context,
+	typeName string,
+	rep EntityRepresentation,
+) (e fedruntime.Entity, err error) {
+	// we need to do our own panic handling, because we may be called in a
+	// goroutine, where the usual panic handling can't catch us
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+		}
+	}()
+
+	switch typeName {
+	case "Annotation":
+		resolverName, err := entityResolverNameForAnnotation(ctx, rep)
+		if err != nil {
+			return nil, fmt.Errorf(`finding resolver for Entity "Annotation": %w`, err)
+		}
+		switch resolverName {
+
+		case "findAnnotationByID":
+			id0, err := ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, rep["id"])
+			if err != nil {
+				return nil, fmt.Errorf(`unmarshalling param 0 for findAnnotationByID(): %w`, err)
+			}
+			entity, err := ec.resolvers.Entity().FindAnnotationByID(ctx, id0)
+			if err != nil {
+				return nil, fmt.Errorf(`resolving Entity "Annotation": %w`, err)
+			}
+
+			return entity, nil
+		}
+	case "AnnotationNamespace":
+		resolverName, err := entityResolverNameForAnnotationNamespace(ctx, rep)
+		if err != nil {
+			return nil, fmt.Errorf(`finding resolver for Entity "AnnotationNamespace": %w`, err)
+		}
+		switch resolverName {
+
+		case "findAnnotationNamespaceByID":
+			id0, err := ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, rep["id"])
+			if err != nil {
+				return nil, fmt.Errorf(`unmarshalling param 0 for findAnnotationNamespaceByID(): %w`, err)
+			}
+			entity, err := ec.resolvers.Entity().FindAnnotationNamespaceByID(ctx, id0)
+			if err != nil {
+				return nil, fmt.Errorf(`resolving Entity "AnnotationNamespace": %w`, err)
+			}
+
+			return entity, nil
+		}
+	case "Metadata":
+		resolverName, err := entityResolverNameForMetadata(ctx, rep)
+		if err != nil {
+			return nil, fmt.Errorf(`finding resolver for Entity "Metadata": %w`, err)
+		}
+		switch resolverName {
+
+		case "findMetadataByID":
+			id0, err := ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, rep["id"])
+			if err != nil {
+				return nil, fmt.Errorf(`unmarshalling param 0 for findMetadataByID(): %w`, err)
+			}
+			entity, err := ec.resolvers.Entity().FindMetadataByID(ctx, id0)
+			if err != nil {
+				return nil, fmt.Errorf(`resolving Entity "Metadata": %w`, err)
+			}
+
+			return entity, nil
+		case "findMetadataByNodeID":
+			id0, err := ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, rep["nodeID"])
+			if err != nil {
+				return nil, fmt.Errorf(`unmarshalling param 0 for findMetadataByNodeID(): %w`, err)
+			}
+			entity, err := ec.resolvers.Entity().FindMetadataByNodeID(ctx, id0)
+			if err != nil {
+				return nil, fmt.Errorf(`resolving Entity "Metadata": %w`, err)
+			}
+
+			return entity, nil
+		}
+	case "MetadataNode":
+		resolverName, err := entityResolverNameForMetadataNode(ctx, rep)
+		if err != nil {
+			return nil, fmt.Errorf(`finding resolver for Entity "MetadataNode": %w`, err)
+		}
+		switch resolverName {
+
+		case "findMetadataNodeByID":
+			id0, err := ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, rep["id"])
+			if err != nil {
+				return nil, fmt.Errorf(`unmarshalling param 0 for findMetadataNodeByID(): %w`, err)
+			}
+			entity, err := ec.resolvers.Entity().FindMetadataNodeByID(ctx, id0)
+			if err != nil {
+				return nil, fmt.Errorf(`resolving Entity "MetadataNode": %w`, err)
+			}
+
+			return entity, nil
+		}
+	case "ResourceOwner":
+		resolverName, err := entityResolverNameForResourceOwner(ctx, rep)
+		if err != nil {
+			return nil, fmt.Errorf(`finding resolver for Entity "ResourceOwner": %w`, err)
+		}
+		switch resolverName {
+
+		case "findResourceOwnerByID":
+			id0, err := ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, rep["id"])
+			if err != nil {
+				return nil, fmt.Errorf(`unmarshalling param 0 for findResourceOwnerByID(): %w`, err)
+			}
+			entity, err := ec.resolvers.Entity().FindResourceOwnerByID(ctx, id0)
+			if err != nil {
+				return nil, fmt.Errorf(`resolving Entity "ResourceOwner": %w`, err)
+			}
+
+			return entity, nil
+		}
+	case "Status":
+		resolverName, err := entityResolverNameForStatus(ctx, rep)
+		if err != nil {
+			return nil, fmt.Errorf(`finding resolver for Entity "Status": %w`, err)
+		}
+		switch resolverName {
+
+		case "findStatusByID":
+			id0, err := ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, rep["id"])
+			if err != nil {
+				return nil, fmt.Errorf(`unmarshalling param 0 for findStatusByID(): %w`, err)
+			}
+			entity, err := ec.resolvers.Entity().FindStatusByID(ctx, id0)
+			if err != nil {
+				return nil, fmt.Errorf(`resolving Entity "Status": %w`, err)
+			}
+
+			return entity, nil
+		}
+	case "StatusNamespace":
+		resolverName, err := entityResolverNameForStatusNamespace(ctx, rep)
+		if err != nil {
+			return nil, fmt.Errorf(`finding resolver for Entity "StatusNamespace": %w`, err)
+		}
+		switch resolverName {
+
+		case "findStatusNamespaceByID":
+			id0, err := ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, rep["id"])
+			if err != nil {
+				return nil, fmt.Errorf(`unmarshalling param 0 for findStatusNamespaceByID(): %w`, err)
+			}
+			entity, err := ec.resolvers.Entity().FindStatusNamespaceByID(ctx, id0)
+			if err != nil {
+				return nil, fmt.Errorf(`resolving Entity "StatusNamespace": %w`, err)
+			}
+
+			return entity, nil
+		}
+	case "StatusOwner":
+		resolverName, err := entityResolverNameForStatusOwner(ctx, rep)
+		if err != nil {
+			return nil, fmt.Errorf(`finding resolver for Entity "StatusOwner": %w`, err)
+		}
+		switch resolverName {
+
+		case "findStatusOwnerByID":
+			id0, err := ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, rep["id"])
+			if err != nil {
+				return nil, fmt.Errorf(`unmarshalling param 0 for findStatusOwnerByID(): %w`, err)
+			}
+			entity, err := ec.resolvers.Entity().FindStatusOwnerByID(ctx, id0)
+			if err != nil {
+				return nil, fmt.Errorf(`resolving Entity "StatusOwner": %w`, err)
+			}
+
+			return entity, nil
+		}
+
+	}
+	return nil, fmt.Errorf("%w: %s", ErrUnknownType, typeName)
+}
+
+func (ec *executionContext) resolveManyEntities(
+	ctx context.Context,
+	typeName string,
+	reps []EntityWithIndex,
+	list []fedruntime.Entity,
+) (err error) {
+	// we need to do our own panic handling, because we may be called in a
+	// goroutine, where the usual panic handling can't catch us
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+		}
+	}()
+
+	switch typeName {
+
+	default:
+		return errors.New("unknown type: " + typeName)
+	}
+}
+
+func entityResolverNameForAnnotation(ctx context.Context, rep EntityRepresentation) (string, error) {
+	// we collect errors because a later entity resolver may work fine
+	// when an entity has multiple keys
+	entityResolverErrs := []error{}
 	for {
 		var (
-			m   map[string]interface{}
-			val interface{}
+			m   EntityRepresentation
+			val any
 			ok  bool
 		)
 		_ = val
+		// if all of the KeyFields values for this resolver are null,
+		// we shouldn't use use it
+		allNull := true
 		m = rep
-		if _, ok = m["id"]; !ok {
+		val, ok = m["id"]
+		if !ok {
+			entityResolverErrs = append(entityResolverErrs,
+				fmt.Errorf("%w due to missing Key Field \"id\" for Annotation", ErrTypeNotFound))
+			break
+		}
+		if allNull {
+			allNull = val == nil
+		}
+		if allNull {
+			entityResolverErrs = append(entityResolverErrs,
+				fmt.Errorf("%w due to all null value KeyFields for Annotation", ErrTypeNotFound))
 			break
 		}
 		return "findAnnotationByID", nil
 	}
-	return "", fmt.Errorf("%w for Annotation", ErrTypeNotFound)
+	return "", fmt.Errorf("%w for Annotation due to %v", ErrTypeNotFound,
+		errors.Join(entityResolverErrs...).Error())
 }
 
-func entityResolverNameForAnnotationNamespace(ctx context.Context, rep map[string]interface{}) (string, error) {
+func entityResolverNameForAnnotationNamespace(ctx context.Context, rep EntityRepresentation) (string, error) {
+	// we collect errors because a later entity resolver may work fine
+	// when an entity has multiple keys
+	entityResolverErrs := []error{}
 	for {
 		var (
-			m   map[string]interface{}
-			val interface{}
+			m   EntityRepresentation
+			val any
 			ok  bool
 		)
 		_ = val
+		// if all of the KeyFields values for this resolver are null,
+		// we shouldn't use use it
+		allNull := true
 		m = rep
-		if _, ok = m["id"]; !ok {
+		val, ok = m["id"]
+		if !ok {
+			entityResolverErrs = append(entityResolverErrs,
+				fmt.Errorf("%w due to missing Key Field \"id\" for AnnotationNamespace", ErrTypeNotFound))
+			break
+		}
+		if allNull {
+			allNull = val == nil
+		}
+		if allNull {
+			entityResolverErrs = append(entityResolverErrs,
+				fmt.Errorf("%w due to all null value KeyFields for AnnotationNamespace", ErrTypeNotFound))
 			break
 		}
 		return "findAnnotationNamespaceByID", nil
 	}
-	return "", fmt.Errorf("%w for AnnotationNamespace", ErrTypeNotFound)
+	return "", fmt.Errorf("%w for AnnotationNamespace due to %v", ErrTypeNotFound,
+		errors.Join(entityResolverErrs...).Error())
 }
 
-func entityResolverNameForMetadata(ctx context.Context, rep map[string]interface{}) (string, error) {
+func entityResolverNameForMetadata(ctx context.Context, rep EntityRepresentation) (string, error) {
+	// we collect errors because a later entity resolver may work fine
+	// when an entity has multiple keys
+	entityResolverErrs := []error{}
 	for {
 		var (
-			m   map[string]interface{}
-			val interface{}
+			m   EntityRepresentation
+			val any
 			ok  bool
 		)
 		_ = val
+		// if all of the KeyFields values for this resolver are null,
+		// we shouldn't use use it
+		allNull := true
 		m = rep
-		if _, ok = m["id"]; !ok {
+		val, ok = m["id"]
+		if !ok {
+			entityResolverErrs = append(entityResolverErrs,
+				fmt.Errorf("%w due to missing Key Field \"id\" for Metadata", ErrTypeNotFound))
+			break
+		}
+		if allNull {
+			allNull = val == nil
+		}
+		if allNull {
+			entityResolverErrs = append(entityResolverErrs,
+				fmt.Errorf("%w due to all null value KeyFields for Metadata", ErrTypeNotFound))
 			break
 		}
 		return "findMetadataByID", nil
 	}
 	for {
 		var (
-			m   map[string]interface{}
-			val interface{}
+			m   EntityRepresentation
+			val any
 			ok  bool
 		)
 		_ = val
+		// if all of the KeyFields values for this resolver are null,
+		// we shouldn't use use it
+		allNull := true
 		m = rep
-		if _, ok = m["nodeID"]; !ok {
+		val, ok = m["nodeID"]
+		if !ok {
+			entityResolverErrs = append(entityResolverErrs,
+				fmt.Errorf("%w due to missing Key Field \"nodeID\" for Metadata", ErrTypeNotFound))
+			break
+		}
+		if allNull {
+			allNull = val == nil
+		}
+		if allNull {
+			entityResolverErrs = append(entityResolverErrs,
+				fmt.Errorf("%w due to all null value KeyFields for Metadata", ErrTypeNotFound))
 			break
 		}
 		return "findMetadataByNodeID", nil
 	}
-	return "", fmt.Errorf("%w for Metadata", ErrTypeNotFound)
+	return "", fmt.Errorf("%w for Metadata due to %v", ErrTypeNotFound,
+		errors.Join(entityResolverErrs...).Error())
 }
 
-func entityResolverNameForMetadataNode(ctx context.Context, rep map[string]interface{}) (string, error) {
+func entityResolverNameForMetadataNode(ctx context.Context, rep EntityRepresentation) (string, error) {
+	// we collect errors because a later entity resolver may work fine
+	// when an entity has multiple keys
+	entityResolverErrs := []error{}
 	for {
 		var (
-			m   map[string]interface{}
-			val interface{}
+			m   EntityRepresentation
+			val any
 			ok  bool
 		)
 		_ = val
+		// if all of the KeyFields values for this resolver are null,
+		// we shouldn't use use it
+		allNull := true
 		m = rep
-		if _, ok = m["id"]; !ok {
+		val, ok = m["id"]
+		if !ok {
+			entityResolverErrs = append(entityResolverErrs,
+				fmt.Errorf("%w due to missing Key Field \"id\" for MetadataNode", ErrTypeNotFound))
+			break
+		}
+		if allNull {
+			allNull = val == nil
+		}
+		if allNull {
+			entityResolverErrs = append(entityResolverErrs,
+				fmt.Errorf("%w due to all null value KeyFields for MetadataNode", ErrTypeNotFound))
 			break
 		}
 		return "findMetadataNodeByID", nil
 	}
-	return "", fmt.Errorf("%w for MetadataNode", ErrTypeNotFound)
+	return "", fmt.Errorf("%w for MetadataNode due to %v", ErrTypeNotFound,
+		errors.Join(entityResolverErrs...).Error())
 }
 
-func entityResolverNameForResourceOwner(ctx context.Context, rep map[string]interface{}) (string, error) {
+func entityResolverNameForResourceOwner(ctx context.Context, rep EntityRepresentation) (string, error) {
+	// we collect errors because a later entity resolver may work fine
+	// when an entity has multiple keys
+	entityResolverErrs := []error{}
 	for {
 		var (
-			m   map[string]interface{}
-			val interface{}
+			m   EntityRepresentation
+			val any
 			ok  bool
 		)
 		_ = val
+		// if all of the KeyFields values for this resolver are null,
+		// we shouldn't use use it
+		allNull := true
 		m = rep
-		if _, ok = m["id"]; !ok {
+		val, ok = m["id"]
+		if !ok {
+			entityResolverErrs = append(entityResolverErrs,
+				fmt.Errorf("%w due to missing Key Field \"id\" for ResourceOwner", ErrTypeNotFound))
+			break
+		}
+		if allNull {
+			allNull = val == nil
+		}
+		if allNull {
+			entityResolverErrs = append(entityResolverErrs,
+				fmt.Errorf("%w due to all null value KeyFields for ResourceOwner", ErrTypeNotFound))
 			break
 		}
 		return "findResourceOwnerByID", nil
 	}
-	return "", fmt.Errorf("%w for ResourceOwner", ErrTypeNotFound)
+	return "", fmt.Errorf("%w for ResourceOwner due to %v", ErrTypeNotFound,
+		errors.Join(entityResolverErrs...).Error())
 }
 
-func entityResolverNameForStatus(ctx context.Context, rep map[string]interface{}) (string, error) {
+func entityResolverNameForStatus(ctx context.Context, rep EntityRepresentation) (string, error) {
+	// we collect errors because a later entity resolver may work fine
+	// when an entity has multiple keys
+	entityResolverErrs := []error{}
 	for {
 		var (
-			m   map[string]interface{}
-			val interface{}
+			m   EntityRepresentation
+			val any
 			ok  bool
 		)
 		_ = val
+		// if all of the KeyFields values for this resolver are null,
+		// we shouldn't use use it
+		allNull := true
 		m = rep
-		if _, ok = m["id"]; !ok {
+		val, ok = m["id"]
+		if !ok {
+			entityResolverErrs = append(entityResolverErrs,
+				fmt.Errorf("%w due to missing Key Field \"id\" for Status", ErrTypeNotFound))
+			break
+		}
+		if allNull {
+			allNull = val == nil
+		}
+		if allNull {
+			entityResolverErrs = append(entityResolverErrs,
+				fmt.Errorf("%w due to all null value KeyFields for Status", ErrTypeNotFound))
 			break
 		}
 		return "findStatusByID", nil
 	}
-	return "", fmt.Errorf("%w for Status", ErrTypeNotFound)
+	return "", fmt.Errorf("%w for Status due to %v", ErrTypeNotFound,
+		errors.Join(entityResolverErrs...).Error())
 }
 
-func entityResolverNameForStatusNamespace(ctx context.Context, rep map[string]interface{}) (string, error) {
+func entityResolverNameForStatusNamespace(ctx context.Context, rep EntityRepresentation) (string, error) {
+	// we collect errors because a later entity resolver may work fine
+	// when an entity has multiple keys
+	entityResolverErrs := []error{}
 	for {
 		var (
-			m   map[string]interface{}
-			val interface{}
+			m   EntityRepresentation
+			val any
 			ok  bool
 		)
 		_ = val
+		// if all of the KeyFields values for this resolver are null,
+		// we shouldn't use use it
+		allNull := true
 		m = rep
-		if _, ok = m["id"]; !ok {
+		val, ok = m["id"]
+		if !ok {
+			entityResolverErrs = append(entityResolverErrs,
+				fmt.Errorf("%w due to missing Key Field \"id\" for StatusNamespace", ErrTypeNotFound))
+			break
+		}
+		if allNull {
+			allNull = val == nil
+		}
+		if allNull {
+			entityResolverErrs = append(entityResolverErrs,
+				fmt.Errorf("%w due to all null value KeyFields for StatusNamespace", ErrTypeNotFound))
 			break
 		}
 		return "findStatusNamespaceByID", nil
 	}
-	return "", fmt.Errorf("%w for StatusNamespace", ErrTypeNotFound)
+	return "", fmt.Errorf("%w for StatusNamespace due to %v", ErrTypeNotFound,
+		errors.Join(entityResolverErrs...).Error())
 }
 
-func entityResolverNameForStatusOwner(ctx context.Context, rep map[string]interface{}) (string, error) {
+func entityResolverNameForStatusOwner(ctx context.Context, rep EntityRepresentation) (string, error) {
+	// we collect errors because a later entity resolver may work fine
+	// when an entity has multiple keys
+	entityResolverErrs := []error{}
 	for {
 		var (
-			m   map[string]interface{}
-			val interface{}
+			m   EntityRepresentation
+			val any
 			ok  bool
 		)
 		_ = val
+		// if all of the KeyFields values for this resolver are null,
+		// we shouldn't use use it
+		allNull := true
 		m = rep
-		if _, ok = m["id"]; !ok {
+		val, ok = m["id"]
+		if !ok {
+			entityResolverErrs = append(entityResolverErrs,
+				fmt.Errorf("%w due to missing Key Field \"id\" for StatusOwner", ErrTypeNotFound))
+			break
+		}
+		if allNull {
+			allNull = val == nil
+		}
+		if allNull {
+			entityResolverErrs = append(entityResolverErrs,
+				fmt.Errorf("%w due to all null value KeyFields for StatusOwner", ErrTypeNotFound))
 			break
 		}
 		return "findStatusOwnerByID", nil
 	}
-	return "", fmt.Errorf("%w for StatusOwner", ErrTypeNotFound)
+	return "", fmt.Errorf("%w for StatusOwner due to %v", ErrTypeNotFound,
+		errors.Join(entityResolverErrs...).Error())
 }

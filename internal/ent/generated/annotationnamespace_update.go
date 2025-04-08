@@ -49,6 +49,14 @@ func (anu *AnnotationNamespaceUpdate) SetName(s string) *AnnotationNamespaceUpda
 	return anu
 }
 
+// SetNillableName sets the "name" field if the given value is not nil.
+func (anu *AnnotationNamespaceUpdate) SetNillableName(s *string) *AnnotationNamespaceUpdate {
+	if s != nil {
+		anu.SetName(*s)
+	}
+	return anu
+}
+
 // SetPrivate sets the "private" field.
 func (anu *AnnotationNamespaceUpdate) SetPrivate(b bool) *AnnotationNamespaceUpdate {
 	anu.mutation.SetPrivate(b)
@@ -239,6 +247,14 @@ type AnnotationNamespaceUpdateOne struct {
 // SetName sets the "name" field.
 func (anuo *AnnotationNamespaceUpdateOne) SetName(s string) *AnnotationNamespaceUpdateOne {
 	anuo.mutation.SetName(s)
+	return anuo
+}
+
+// SetNillableName sets the "name" field if the given value is not nil.
+func (anuo *AnnotationNamespaceUpdateOne) SetNillableName(s *string) *AnnotationNamespaceUpdateOne {
+	if s != nil {
+		anuo.SetName(*s)
+	}
 	return anuo
 }
 

@@ -8,6 +8,8 @@ on:
       - opened
       - edited
       - synchronize
+  merge_group:
+
 jobs:
   conventional-pr:
     runs-on: ubuntu-latest

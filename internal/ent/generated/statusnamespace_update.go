@@ -49,6 +49,14 @@ func (snu *StatusNamespaceUpdate) SetName(s string) *StatusNamespaceUpdate {
 	return snu
 }
 
+// SetNillableName sets the "name" field if the given value is not nil.
+func (snu *StatusNamespaceUpdate) SetNillableName(s *string) *StatusNamespaceUpdate {
+	if s != nil {
+		snu.SetName(*s)
+	}
+	return snu
+}
+
 // SetPrivate sets the "private" field.
 func (snu *StatusNamespaceUpdate) SetPrivate(b bool) *StatusNamespaceUpdate {
 	snu.mutation.SetPrivate(b)
@@ -239,6 +247,14 @@ type StatusNamespaceUpdateOne struct {
 // SetName sets the "name" field.
 func (snuo *StatusNamespaceUpdateOne) SetName(s string) *StatusNamespaceUpdateOne {
 	snuo.mutation.SetName(s)
+	return snuo
+}
+
+// SetNillableName sets the "name" field if the given value is not nil.
+func (snuo *StatusNamespaceUpdateOne) SetNillableName(s *string) *StatusNamespaceUpdateOne {
+	if s != nil {
+		snuo.SetName(*s)
+	}
 	return snuo
 }
 

@@ -32,9 +32,9 @@ type Annotation struct {
 	// ID of the metadata of this annotation
 	MetadataID gidx.PrefixedID `json:"metadataID"`
 	// JSON formatted data of this annotation.
-	Data      json.RawMessage     `json:"data"`
-	Namespace AnnotationNamespace `json:"namespace"`
-	Metadata  Metadata            `json:"metadata"`
+	Data      json.RawMessage      `json:"data"`
+	Namespace *AnnotationNamespace `json:"namespace"`
+	Metadata  *Metadata            `json:"metadata"`
 }
 
 func (Annotation) IsNode() {}
@@ -49,7 +49,7 @@ type AnnotationConnection struct {
 	// A list of edges.
 	Edges []*AnnotationEdge `json:"edges,omitempty"`
 	// Information to aid in pagination.
-	PageInfo PageInfo `json:"pageInfo"`
+	PageInfo *PageInfo `json:"pageInfo"`
 	// Identifies the total count of items in the connection.
 	TotalCount int64 `json:"totalCount"`
 }
@@ -87,7 +87,7 @@ type AnnotationNamespace struct {
 	Private     bool          `json:"private"`
 	Annotations []*Annotation `json:"annotations,omitempty"`
 	// The owner of the annotation namespace.
-	Owner ResourceOwner `json:"owner"`
+	Owner *ResourceOwner `json:"owner"`
 }
 
 func (AnnotationNamespace) IsNode() {}
@@ -102,7 +102,7 @@ type AnnotationNamespaceConnection struct {
 	// A list of edges.
 	Edges []*AnnotationNamespaceEdge `json:"edges,omitempty"`
 	// Information to aid in pagination.
-	PageInfo PageInfo `json:"pageInfo"`
+	PageInfo *PageInfo `json:"pageInfo"`
 	// Identifies the total count of items in the connection.
 	TotalCount int64 `json:"totalCount"`
 }
@@ -110,7 +110,7 @@ type AnnotationNamespaceConnection struct {
 // Return response from annotationNamespaceCreate
 type AnnotationNamespaceCreatePayload struct {
 	// The created annotation namespace.
-	AnnotationNamespace AnnotationNamespace `json:"annotationNamespace"`
+	AnnotationNamespace *AnnotationNamespace `json:"annotationNamespace"`
 }
 
 // Return response from annotationNamespaceDelete
@@ -140,7 +140,7 @@ type AnnotationNamespaceOrder struct {
 // Return response from annotationNamespaceUpdate
 type AnnotationNamespaceUpdatePayload struct {
 	// The updated annotation namespace.
-	AnnotationNamespace AnnotationNamespace `json:"annotationNamespace"`
+	AnnotationNamespace *AnnotationNamespace `json:"annotationNamespace"`
 }
 
 // AnnotationNamespaceWhereInput is used for filtering AnnotationNamespace objects.
@@ -216,7 +216,7 @@ type AnnotationUpdateInput struct {
 // Return response from annotationUpdate
 type AnnotationUpdateResponse struct {
 	// The set annotation.
-	Annotation Annotation `json:"annotation"`
+	Annotation *Annotation `json:"annotation"`
 }
 
 // AnnotationWhereInput is used for filtering Annotation objects.
@@ -295,11 +295,11 @@ type Metadata struct {
 	CreatedAt time.Time       `json:"createdAt"`
 	UpdatedAt time.Time       `json:"updatedAt"`
 	// ID of the node for this metadata
-	NodeID      gidx.PrefixedID      `json:"nodeID"`
-	Annotations AnnotationConnection `json:"annotations"`
-	Statuses    StatusConnection     `json:"statuses"`
+	NodeID      gidx.PrefixedID       `json:"nodeID"`
+	Annotations *AnnotationConnection `json:"annotations"`
+	Statuses    *StatusConnection     `json:"statuses"`
 	// Node that this metadata is assigned to.
-	Node MetadataNode `json:"node"`
+	Node *MetadataNode `json:"node"`
 }
 
 func (Metadata) IsNode() {}
@@ -314,7 +314,7 @@ type MetadataConnection struct {
 	// A list of edges.
 	Edges []*MetadataEdge `json:"edges,omitempty"`
 	// Information to aid in pagination.
-	PageInfo PageInfo `json:"pageInfo"`
+	PageInfo *PageInfo `json:"pageInfo"`
 	// Identifies the total count of items in the connection.
 	TotalCount int64 `json:"totalCount"`
 }
@@ -385,6 +385,9 @@ type MetadataWhereInput struct {
 	HasStatusesWith []*StatusWhereInput `json:"hasStatusesWith,omitempty"`
 }
 
+type Mutation struct {
+}
+
 // Information about pagination in a connection.
 // https://relay.dev/graphql/connections.htm#sec-undefined.PageInfo
 type PageInfo struct {
@@ -398,9 +401,12 @@ type PageInfo struct {
 	EndCursor *string `json:"endCursor,omitempty"`
 }
 
+type Query struct {
+}
+
 type ResourceOwner struct {
-	ID                   gidx.PrefixedID               `json:"id"`
-	AnnotationNamespaces AnnotationNamespaceConnection `json:"annotationNamespaces"`
+	ID                   gidx.PrefixedID                `json:"id"`
+	AnnotationNamespaces *AnnotationNamespaceConnection `json:"annotationNamespaces"`
 	// Metadata about this node, including annotations and statuses.
 	Metadata *Metadata `json:"metadata,omitempty"`
 }
@@ -416,9 +422,9 @@ type Status struct {
 	StatusNamespaceID gidx.PrefixedID `json:"statusNamespaceID"`
 	Source            string          `json:"source"`
 	// JSON formatted data of this annotation.
-	Data      json.RawMessage `json:"data"`
-	Namespace StatusNamespace `json:"namespace"`
-	Metadata  Metadata        `json:"metadata"`
+	Data      json.RawMessage  `json:"data"`
+	Namespace *StatusNamespace `json:"namespace"`
+	Metadata  *Metadata        `json:"metadata"`
 }
 
 func (Status) IsNode() {}
@@ -433,7 +439,7 @@ type StatusConnection struct {
 	// A list of edges.
 	Edges []*StatusEdge `json:"edges,omitempty"`
 	// Information to aid in pagination.
-	PageInfo PageInfo `json:"pageInfo"`
+	PageInfo *PageInfo `json:"pageInfo"`
 	// Identifies the total count of items in the connection.
 	TotalCount int64 `json:"totalCount"`
 }
@@ -472,7 +478,7 @@ type StatusNamespace struct {
 	// Flag for if this namespace is private.
 	Private bool `json:"private"`
 	// The owner of the status namespace.
-	Owner StatusOwner `json:"owner"`
+	Owner *StatusOwner `json:"owner"`
 }
 
 func (StatusNamespace) IsNode() {}
@@ -487,7 +493,7 @@ type StatusNamespaceConnection struct {
 	// A list of edges.
 	Edges []*StatusNamespaceEdge `json:"edges,omitempty"`
 	// Information to aid in pagination.
-	PageInfo PageInfo `json:"pageInfo"`
+	PageInfo *PageInfo `json:"pageInfo"`
 	// Identifies the total count of items in the connection.
 	TotalCount int64 `json:"totalCount"`
 }
@@ -495,7 +501,7 @@ type StatusNamespaceConnection struct {
 // Return response from statusNamespaceCreate
 type StatusNamespaceCreatePayload struct {
 	// The created status namespace.
-	StatusNamespace StatusNamespace `json:"statusNamespace"`
+	StatusNamespace *StatusNamespace `json:"statusNamespace"`
 }
 
 // Return response from statusNamespaceDelete
@@ -525,7 +531,7 @@ type StatusNamespaceOrder struct {
 // Return response from statusNamespaceUpdate
 type StatusNamespaceUpdatePayload struct {
 	// The updated status namespace.
-	StatusNamespace StatusNamespace `json:"statusNamespace"`
+	StatusNamespace *StatusNamespace `json:"statusNamespace"`
 }
 
 // StatusNamespaceWhereInput is used for filtering StatusNamespace objects.
@@ -586,8 +592,8 @@ type StatusOrder struct {
 }
 
 type StatusOwner struct {
-	ID               gidx.PrefixedID           `json:"id"`
-	StatusNamespaces StatusNamespaceConnection `json:"statusNamespaces"`
+	ID               gidx.PrefixedID            `json:"id"`
+	StatusNamespaces *StatusNamespaceConnection `json:"statusNamespaces"`
 	// Metadata about this node, including annotations and statuses.
 	Metadata *Metadata `json:"metadata,omitempty"`
 }
@@ -609,7 +615,7 @@ type StatusUpdateInput struct {
 // Return response from statusUpdate
 type StatusUpdateResponse struct {
 	// The set status.
-	Status Status `json:"status"`
+	Status *Status `json:"status"`
 }
 
 // StatusWhereInput is used for filtering Status objects.
@@ -727,7 +733,7 @@ func (e AnnotationNamespaceOrderField) String() string {
 	return string(e)
 }
 
-func (e *AnnotationNamespaceOrderField) UnmarshalGQL(v interface{}) error {
+func (e *AnnotationNamespaceOrderField) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -769,7 +775,7 @@ func (e AnnotationOrderField) String() string {
 	return string(e)
 }
 
-func (e *AnnotationOrderField) UnmarshalGQL(v interface{}) error {
+func (e *AnnotationOrderField) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -811,7 +817,7 @@ func (e MetadataOrderField) String() string {
 	return string(e)
 }
 
-func (e *MetadataOrderField) UnmarshalGQL(v interface{}) error {
+func (e *MetadataOrderField) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -855,7 +861,7 @@ func (e OrderDirection) String() string {
 	return string(e)
 }
 
-func (e *OrderDirection) UnmarshalGQL(v interface{}) error {
+func (e *OrderDirection) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -905,7 +911,7 @@ func (e StatusNamespaceOrderField) String() string {
 	return string(e)
 }
 
-func (e *StatusNamespaceOrderField) UnmarshalGQL(v interface{}) error {
+func (e *StatusNamespaceOrderField) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
@@ -947,7 +953,7 @@ func (e StatusOrderField) String() string {
 	return string(e)
 }
 
-func (e *StatusOrderField) UnmarshalGQL(v interface{}) error {
+func (e *StatusOrderField) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")

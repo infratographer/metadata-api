@@ -98,10 +98,10 @@ func (su *StatusUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (su *StatusUpdate) check() error {
-	if _, ok := su.mutation.NamespaceID(); su.mutation.NamespaceCleared() && !ok {
+	if su.mutation.NamespaceCleared() && len(su.mutation.NamespaceIDs()) > 0 {
 		return errors.New(`generated: clearing a required unique edge "Status.namespace"`)
 	}
-	if _, ok := su.mutation.MetadataID(); su.mutation.MetadataCleared() && !ok {
+	if su.mutation.MetadataCleared() && len(su.mutation.MetadataIDs()) > 0 {
 		return errors.New(`generated: clearing a required unique edge "Status.metadata"`)
 	}
 	return nil
@@ -218,10 +218,10 @@ func (suo *StatusUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (suo *StatusUpdateOne) check() error {
-	if _, ok := suo.mutation.NamespaceID(); suo.mutation.NamespaceCleared() && !ok {
+	if suo.mutation.NamespaceCleared() && len(suo.mutation.NamespaceIDs()) > 0 {
 		return errors.New(`generated: clearing a required unique edge "Status.namespace"`)
 	}
-	if _, ok := suo.mutation.MetadataID(); suo.mutation.MetadataCleared() && !ok {
+	if suo.mutation.MetadataCleared() && len(suo.mutation.MetadataIDs()) > 0 {
 		return errors.New(`generated: clearing a required unique edge "Status.metadata"`)
 	}
 	return nil

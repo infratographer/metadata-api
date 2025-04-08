@@ -185,10 +185,10 @@ func (ac *AnnotationCreate) check() error {
 	if _, ok := ac.mutation.Data(); !ok {
 		return &ValidationError{Name: "data", err: errors.New(`generated: missing required field "Annotation.data"`)}
 	}
-	if _, ok := ac.mutation.NamespaceID(); !ok {
+	if len(ac.mutation.NamespaceIDs()) == 0 {
 		return &ValidationError{Name: "namespace", err: errors.New(`generated: missing required edge "Annotation.namespace"`)}
 	}
-	if _, ok := ac.mutation.MetadataID(); !ok {
+	if len(ac.mutation.MetadataIDs()) == 0 {
 		return &ValidationError{Name: "metadata", err: errors.New(`generated: missing required edge "Annotation.metadata"`)}
 	}
 	return nil

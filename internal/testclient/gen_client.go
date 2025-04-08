@@ -5,340 +5,1061 @@ package testclient
 import (
 	"context"
 	"encoding/json"
-	"net/http"
 	"time"
 
-	"github.com/Yamashou/gqlgenc/client"
+	"github.com/Yamashou/gqlgenc/clientv2"
 	"go.infratographer.com/x/gidx"
 )
 
 type TestClient interface {
-	AnnotationDelete(ctx context.Context, input AnnotationDeleteInput, httpRequestOptions ...client.HTTPRequestOption) (*AnnotationDelete, error)
-	AnnotationNamespaceCreate(ctx context.Context, input CreateAnnotationNamespaceInput, httpRequestOptions ...client.HTTPRequestOption) (*AnnotationNamespaceCreate, error)
-	AnnotationNamespaceDelete(ctx context.Context, id gidx.PrefixedID, force bool, httpRequestOptions ...client.HTTPRequestOption) (*AnnotationNamespaceDelete, error)
-	AnnotationNamespaceUpdate(ctx context.Context, id gidx.PrefixedID, input UpdateAnnotationNamespaceInput, httpRequestOptions ...client.HTTPRequestOption) (*AnnotationNamespaceUpdate, error)
-	AnnotationUpdate(ctx context.Context, input AnnotationUpdateInput, httpRequestOptions ...client.HTTPRequestOption) (*AnnotationUpdate, error)
-	GetAnnotationNamespace(ctx context.Context, annotationNamespaceID gidx.PrefixedID, httpRequestOptions ...client.HTTPRequestOption) (*GetAnnotationNamespace, error)
-	GetNodeMetadata(ctx context.Context, id gidx.PrefixedID, httpRequestOptions ...client.HTTPRequestOption) (*GetNodeMetadata, error)
-	GetResourceOwnerAnnotationNamespaces(ctx context.Context, id gidx.PrefixedID, orderBy *AnnotationNamespaceOrder, httpRequestOptions ...client.HTTPRequestOption) (*GetResourceOwnerAnnotationNamespaces, error)
-	GetResourceProviderStatusNamespaces(ctx context.Context, id gidx.PrefixedID, orderBy *StatusNamespaceOrder, httpRequestOptions ...client.HTTPRequestOption) (*GetResourceProviderStatusNamespaces, error)
-	StatusDelete(ctx context.Context, input StatusDeleteInput, httpRequestOptions ...client.HTTPRequestOption) (*StatusDelete, error)
-	StatusNamespaceCreate(ctx context.Context, input CreateStatusNamespaceInput, httpRequestOptions ...client.HTTPRequestOption) (*StatusNamespaceCreate, error)
-	StatusNamespaceDelete(ctx context.Context, id gidx.PrefixedID, force bool, httpRequestOptions ...client.HTTPRequestOption) (*StatusNamespaceDelete, error)
-	StatusNamespaceUpdate(ctx context.Context, id gidx.PrefixedID, input UpdateStatusNamespaceInput, httpRequestOptions ...client.HTTPRequestOption) (*StatusNamespaceUpdate, error)
-	StatusUpdate(ctx context.Context, input StatusUpdateInput, httpRequestOptions ...client.HTTPRequestOption) (*StatusUpdate, error)
+	AnnotationUpdate(ctx context.Context, input AnnotationUpdateInput, interceptors ...clientv2.RequestInterceptor) (*AnnotationUpdate, error)
+	AnnotationDelete(ctx context.Context, input AnnotationDeleteInput, interceptors ...clientv2.RequestInterceptor) (*AnnotationDelete, error)
+	GetResourceOwnerAnnotationNamespaces(ctx context.Context, id gidx.PrefixedID, orderBy *AnnotationNamespaceOrder, interceptors ...clientv2.RequestInterceptor) (*GetResourceOwnerAnnotationNamespaces, error)
+	GetAnnotationNamespace(ctx context.Context, annotationNamespaceID gidx.PrefixedID, interceptors ...clientv2.RequestInterceptor) (*GetAnnotationNamespace, error)
+	AnnotationNamespaceCreate(ctx context.Context, input CreateAnnotationNamespaceInput, interceptors ...clientv2.RequestInterceptor) (*AnnotationNamespaceCreate, error)
+	AnnotationNamespaceUpdate(ctx context.Context, id gidx.PrefixedID, input UpdateAnnotationNamespaceInput, interceptors ...clientv2.RequestInterceptor) (*AnnotationNamespaceUpdate, error)
+	AnnotationNamespaceDelete(ctx context.Context, id gidx.PrefixedID, force bool, interceptors ...clientv2.RequestInterceptor) (*AnnotationNamespaceDelete, error)
+	GetNodeMetadata(ctx context.Context, id gidx.PrefixedID, interceptors ...clientv2.RequestInterceptor) (*GetNodeMetadata, error)
+	StatusUpdate(ctx context.Context, input StatusUpdateInput, interceptors ...clientv2.RequestInterceptor) (*StatusUpdate, error)
+	StatusDelete(ctx context.Context, input StatusDeleteInput, interceptors ...clientv2.RequestInterceptor) (*StatusDelete, error)
+	GetResourceProviderStatusNamespaces(ctx context.Context, id gidx.PrefixedID, orderBy *StatusNamespaceOrder, interceptors ...clientv2.RequestInterceptor) (*GetResourceProviderStatusNamespaces, error)
+	StatusNamespaceCreate(ctx context.Context, input CreateStatusNamespaceInput, interceptors ...clientv2.RequestInterceptor) (*StatusNamespaceCreate, error)
+	StatusNamespaceUpdate(ctx context.Context, id gidx.PrefixedID, input UpdateStatusNamespaceInput, interceptors ...clientv2.RequestInterceptor) (*StatusNamespaceUpdate, error)
+	StatusNamespaceDelete(ctx context.Context, id gidx.PrefixedID, force bool, interceptors ...clientv2.RequestInterceptor) (*StatusNamespaceDelete, error)
 }
 
 type Client struct {
-	Client *client.Client
+	Client *clientv2.Client
 }
 
-func NewClient(cli *http.Client, baseURL string, options ...client.HTTPRequestOption) TestClient {
-	return &Client{Client: client.NewClient(cli, baseURL, options...)}
+func NewClient(cli clientv2.HttpClient, baseURL string, options *clientv2.Options, interceptors ...clientv2.RequestInterceptor) TestClient {
+	return &Client{Client: clientv2.NewClient(cli, baseURL, options, interceptors...)}
 }
 
-type Query struct {
-	AnnotationNamespace AnnotationNamespace "json:\"annotationNamespace\" graphql:\"annotationNamespace\""
-	Entities            []Entity            "json:\"_entities\" graphql:\"_entities\""
-	Service             Service             "json:\"_service\" graphql:\"_service\""
+type AnnotationUpdate_AnnotationUpdate_Annotation_Metadata_Node struct {
+	ID gidx.PrefixedID "json:\"id\" graphql:\"id\""
 }
-type Mutation struct {
-	AnnotationUpdate          AnnotationUpdateResponse         "json:\"annotationUpdate\" graphql:\"annotationUpdate\""
-	AnnotationDelete          AnnotationDeleteResponse         "json:\"annotationDelete\" graphql:\"annotationDelete\""
-	AnnotationNamespaceCreate AnnotationNamespaceCreatePayload "json:\"annotationNamespaceCreate\" graphql:\"annotationNamespaceCreate\""
-	AnnotationNamespaceDelete AnnotationNamespaceDeletePayload "json:\"annotationNamespaceDelete\" graphql:\"annotationNamespaceDelete\""
-	AnnotationNamespaceUpdate AnnotationNamespaceUpdatePayload "json:\"annotationNamespaceUpdate\" graphql:\"annotationNamespaceUpdate\""
-	StatusUpdate              StatusUpdateResponse             "json:\"statusUpdate\" graphql:\"statusUpdate\""
-	StatusDelete              StatusDeleteResponse             "json:\"statusDelete\" graphql:\"statusDelete\""
-	StatusNamespaceCreate     StatusNamespaceCreatePayload     "json:\"statusNamespaceCreate\" graphql:\"statusNamespaceCreate\""
-	StatusNamespaceDelete     StatusNamespaceDeletePayload     "json:\"statusNamespaceDelete\" graphql:\"statusNamespaceDelete\""
-	StatusNamespaceUpdate     StatusNamespaceUpdatePayload     "json:\"statusNamespaceUpdate\" graphql:\"statusNamespaceUpdate\""
+
+func (t *AnnotationUpdate_AnnotationUpdate_Annotation_Metadata_Node) GetID() *gidx.PrefixedID {
+	if t == nil {
+		t = &AnnotationUpdate_AnnotationUpdate_Annotation_Metadata_Node{}
+	}
+	return &t.ID
 }
-type AnnotationDelete struct {
-	AnnotationDelete struct {
-		DeletedID gidx.PrefixedID "json:\"deletedID\" graphql:\"deletedID\""
-	} "json:\"annotationDelete\" graphql:\"annotationDelete\""
+
+type AnnotationUpdate_AnnotationUpdate_Annotation_Metadata struct {
+	ID   gidx.PrefixedID                                            "json:\"id\" graphql:\"id\""
+	Node AnnotationUpdate_AnnotationUpdate_Annotation_Metadata_Node "json:\"node\" graphql:\"node\""
 }
-type AnnotationNamespaceCreate struct {
-	AnnotationNamespaceCreate struct {
-		AnnotationNamespace struct {
-			ID        gidx.PrefixedID "json:\"id\" graphql:\"id\""
-			Name      string          "json:\"name\" graphql:\"name\""
-			Private   bool            "json:\"private\" graphql:\"private\""
-			CreatedAt time.Time       "json:\"createdAt\" graphql:\"createdAt\""
-			UpdatedAt time.Time       "json:\"updatedAt\" graphql:\"updatedAt\""
-			Owner     struct {
-				ID gidx.PrefixedID "json:\"id\" graphql:\"id\""
-			} "json:\"owner\" graphql:\"owner\""
-		} "json:\"annotationNamespace\" graphql:\"annotationNamespace\""
-	} "json:\"annotationNamespaceCreate\" graphql:\"annotationNamespaceCreate\""
+
+func (t *AnnotationUpdate_AnnotationUpdate_Annotation_Metadata) GetID() *gidx.PrefixedID {
+	if t == nil {
+		t = &AnnotationUpdate_AnnotationUpdate_Annotation_Metadata{}
+	}
+	return &t.ID
 }
-type AnnotationNamespaceDelete struct {
-	AnnotationNamespaceDelete struct {
-		DeletedID              gidx.PrefixedID "json:\"deletedID\" graphql:\"deletedID\""
-		AnnotationDeletedCount int64           "json:\"annotationDeletedCount\" graphql:\"annotationDeletedCount\""
-	} "json:\"annotationNamespaceDelete\" graphql:\"annotationNamespaceDelete\""
+func (t *AnnotationUpdate_AnnotationUpdate_Annotation_Metadata) GetNode() *AnnotationUpdate_AnnotationUpdate_Annotation_Metadata_Node {
+	if t == nil {
+		t = &AnnotationUpdate_AnnotationUpdate_Annotation_Metadata{}
+	}
+	return &t.Node
 }
-type AnnotationNamespaceUpdate struct {
-	AnnotationNamespaceUpdate struct {
-		AnnotationNamespace struct {
-			ID        gidx.PrefixedID "json:\"id\" graphql:\"id\""
-			Name      string          "json:\"name\" graphql:\"name\""
-			Private   bool            "json:\"private\" graphql:\"private\""
-			CreatedAt time.Time       "json:\"createdAt\" graphql:\"createdAt\""
-			UpdatedAt time.Time       "json:\"updatedAt\" graphql:\"updatedAt\""
-			Owner     struct {
-				ID gidx.PrefixedID "json:\"id\" graphql:\"id\""
-			} "json:\"owner\" graphql:\"owner\""
-		} "json:\"annotationNamespace\" graphql:\"annotationNamespace\""
-	} "json:\"annotationNamespaceUpdate\" graphql:\"annotationNamespaceUpdate\""
+
+type AnnotationUpdate_AnnotationUpdate_Annotation_Namespace struct {
+	ID      gidx.PrefixedID "json:\"id\" graphql:\"id\""
+	Name    string          "json:\"name\" graphql:\"name\""
+	Private bool            "json:\"private\" graphql:\"private\""
 }
+
+func (t *AnnotationUpdate_AnnotationUpdate_Annotation_Namespace) GetID() *gidx.PrefixedID {
+	if t == nil {
+		t = &AnnotationUpdate_AnnotationUpdate_Annotation_Namespace{}
+	}
+	return &t.ID
+}
+func (t *AnnotationUpdate_AnnotationUpdate_Annotation_Namespace) GetName() string {
+	if t == nil {
+		t = &AnnotationUpdate_AnnotationUpdate_Annotation_Namespace{}
+	}
+	return t.Name
+}
+func (t *AnnotationUpdate_AnnotationUpdate_Annotation_Namespace) GetPrivate() bool {
+	if t == nil {
+		t = &AnnotationUpdate_AnnotationUpdate_Annotation_Namespace{}
+	}
+	return t.Private
+}
+
+type AnnotationUpdate_AnnotationUpdate_Annotation struct {
+	CreatedAt time.Time                                              "json:\"createdAt\" graphql:\"createdAt\""
+	Data      json.RawMessage                                        "json:\"data\" graphql:\"data\""
+	ID        gidx.PrefixedID                                        "json:\"id\" graphql:\"id\""
+	Metadata  AnnotationUpdate_AnnotationUpdate_Annotation_Metadata  "json:\"metadata\" graphql:\"metadata\""
+	Namespace AnnotationUpdate_AnnotationUpdate_Annotation_Namespace "json:\"namespace\" graphql:\"namespace\""
+	UpdatedAt time.Time                                              "json:\"updatedAt\" graphql:\"updatedAt\""
+}
+
+func (t *AnnotationUpdate_AnnotationUpdate_Annotation) GetCreatedAt() *time.Time {
+	if t == nil {
+		t = &AnnotationUpdate_AnnotationUpdate_Annotation{}
+	}
+	return &t.CreatedAt
+}
+func (t *AnnotationUpdate_AnnotationUpdate_Annotation) GetData() *json.RawMessage {
+	if t == nil {
+		t = &AnnotationUpdate_AnnotationUpdate_Annotation{}
+	}
+	return &t.Data
+}
+func (t *AnnotationUpdate_AnnotationUpdate_Annotation) GetID() *gidx.PrefixedID {
+	if t == nil {
+		t = &AnnotationUpdate_AnnotationUpdate_Annotation{}
+	}
+	return &t.ID
+}
+func (t *AnnotationUpdate_AnnotationUpdate_Annotation) GetMetadata() *AnnotationUpdate_AnnotationUpdate_Annotation_Metadata {
+	if t == nil {
+		t = &AnnotationUpdate_AnnotationUpdate_Annotation{}
+	}
+	return &t.Metadata
+}
+func (t *AnnotationUpdate_AnnotationUpdate_Annotation) GetNamespace() *AnnotationUpdate_AnnotationUpdate_Annotation_Namespace {
+	if t == nil {
+		t = &AnnotationUpdate_AnnotationUpdate_Annotation{}
+	}
+	return &t.Namespace
+}
+func (t *AnnotationUpdate_AnnotationUpdate_Annotation) GetUpdatedAt() *time.Time {
+	if t == nil {
+		t = &AnnotationUpdate_AnnotationUpdate_Annotation{}
+	}
+	return &t.UpdatedAt
+}
+
+type AnnotationUpdate_AnnotationUpdate struct {
+	Annotation AnnotationUpdate_AnnotationUpdate_Annotation "json:\"annotation\" graphql:\"annotation\""
+}
+
+func (t *AnnotationUpdate_AnnotationUpdate) GetAnnotation() *AnnotationUpdate_AnnotationUpdate_Annotation {
+	if t == nil {
+		t = &AnnotationUpdate_AnnotationUpdate{}
+	}
+	return &t.Annotation
+}
+
+type AnnotationDelete_AnnotationDelete struct {
+	DeletedID gidx.PrefixedID "json:\"deletedID\" graphql:\"deletedID\""
+}
+
+func (t *AnnotationDelete_AnnotationDelete) GetDeletedID() *gidx.PrefixedID {
+	if t == nil {
+		t = &AnnotationDelete_AnnotationDelete{}
+	}
+	return &t.DeletedID
+}
+
+type GetResourceOwnerAnnotationNamespaces_Entities_ResourceOwner_AnnotationNamespaces_Edges_Node struct {
+	CreatedAt time.Time       "json:\"createdAt\" graphql:\"createdAt\""
+	ID        gidx.PrefixedID "json:\"id\" graphql:\"id\""
+	Name      string          "json:\"name\" graphql:\"name\""
+	Private   bool            "json:\"private\" graphql:\"private\""
+	UpdatedAt time.Time       "json:\"updatedAt\" graphql:\"updatedAt\""
+}
+
+func (t *GetResourceOwnerAnnotationNamespaces_Entities_ResourceOwner_AnnotationNamespaces_Edges_Node) GetCreatedAt() *time.Time {
+	if t == nil {
+		t = &GetResourceOwnerAnnotationNamespaces_Entities_ResourceOwner_AnnotationNamespaces_Edges_Node{}
+	}
+	return &t.CreatedAt
+}
+func (t *GetResourceOwnerAnnotationNamespaces_Entities_ResourceOwner_AnnotationNamespaces_Edges_Node) GetID() *gidx.PrefixedID {
+	if t == nil {
+		t = &GetResourceOwnerAnnotationNamespaces_Entities_ResourceOwner_AnnotationNamespaces_Edges_Node{}
+	}
+	return &t.ID
+}
+func (t *GetResourceOwnerAnnotationNamespaces_Entities_ResourceOwner_AnnotationNamespaces_Edges_Node) GetName() string {
+	if t == nil {
+		t = &GetResourceOwnerAnnotationNamespaces_Entities_ResourceOwner_AnnotationNamespaces_Edges_Node{}
+	}
+	return t.Name
+}
+func (t *GetResourceOwnerAnnotationNamespaces_Entities_ResourceOwner_AnnotationNamespaces_Edges_Node) GetPrivate() bool {
+	if t == nil {
+		t = &GetResourceOwnerAnnotationNamespaces_Entities_ResourceOwner_AnnotationNamespaces_Edges_Node{}
+	}
+	return t.Private
+}
+func (t *GetResourceOwnerAnnotationNamespaces_Entities_ResourceOwner_AnnotationNamespaces_Edges_Node) GetUpdatedAt() *time.Time {
+	if t == nil {
+		t = &GetResourceOwnerAnnotationNamespaces_Entities_ResourceOwner_AnnotationNamespaces_Edges_Node{}
+	}
+	return &t.UpdatedAt
+}
+
+type GetResourceOwnerAnnotationNamespaces_Entities_ResourceOwner_AnnotationNamespaces_Edges struct {
+	Node *GetResourceOwnerAnnotationNamespaces_Entities_ResourceOwner_AnnotationNamespaces_Edges_Node "json:\"node,omitempty\" graphql:\"node\""
+}
+
+func (t *GetResourceOwnerAnnotationNamespaces_Entities_ResourceOwner_AnnotationNamespaces_Edges) GetNode() *GetResourceOwnerAnnotationNamespaces_Entities_ResourceOwner_AnnotationNamespaces_Edges_Node {
+	if t == nil {
+		t = &GetResourceOwnerAnnotationNamespaces_Entities_ResourceOwner_AnnotationNamespaces_Edges{}
+	}
+	return t.Node
+}
+
+type GetResourceOwnerAnnotationNamespaces_Entities_ResourceOwner_AnnotationNamespaces struct {
+	Edges []*GetResourceOwnerAnnotationNamespaces_Entities_ResourceOwner_AnnotationNamespaces_Edges "json:\"edges,omitempty\" graphql:\"edges\""
+}
+
+func (t *GetResourceOwnerAnnotationNamespaces_Entities_ResourceOwner_AnnotationNamespaces) GetEdges() []*GetResourceOwnerAnnotationNamespaces_Entities_ResourceOwner_AnnotationNamespaces_Edges {
+	if t == nil {
+		t = &GetResourceOwnerAnnotationNamespaces_Entities_ResourceOwner_AnnotationNamespaces{}
+	}
+	return t.Edges
+}
+
+type GetResourceOwnerAnnotationNamespaces_Entities_ResourceOwner struct {
+	AnnotationNamespaces GetResourceOwnerAnnotationNamespaces_Entities_ResourceOwner_AnnotationNamespaces "json:\"annotationNamespaces\" graphql:\"annotationNamespaces\""
+}
+
+func (t *GetResourceOwnerAnnotationNamespaces_Entities_ResourceOwner) GetAnnotationNamespaces() *GetResourceOwnerAnnotationNamespaces_Entities_ResourceOwner_AnnotationNamespaces {
+	if t == nil {
+		t = &GetResourceOwnerAnnotationNamespaces_Entities_ResourceOwner{}
+	}
+	return &t.AnnotationNamespaces
+}
+
+type GetAnnotationNamespace_AnnotationNamespace_Owner struct {
+	ID gidx.PrefixedID "json:\"id\" graphql:\"id\""
+}
+
+func (t *GetAnnotationNamespace_AnnotationNamespace_Owner) GetID() *gidx.PrefixedID {
+	if t == nil {
+		t = &GetAnnotationNamespace_AnnotationNamespace_Owner{}
+	}
+	return &t.ID
+}
+
+type GetAnnotationNamespace_AnnotationNamespace_Annotations struct {
+	CreatedAt time.Time       "json:\"createdAt\" graphql:\"createdAt\""
+	Data      json.RawMessage "json:\"data\" graphql:\"data\""
+	ID        gidx.PrefixedID "json:\"id\" graphql:\"id\""
+	UpdatedAt time.Time       "json:\"updatedAt\" graphql:\"updatedAt\""
+}
+
+func (t *GetAnnotationNamespace_AnnotationNamespace_Annotations) GetCreatedAt() *time.Time {
+	if t == nil {
+		t = &GetAnnotationNamespace_AnnotationNamespace_Annotations{}
+	}
+	return &t.CreatedAt
+}
+func (t *GetAnnotationNamespace_AnnotationNamespace_Annotations) GetData() *json.RawMessage {
+	if t == nil {
+		t = &GetAnnotationNamespace_AnnotationNamespace_Annotations{}
+	}
+	return &t.Data
+}
+func (t *GetAnnotationNamespace_AnnotationNamespace_Annotations) GetID() *gidx.PrefixedID {
+	if t == nil {
+		t = &GetAnnotationNamespace_AnnotationNamespace_Annotations{}
+	}
+	return &t.ID
+}
+func (t *GetAnnotationNamespace_AnnotationNamespace_Annotations) GetUpdatedAt() *time.Time {
+	if t == nil {
+		t = &GetAnnotationNamespace_AnnotationNamespace_Annotations{}
+	}
+	return &t.UpdatedAt
+}
+
+type GetAnnotationNamespace_AnnotationNamespace struct {
+	Annotations []*GetAnnotationNamespace_AnnotationNamespace_Annotations "json:\"annotations,omitempty\" graphql:\"annotations\""
+	CreatedAt   time.Time                                                 "json:\"createdAt\" graphql:\"createdAt\""
+	ID          gidx.PrefixedID                                           "json:\"id\" graphql:\"id\""
+	Name        string                                                    "json:\"name\" graphql:\"name\""
+	Owner       GetAnnotationNamespace_AnnotationNamespace_Owner          "json:\"owner\" graphql:\"owner\""
+	Private     bool                                                      "json:\"private\" graphql:\"private\""
+	UpdatedAt   time.Time                                                 "json:\"updatedAt\" graphql:\"updatedAt\""
+}
+
+func (t *GetAnnotationNamespace_AnnotationNamespace) GetAnnotations() []*GetAnnotationNamespace_AnnotationNamespace_Annotations {
+	if t == nil {
+		t = &GetAnnotationNamespace_AnnotationNamespace{}
+	}
+	return t.Annotations
+}
+func (t *GetAnnotationNamespace_AnnotationNamespace) GetCreatedAt() *time.Time {
+	if t == nil {
+		t = &GetAnnotationNamespace_AnnotationNamespace{}
+	}
+	return &t.CreatedAt
+}
+func (t *GetAnnotationNamespace_AnnotationNamespace) GetID() *gidx.PrefixedID {
+	if t == nil {
+		t = &GetAnnotationNamespace_AnnotationNamespace{}
+	}
+	return &t.ID
+}
+func (t *GetAnnotationNamespace_AnnotationNamespace) GetName() string {
+	if t == nil {
+		t = &GetAnnotationNamespace_AnnotationNamespace{}
+	}
+	return t.Name
+}
+func (t *GetAnnotationNamespace_AnnotationNamespace) GetOwner() *GetAnnotationNamespace_AnnotationNamespace_Owner {
+	if t == nil {
+		t = &GetAnnotationNamespace_AnnotationNamespace{}
+	}
+	return &t.Owner
+}
+func (t *GetAnnotationNamespace_AnnotationNamespace) GetPrivate() bool {
+	if t == nil {
+		t = &GetAnnotationNamespace_AnnotationNamespace{}
+	}
+	return t.Private
+}
+func (t *GetAnnotationNamespace_AnnotationNamespace) GetUpdatedAt() *time.Time {
+	if t == nil {
+		t = &GetAnnotationNamespace_AnnotationNamespace{}
+	}
+	return &t.UpdatedAt
+}
+
+type AnnotationNamespaceCreate_AnnotationNamespaceCreate_AnnotationNamespace_Owner struct {
+	ID gidx.PrefixedID "json:\"id\" graphql:\"id\""
+}
+
+func (t *AnnotationNamespaceCreate_AnnotationNamespaceCreate_AnnotationNamespace_Owner) GetID() *gidx.PrefixedID {
+	if t == nil {
+		t = &AnnotationNamespaceCreate_AnnotationNamespaceCreate_AnnotationNamespace_Owner{}
+	}
+	return &t.ID
+}
+
+type AnnotationNamespaceCreate_AnnotationNamespaceCreate_AnnotationNamespace struct {
+	CreatedAt time.Time                                                                     "json:\"createdAt\" graphql:\"createdAt\""
+	ID        gidx.PrefixedID                                                               "json:\"id\" graphql:\"id\""
+	Name      string                                                                        "json:\"name\" graphql:\"name\""
+	Owner     AnnotationNamespaceCreate_AnnotationNamespaceCreate_AnnotationNamespace_Owner "json:\"owner\" graphql:\"owner\""
+	Private   bool                                                                          "json:\"private\" graphql:\"private\""
+	UpdatedAt time.Time                                                                     "json:\"updatedAt\" graphql:\"updatedAt\""
+}
+
+func (t *AnnotationNamespaceCreate_AnnotationNamespaceCreate_AnnotationNamespace) GetCreatedAt() *time.Time {
+	if t == nil {
+		t = &AnnotationNamespaceCreate_AnnotationNamespaceCreate_AnnotationNamespace{}
+	}
+	return &t.CreatedAt
+}
+func (t *AnnotationNamespaceCreate_AnnotationNamespaceCreate_AnnotationNamespace) GetID() *gidx.PrefixedID {
+	if t == nil {
+		t = &AnnotationNamespaceCreate_AnnotationNamespaceCreate_AnnotationNamespace{}
+	}
+	return &t.ID
+}
+func (t *AnnotationNamespaceCreate_AnnotationNamespaceCreate_AnnotationNamespace) GetName() string {
+	if t == nil {
+		t = &AnnotationNamespaceCreate_AnnotationNamespaceCreate_AnnotationNamespace{}
+	}
+	return t.Name
+}
+func (t *AnnotationNamespaceCreate_AnnotationNamespaceCreate_AnnotationNamespace) GetOwner() *AnnotationNamespaceCreate_AnnotationNamespaceCreate_AnnotationNamespace_Owner {
+	if t == nil {
+		t = &AnnotationNamespaceCreate_AnnotationNamespaceCreate_AnnotationNamespace{}
+	}
+	return &t.Owner
+}
+func (t *AnnotationNamespaceCreate_AnnotationNamespaceCreate_AnnotationNamespace) GetPrivate() bool {
+	if t == nil {
+		t = &AnnotationNamespaceCreate_AnnotationNamespaceCreate_AnnotationNamespace{}
+	}
+	return t.Private
+}
+func (t *AnnotationNamespaceCreate_AnnotationNamespaceCreate_AnnotationNamespace) GetUpdatedAt() *time.Time {
+	if t == nil {
+		t = &AnnotationNamespaceCreate_AnnotationNamespaceCreate_AnnotationNamespace{}
+	}
+	return &t.UpdatedAt
+}
+
+type AnnotationNamespaceCreate_AnnotationNamespaceCreate struct {
+	AnnotationNamespace AnnotationNamespaceCreate_AnnotationNamespaceCreate_AnnotationNamespace "json:\"annotationNamespace\" graphql:\"annotationNamespace\""
+}
+
+func (t *AnnotationNamespaceCreate_AnnotationNamespaceCreate) GetAnnotationNamespace() *AnnotationNamespaceCreate_AnnotationNamespaceCreate_AnnotationNamespace {
+	if t == nil {
+		t = &AnnotationNamespaceCreate_AnnotationNamespaceCreate{}
+	}
+	return &t.AnnotationNamespace
+}
+
+type AnnotationNamespaceUpdate_AnnotationNamespaceUpdate_AnnotationNamespace_Owner struct {
+	ID gidx.PrefixedID "json:\"id\" graphql:\"id\""
+}
+
+func (t *AnnotationNamespaceUpdate_AnnotationNamespaceUpdate_AnnotationNamespace_Owner) GetID() *gidx.PrefixedID {
+	if t == nil {
+		t = &AnnotationNamespaceUpdate_AnnotationNamespaceUpdate_AnnotationNamespace_Owner{}
+	}
+	return &t.ID
+}
+
+type AnnotationNamespaceUpdate_AnnotationNamespaceUpdate_AnnotationNamespace struct {
+	CreatedAt time.Time                                                                     "json:\"createdAt\" graphql:\"createdAt\""
+	ID        gidx.PrefixedID                                                               "json:\"id\" graphql:\"id\""
+	Name      string                                                                        "json:\"name\" graphql:\"name\""
+	Owner     AnnotationNamespaceUpdate_AnnotationNamespaceUpdate_AnnotationNamespace_Owner "json:\"owner\" graphql:\"owner\""
+	Private   bool                                                                          "json:\"private\" graphql:\"private\""
+	UpdatedAt time.Time                                                                     "json:\"updatedAt\" graphql:\"updatedAt\""
+}
+
+func (t *AnnotationNamespaceUpdate_AnnotationNamespaceUpdate_AnnotationNamespace) GetCreatedAt() *time.Time {
+	if t == nil {
+		t = &AnnotationNamespaceUpdate_AnnotationNamespaceUpdate_AnnotationNamespace{}
+	}
+	return &t.CreatedAt
+}
+func (t *AnnotationNamespaceUpdate_AnnotationNamespaceUpdate_AnnotationNamespace) GetID() *gidx.PrefixedID {
+	if t == nil {
+		t = &AnnotationNamespaceUpdate_AnnotationNamespaceUpdate_AnnotationNamespace{}
+	}
+	return &t.ID
+}
+func (t *AnnotationNamespaceUpdate_AnnotationNamespaceUpdate_AnnotationNamespace) GetName() string {
+	if t == nil {
+		t = &AnnotationNamespaceUpdate_AnnotationNamespaceUpdate_AnnotationNamespace{}
+	}
+	return t.Name
+}
+func (t *AnnotationNamespaceUpdate_AnnotationNamespaceUpdate_AnnotationNamespace) GetOwner() *AnnotationNamespaceUpdate_AnnotationNamespaceUpdate_AnnotationNamespace_Owner {
+	if t == nil {
+		t = &AnnotationNamespaceUpdate_AnnotationNamespaceUpdate_AnnotationNamespace{}
+	}
+	return &t.Owner
+}
+func (t *AnnotationNamespaceUpdate_AnnotationNamespaceUpdate_AnnotationNamespace) GetPrivate() bool {
+	if t == nil {
+		t = &AnnotationNamespaceUpdate_AnnotationNamespaceUpdate_AnnotationNamespace{}
+	}
+	return t.Private
+}
+func (t *AnnotationNamespaceUpdate_AnnotationNamespaceUpdate_AnnotationNamespace) GetUpdatedAt() *time.Time {
+	if t == nil {
+		t = &AnnotationNamespaceUpdate_AnnotationNamespaceUpdate_AnnotationNamespace{}
+	}
+	return &t.UpdatedAt
+}
+
+type AnnotationNamespaceUpdate_AnnotationNamespaceUpdate struct {
+	AnnotationNamespace AnnotationNamespaceUpdate_AnnotationNamespaceUpdate_AnnotationNamespace "json:\"annotationNamespace\" graphql:\"annotationNamespace\""
+}
+
+func (t *AnnotationNamespaceUpdate_AnnotationNamespaceUpdate) GetAnnotationNamespace() *AnnotationNamespaceUpdate_AnnotationNamespaceUpdate_AnnotationNamespace {
+	if t == nil {
+		t = &AnnotationNamespaceUpdate_AnnotationNamespaceUpdate{}
+	}
+	return &t.AnnotationNamespace
+}
+
+type AnnotationNamespaceDelete_AnnotationNamespaceDelete struct {
+	AnnotationDeletedCount int64           "json:\"annotationDeletedCount\" graphql:\"annotationDeletedCount\""
+	DeletedID              gidx.PrefixedID "json:\"deletedID\" graphql:\"deletedID\""
+}
+
+func (t *AnnotationNamespaceDelete_AnnotationNamespaceDelete) GetAnnotationDeletedCount() int64 {
+	if t == nil {
+		t = &AnnotationNamespaceDelete_AnnotationNamespaceDelete{}
+	}
+	return t.AnnotationDeletedCount
+}
+func (t *AnnotationNamespaceDelete_AnnotationNamespaceDelete) GetDeletedID() *gidx.PrefixedID {
+	if t == nil {
+		t = &AnnotationNamespaceDelete_AnnotationNamespaceDelete{}
+	}
+	return &t.DeletedID
+}
+
+type GetNodeMetadata_Entities_MetadataNode_Metadata_Annotations_Edges_Node_Namespace struct {
+	Name string "json:\"name\" graphql:\"name\""
+}
+
+func (t *GetNodeMetadata_Entities_MetadataNode_Metadata_Annotations_Edges_Node_Namespace) GetName() string {
+	if t == nil {
+		t = &GetNodeMetadata_Entities_MetadataNode_Metadata_Annotations_Edges_Node_Namespace{}
+	}
+	return t.Name
+}
+
+type GetNodeMetadata_Entities_MetadataNode_Metadata_Annotations_Edges_Node struct {
+	Data      json.RawMessage                                                                 "json:\"data\" graphql:\"data\""
+	Namespace GetNodeMetadata_Entities_MetadataNode_Metadata_Annotations_Edges_Node_Namespace "json:\"namespace\" graphql:\"namespace\""
+}
+
+func (t *GetNodeMetadata_Entities_MetadataNode_Metadata_Annotations_Edges_Node) GetData() *json.RawMessage {
+	if t == nil {
+		t = &GetNodeMetadata_Entities_MetadataNode_Metadata_Annotations_Edges_Node{}
+	}
+	return &t.Data
+}
+func (t *GetNodeMetadata_Entities_MetadataNode_Metadata_Annotations_Edges_Node) GetNamespace() *GetNodeMetadata_Entities_MetadataNode_Metadata_Annotations_Edges_Node_Namespace {
+	if t == nil {
+		t = &GetNodeMetadata_Entities_MetadataNode_Metadata_Annotations_Edges_Node{}
+	}
+	return &t.Namespace
+}
+
+type GetNodeMetadata_Entities_MetadataNode_Metadata_Annotations_Edges struct {
+	Node *GetNodeMetadata_Entities_MetadataNode_Metadata_Annotations_Edges_Node "json:\"node,omitempty\" graphql:\"node\""
+}
+
+func (t *GetNodeMetadata_Entities_MetadataNode_Metadata_Annotations_Edges) GetNode() *GetNodeMetadata_Entities_MetadataNode_Metadata_Annotations_Edges_Node {
+	if t == nil {
+		t = &GetNodeMetadata_Entities_MetadataNode_Metadata_Annotations_Edges{}
+	}
+	return t.Node
+}
+
+type GetNodeMetadata_Entities_MetadataNode_Metadata_Annotations struct {
+	Edges []*GetNodeMetadata_Entities_MetadataNode_Metadata_Annotations_Edges "json:\"edges,omitempty\" graphql:\"edges\""
+}
+
+func (t *GetNodeMetadata_Entities_MetadataNode_Metadata_Annotations) GetEdges() []*GetNodeMetadata_Entities_MetadataNode_Metadata_Annotations_Edges {
+	if t == nil {
+		t = &GetNodeMetadata_Entities_MetadataNode_Metadata_Annotations{}
+	}
+	return t.Edges
+}
+
+type GetNodeMetadata_Entities_MetadataNode_Metadata struct {
+	Annotations GetNodeMetadata_Entities_MetadataNode_Metadata_Annotations "json:\"annotations\" graphql:\"annotations\""
+}
+
+func (t *GetNodeMetadata_Entities_MetadataNode_Metadata) GetAnnotations() *GetNodeMetadata_Entities_MetadataNode_Metadata_Annotations {
+	if t == nil {
+		t = &GetNodeMetadata_Entities_MetadataNode_Metadata{}
+	}
+	return &t.Annotations
+}
+
+type GetNodeMetadata_Entities_MetadataNode struct {
+	Metadata *GetNodeMetadata_Entities_MetadataNode_Metadata "json:\"metadata,omitempty\" graphql:\"metadata\""
+}
+
+func (t *GetNodeMetadata_Entities_MetadataNode) GetMetadata() *GetNodeMetadata_Entities_MetadataNode_Metadata {
+	if t == nil {
+		t = &GetNodeMetadata_Entities_MetadataNode{}
+	}
+	return t.Metadata
+}
+
+type StatusUpdate_StatusUpdate_Status_Metadata_Node struct {
+	ID gidx.PrefixedID "json:\"id\" graphql:\"id\""
+}
+
+func (t *StatusUpdate_StatusUpdate_Status_Metadata_Node) GetID() *gidx.PrefixedID {
+	if t == nil {
+		t = &StatusUpdate_StatusUpdate_Status_Metadata_Node{}
+	}
+	return &t.ID
+}
+
+type StatusUpdate_StatusUpdate_Status_Metadata struct {
+	ID   gidx.PrefixedID                                "json:\"id\" graphql:\"id\""
+	Node StatusUpdate_StatusUpdate_Status_Metadata_Node "json:\"node\" graphql:\"node\""
+}
+
+func (t *StatusUpdate_StatusUpdate_Status_Metadata) GetID() *gidx.PrefixedID {
+	if t == nil {
+		t = &StatusUpdate_StatusUpdate_Status_Metadata{}
+	}
+	return &t.ID
+}
+func (t *StatusUpdate_StatusUpdate_Status_Metadata) GetNode() *StatusUpdate_StatusUpdate_Status_Metadata_Node {
+	if t == nil {
+		t = &StatusUpdate_StatusUpdate_Status_Metadata{}
+	}
+	return &t.Node
+}
+
+type StatusUpdate_StatusUpdate_Status_Namespace struct {
+	ID      gidx.PrefixedID "json:\"id\" graphql:\"id\""
+	Name    string          "json:\"name\" graphql:\"name\""
+	Private bool            "json:\"private\" graphql:\"private\""
+}
+
+func (t *StatusUpdate_StatusUpdate_Status_Namespace) GetID() *gidx.PrefixedID {
+	if t == nil {
+		t = &StatusUpdate_StatusUpdate_Status_Namespace{}
+	}
+	return &t.ID
+}
+func (t *StatusUpdate_StatusUpdate_Status_Namespace) GetName() string {
+	if t == nil {
+		t = &StatusUpdate_StatusUpdate_Status_Namespace{}
+	}
+	return t.Name
+}
+func (t *StatusUpdate_StatusUpdate_Status_Namespace) GetPrivate() bool {
+	if t == nil {
+		t = &StatusUpdate_StatusUpdate_Status_Namespace{}
+	}
+	return t.Private
+}
+
+type StatusUpdate_StatusUpdate_Status struct {
+	CreatedAt time.Time                                  "json:\"createdAt\" graphql:\"createdAt\""
+	Data      json.RawMessage                            "json:\"data\" graphql:\"data\""
+	ID        gidx.PrefixedID                            "json:\"id\" graphql:\"id\""
+	Metadata  StatusUpdate_StatusUpdate_Status_Metadata  "json:\"metadata\" graphql:\"metadata\""
+	Namespace StatusUpdate_StatusUpdate_Status_Namespace "json:\"namespace\" graphql:\"namespace\""
+	Source    string                                     "json:\"source\" graphql:\"source\""
+	UpdatedAt time.Time                                  "json:\"updatedAt\" graphql:\"updatedAt\""
+}
+
+func (t *StatusUpdate_StatusUpdate_Status) GetCreatedAt() *time.Time {
+	if t == nil {
+		t = &StatusUpdate_StatusUpdate_Status{}
+	}
+	return &t.CreatedAt
+}
+func (t *StatusUpdate_StatusUpdate_Status) GetData() *json.RawMessage {
+	if t == nil {
+		t = &StatusUpdate_StatusUpdate_Status{}
+	}
+	return &t.Data
+}
+func (t *StatusUpdate_StatusUpdate_Status) GetID() *gidx.PrefixedID {
+	if t == nil {
+		t = &StatusUpdate_StatusUpdate_Status{}
+	}
+	return &t.ID
+}
+func (t *StatusUpdate_StatusUpdate_Status) GetMetadata() *StatusUpdate_StatusUpdate_Status_Metadata {
+	if t == nil {
+		t = &StatusUpdate_StatusUpdate_Status{}
+	}
+	return &t.Metadata
+}
+func (t *StatusUpdate_StatusUpdate_Status) GetNamespace() *StatusUpdate_StatusUpdate_Status_Namespace {
+	if t == nil {
+		t = &StatusUpdate_StatusUpdate_Status{}
+	}
+	return &t.Namespace
+}
+func (t *StatusUpdate_StatusUpdate_Status) GetSource() string {
+	if t == nil {
+		t = &StatusUpdate_StatusUpdate_Status{}
+	}
+	return t.Source
+}
+func (t *StatusUpdate_StatusUpdate_Status) GetUpdatedAt() *time.Time {
+	if t == nil {
+		t = &StatusUpdate_StatusUpdate_Status{}
+	}
+	return &t.UpdatedAt
+}
+
+type StatusUpdate_StatusUpdate struct {
+	Status StatusUpdate_StatusUpdate_Status "json:\"status\" graphql:\"status\""
+}
+
+func (t *StatusUpdate_StatusUpdate) GetStatus() *StatusUpdate_StatusUpdate_Status {
+	if t == nil {
+		t = &StatusUpdate_StatusUpdate{}
+	}
+	return &t.Status
+}
+
+type StatusDelete_StatusDelete struct {
+	DeletedID gidx.PrefixedID "json:\"deletedID\" graphql:\"deletedID\""
+}
+
+func (t *StatusDelete_StatusDelete) GetDeletedID() *gidx.PrefixedID {
+	if t == nil {
+		t = &StatusDelete_StatusDelete{}
+	}
+	return &t.DeletedID
+}
+
+type GetResourceProviderStatusNamespaces_Entities_StatusOwner_StatusNamespaces_Edges_Node struct {
+	CreatedAt time.Time       "json:\"createdAt\" graphql:\"createdAt\""
+	ID        gidx.PrefixedID "json:\"id\" graphql:\"id\""
+	Name      string          "json:\"name\" graphql:\"name\""
+	Private   bool            "json:\"private\" graphql:\"private\""
+	UpdatedAt time.Time       "json:\"updatedAt\" graphql:\"updatedAt\""
+}
+
+func (t *GetResourceProviderStatusNamespaces_Entities_StatusOwner_StatusNamespaces_Edges_Node) GetCreatedAt() *time.Time {
+	if t == nil {
+		t = &GetResourceProviderStatusNamespaces_Entities_StatusOwner_StatusNamespaces_Edges_Node{}
+	}
+	return &t.CreatedAt
+}
+func (t *GetResourceProviderStatusNamespaces_Entities_StatusOwner_StatusNamespaces_Edges_Node) GetID() *gidx.PrefixedID {
+	if t == nil {
+		t = &GetResourceProviderStatusNamespaces_Entities_StatusOwner_StatusNamespaces_Edges_Node{}
+	}
+	return &t.ID
+}
+func (t *GetResourceProviderStatusNamespaces_Entities_StatusOwner_StatusNamespaces_Edges_Node) GetName() string {
+	if t == nil {
+		t = &GetResourceProviderStatusNamespaces_Entities_StatusOwner_StatusNamespaces_Edges_Node{}
+	}
+	return t.Name
+}
+func (t *GetResourceProviderStatusNamespaces_Entities_StatusOwner_StatusNamespaces_Edges_Node) GetPrivate() bool {
+	if t == nil {
+		t = &GetResourceProviderStatusNamespaces_Entities_StatusOwner_StatusNamespaces_Edges_Node{}
+	}
+	return t.Private
+}
+func (t *GetResourceProviderStatusNamespaces_Entities_StatusOwner_StatusNamespaces_Edges_Node) GetUpdatedAt() *time.Time {
+	if t == nil {
+		t = &GetResourceProviderStatusNamespaces_Entities_StatusOwner_StatusNamespaces_Edges_Node{}
+	}
+	return &t.UpdatedAt
+}
+
+type GetResourceProviderStatusNamespaces_Entities_StatusOwner_StatusNamespaces_Edges struct {
+	Node *GetResourceProviderStatusNamespaces_Entities_StatusOwner_StatusNamespaces_Edges_Node "json:\"node,omitempty\" graphql:\"node\""
+}
+
+func (t *GetResourceProviderStatusNamespaces_Entities_StatusOwner_StatusNamespaces_Edges) GetNode() *GetResourceProviderStatusNamespaces_Entities_StatusOwner_StatusNamespaces_Edges_Node {
+	if t == nil {
+		t = &GetResourceProviderStatusNamespaces_Entities_StatusOwner_StatusNamespaces_Edges{}
+	}
+	return t.Node
+}
+
+type GetResourceProviderStatusNamespaces_Entities_StatusOwner_StatusNamespaces struct {
+	Edges []*GetResourceProviderStatusNamespaces_Entities_StatusOwner_StatusNamespaces_Edges "json:\"edges,omitempty\" graphql:\"edges\""
+}
+
+func (t *GetResourceProviderStatusNamespaces_Entities_StatusOwner_StatusNamespaces) GetEdges() []*GetResourceProviderStatusNamespaces_Entities_StatusOwner_StatusNamespaces_Edges {
+	if t == nil {
+		t = &GetResourceProviderStatusNamespaces_Entities_StatusOwner_StatusNamespaces{}
+	}
+	return t.Edges
+}
+
+type GetResourceProviderStatusNamespaces_Entities_StatusOwner struct {
+	StatusNamespaces GetResourceProviderStatusNamespaces_Entities_StatusOwner_StatusNamespaces "json:\"statusNamespaces\" graphql:\"statusNamespaces\""
+}
+
+func (t *GetResourceProviderStatusNamespaces_Entities_StatusOwner) GetStatusNamespaces() *GetResourceProviderStatusNamespaces_Entities_StatusOwner_StatusNamespaces {
+	if t == nil {
+		t = &GetResourceProviderStatusNamespaces_Entities_StatusOwner{}
+	}
+	return &t.StatusNamespaces
+}
+
+type StatusNamespaceCreate_StatusNamespaceCreate_StatusNamespace_Owner struct {
+	ID gidx.PrefixedID "json:\"id\" graphql:\"id\""
+}
+
+func (t *StatusNamespaceCreate_StatusNamespaceCreate_StatusNamespace_Owner) GetID() *gidx.PrefixedID {
+	if t == nil {
+		t = &StatusNamespaceCreate_StatusNamespaceCreate_StatusNamespace_Owner{}
+	}
+	return &t.ID
+}
+
+type StatusNamespaceCreate_StatusNamespaceCreate_StatusNamespace struct {
+	CreatedAt time.Time                                                         "json:\"createdAt\" graphql:\"createdAt\""
+	ID        gidx.PrefixedID                                                   "json:\"id\" graphql:\"id\""
+	Name      string                                                            "json:\"name\" graphql:\"name\""
+	Owner     StatusNamespaceCreate_StatusNamespaceCreate_StatusNamespace_Owner "json:\"owner\" graphql:\"owner\""
+	Private   bool                                                              "json:\"private\" graphql:\"private\""
+	UpdatedAt time.Time                                                         "json:\"updatedAt\" graphql:\"updatedAt\""
+}
+
+func (t *StatusNamespaceCreate_StatusNamespaceCreate_StatusNamespace) GetCreatedAt() *time.Time {
+	if t == nil {
+		t = &StatusNamespaceCreate_StatusNamespaceCreate_StatusNamespace{}
+	}
+	return &t.CreatedAt
+}
+func (t *StatusNamespaceCreate_StatusNamespaceCreate_StatusNamespace) GetID() *gidx.PrefixedID {
+	if t == nil {
+		t = &StatusNamespaceCreate_StatusNamespaceCreate_StatusNamespace{}
+	}
+	return &t.ID
+}
+func (t *StatusNamespaceCreate_StatusNamespaceCreate_StatusNamespace) GetName() string {
+	if t == nil {
+		t = &StatusNamespaceCreate_StatusNamespaceCreate_StatusNamespace{}
+	}
+	return t.Name
+}
+func (t *StatusNamespaceCreate_StatusNamespaceCreate_StatusNamespace) GetOwner() *StatusNamespaceCreate_StatusNamespaceCreate_StatusNamespace_Owner {
+	if t == nil {
+		t = &StatusNamespaceCreate_StatusNamespaceCreate_StatusNamespace{}
+	}
+	return &t.Owner
+}
+func (t *StatusNamespaceCreate_StatusNamespaceCreate_StatusNamespace) GetPrivate() bool {
+	if t == nil {
+		t = &StatusNamespaceCreate_StatusNamespaceCreate_StatusNamespace{}
+	}
+	return t.Private
+}
+func (t *StatusNamespaceCreate_StatusNamespaceCreate_StatusNamespace) GetUpdatedAt() *time.Time {
+	if t == nil {
+		t = &StatusNamespaceCreate_StatusNamespaceCreate_StatusNamespace{}
+	}
+	return &t.UpdatedAt
+}
+
+type StatusNamespaceCreate_StatusNamespaceCreate struct {
+	StatusNamespace StatusNamespaceCreate_StatusNamespaceCreate_StatusNamespace "json:\"statusNamespace\" graphql:\"statusNamespace\""
+}
+
+func (t *StatusNamespaceCreate_StatusNamespaceCreate) GetStatusNamespace() *StatusNamespaceCreate_StatusNamespaceCreate_StatusNamespace {
+	if t == nil {
+		t = &StatusNamespaceCreate_StatusNamespaceCreate{}
+	}
+	return &t.StatusNamespace
+}
+
+type StatusNamespaceUpdate_StatusNamespaceUpdate_StatusNamespace_Owner struct {
+	ID gidx.PrefixedID "json:\"id\" graphql:\"id\""
+}
+
+func (t *StatusNamespaceUpdate_StatusNamespaceUpdate_StatusNamespace_Owner) GetID() *gidx.PrefixedID {
+	if t == nil {
+		t = &StatusNamespaceUpdate_StatusNamespaceUpdate_StatusNamespace_Owner{}
+	}
+	return &t.ID
+}
+
+type StatusNamespaceUpdate_StatusNamespaceUpdate_StatusNamespace struct {
+	CreatedAt time.Time                                                         "json:\"createdAt\" graphql:\"createdAt\""
+	ID        gidx.PrefixedID                                                   "json:\"id\" graphql:\"id\""
+	Name      string                                                            "json:\"name\" graphql:\"name\""
+	Owner     StatusNamespaceUpdate_StatusNamespaceUpdate_StatusNamespace_Owner "json:\"owner\" graphql:\"owner\""
+	Private   bool                                                              "json:\"private\" graphql:\"private\""
+	UpdatedAt time.Time                                                         "json:\"updatedAt\" graphql:\"updatedAt\""
+}
+
+func (t *StatusNamespaceUpdate_StatusNamespaceUpdate_StatusNamespace) GetCreatedAt() *time.Time {
+	if t == nil {
+		t = &StatusNamespaceUpdate_StatusNamespaceUpdate_StatusNamespace{}
+	}
+	return &t.CreatedAt
+}
+func (t *StatusNamespaceUpdate_StatusNamespaceUpdate_StatusNamespace) GetID() *gidx.PrefixedID {
+	if t == nil {
+		t = &StatusNamespaceUpdate_StatusNamespaceUpdate_StatusNamespace{}
+	}
+	return &t.ID
+}
+func (t *StatusNamespaceUpdate_StatusNamespaceUpdate_StatusNamespace) GetName() string {
+	if t == nil {
+		t = &StatusNamespaceUpdate_StatusNamespaceUpdate_StatusNamespace{}
+	}
+	return t.Name
+}
+func (t *StatusNamespaceUpdate_StatusNamespaceUpdate_StatusNamespace) GetOwner() *StatusNamespaceUpdate_StatusNamespaceUpdate_StatusNamespace_Owner {
+	if t == nil {
+		t = &StatusNamespaceUpdate_StatusNamespaceUpdate_StatusNamespace{}
+	}
+	return &t.Owner
+}
+func (t *StatusNamespaceUpdate_StatusNamespaceUpdate_StatusNamespace) GetPrivate() bool {
+	if t == nil {
+		t = &StatusNamespaceUpdate_StatusNamespaceUpdate_StatusNamespace{}
+	}
+	return t.Private
+}
+func (t *StatusNamespaceUpdate_StatusNamespaceUpdate_StatusNamespace) GetUpdatedAt() *time.Time {
+	if t == nil {
+		t = &StatusNamespaceUpdate_StatusNamespaceUpdate_StatusNamespace{}
+	}
+	return &t.UpdatedAt
+}
+
+type StatusNamespaceUpdate_StatusNamespaceUpdate struct {
+	StatusNamespace StatusNamespaceUpdate_StatusNamespaceUpdate_StatusNamespace "json:\"statusNamespace\" graphql:\"statusNamespace\""
+}
+
+func (t *StatusNamespaceUpdate_StatusNamespaceUpdate) GetStatusNamespace() *StatusNamespaceUpdate_StatusNamespaceUpdate_StatusNamespace {
+	if t == nil {
+		t = &StatusNamespaceUpdate_StatusNamespaceUpdate{}
+	}
+	return &t.StatusNamespace
+}
+
+type StatusNamespaceDelete_StatusNamespaceDelete struct {
+	DeletedID          gidx.PrefixedID "json:\"deletedID\" graphql:\"deletedID\""
+	StatusDeletedCount int64           "json:\"statusDeletedCount\" graphql:\"statusDeletedCount\""
+}
+
+func (t *StatusNamespaceDelete_StatusNamespaceDelete) GetDeletedID() *gidx.PrefixedID {
+	if t == nil {
+		t = &StatusNamespaceDelete_StatusNamespaceDelete{}
+	}
+	return &t.DeletedID
+}
+func (t *StatusNamespaceDelete_StatusNamespaceDelete) GetStatusDeletedCount() int64 {
+	if t == nil {
+		t = &StatusNamespaceDelete_StatusNamespaceDelete{}
+	}
+	return t.StatusDeletedCount
+}
+
 type AnnotationUpdate struct {
-	AnnotationUpdate struct {
-		Annotation struct {
-			ID       gidx.PrefixedID "json:\"id\" graphql:\"id\""
-			Metadata struct {
-				ID   gidx.PrefixedID "json:\"id\" graphql:\"id\""
-				Node struct {
-					ID gidx.PrefixedID "json:\"id\" graphql:\"id\""
-				} "json:\"node\" graphql:\"node\""
-			} "json:\"metadata\" graphql:\"metadata\""
-			Namespace struct {
-				ID      gidx.PrefixedID "json:\"id\" graphql:\"id\""
-				Name    string          "json:\"name\" graphql:\"name\""
-				Private bool            "json:\"private\" graphql:\"private\""
-			} "json:\"namespace\" graphql:\"namespace\""
-			Data      json.RawMessage "json:\"data\" graphql:\"data\""
-			CreatedAt time.Time       "json:\"createdAt\" graphql:\"createdAt\""
-			UpdatedAt time.Time       "json:\"updatedAt\" graphql:\"updatedAt\""
-		} "json:\"annotation\" graphql:\"annotation\""
-	} "json:\"annotationUpdate\" graphql:\"annotationUpdate\""
+	AnnotationUpdate AnnotationUpdate_AnnotationUpdate "json:\"annotationUpdate\" graphql:\"annotationUpdate\""
 }
-type GetAnnotationNamespace struct {
-	AnnotationNamespace struct {
-		ID      gidx.PrefixedID "json:\"id\" graphql:\"id\""
-		Name    string          "json:\"name\" graphql:\"name\""
-		Private bool            "json:\"private\" graphql:\"private\""
-		Owner   struct {
-			ID gidx.PrefixedID "json:\"id\" graphql:\"id\""
-		} "json:\"owner\" graphql:\"owner\""
-		Annotations []*struct {
-			ID        gidx.PrefixedID "json:\"id\" graphql:\"id\""
-			Data      json.RawMessage "json:\"data\" graphql:\"data\""
-			CreatedAt time.Time       "json:\"createdAt\" graphql:\"createdAt\""
-			UpdatedAt time.Time       "json:\"updatedAt\" graphql:\"updatedAt\""
-		} "json:\"annotations\" graphql:\"annotations\""
-		CreatedAt time.Time "json:\"createdAt\" graphql:\"createdAt\""
-		UpdatedAt time.Time "json:\"updatedAt\" graphql:\"updatedAt\""
-	} "json:\"annotationNamespace\" graphql:\"annotationNamespace\""
+
+func (t *AnnotationUpdate) GetAnnotationUpdate() *AnnotationUpdate_AnnotationUpdate {
+	if t == nil {
+		t = &AnnotationUpdate{}
+	}
+	return &t.AnnotationUpdate
 }
-type GetNodeMetadata struct {
-	Entities []*struct {
-		Metadata *struct {
-			Annotations struct {
-				Edges []*struct {
-					Node *struct {
-						Namespace struct {
-							Name string "json:\"name\" graphql:\"name\""
-						} "json:\"namespace\" graphql:\"namespace\""
-						Data json.RawMessage "json:\"data\" graphql:\"data\""
-					} "json:\"node\" graphql:\"node\""
-				} "json:\"edges\" graphql:\"edges\""
-			} "json:\"annotations\" graphql:\"annotations\""
-		} "json:\"metadata\" graphql:\"metadata\""
-	} "json:\"_entities\" graphql:\"_entities\""
+
+type AnnotationDelete struct {
+	AnnotationDelete AnnotationDelete_AnnotationDelete "json:\"annotationDelete\" graphql:\"annotationDelete\""
 }
+
+func (t *AnnotationDelete) GetAnnotationDelete() *AnnotationDelete_AnnotationDelete {
+	if t == nil {
+		t = &AnnotationDelete{}
+	}
+	return &t.AnnotationDelete
+}
+
 type GetResourceOwnerAnnotationNamespaces struct {
-	Entities []*struct {
-		AnnotationNamespaces struct {
-			Edges []*struct {
-				Node *struct {
-					ID        gidx.PrefixedID "json:\"id\" graphql:\"id\""
-					Name      string          "json:\"name\" graphql:\"name\""
-					Private   bool            "json:\"private\" graphql:\"private\""
-					CreatedAt time.Time       "json:\"createdAt\" graphql:\"createdAt\""
-					UpdatedAt time.Time       "json:\"updatedAt\" graphql:\"updatedAt\""
-				} "json:\"node\" graphql:\"node\""
-			} "json:\"edges\" graphql:\"edges\""
-		} "json:\"annotationNamespaces\" graphql:\"annotationNamespaces\""
-	} "json:\"_entities\" graphql:\"_entities\""
+	Entities []*GetResourceOwnerAnnotationNamespaces_Entities_ResourceOwner "json:\"_entities\" graphql:\"_entities\""
 }
-type GetResourceProviderStatusNamespaces struct {
-	Entities []*struct {
-		StatusNamespaces struct {
-			Edges []*struct {
-				Node *struct {
-					ID        gidx.PrefixedID "json:\"id\" graphql:\"id\""
-					Name      string          "json:\"name\" graphql:\"name\""
-					Private   bool            "json:\"private\" graphql:\"private\""
-					CreatedAt time.Time       "json:\"createdAt\" graphql:\"createdAt\""
-					UpdatedAt time.Time       "json:\"updatedAt\" graphql:\"updatedAt\""
-				} "json:\"node\" graphql:\"node\""
-			} "json:\"edges\" graphql:\"edges\""
-		} "json:\"statusNamespaces\" graphql:\"statusNamespaces\""
-	} "json:\"_entities\" graphql:\"_entities\""
+
+func (t *GetResourceOwnerAnnotationNamespaces) GetEntities() []*GetResourceOwnerAnnotationNamespaces_Entities_ResourceOwner {
+	if t == nil {
+		t = &GetResourceOwnerAnnotationNamespaces{}
+	}
+	return t.Entities
 }
-type StatusDelete struct {
-	StatusDelete struct {
-		DeletedID gidx.PrefixedID "json:\"deletedID\" graphql:\"deletedID\""
-	} "json:\"statusDelete\" graphql:\"statusDelete\""
+
+type GetAnnotationNamespace struct {
+	AnnotationNamespace GetAnnotationNamespace_AnnotationNamespace "json:\"annotationNamespace\" graphql:\"annotationNamespace\""
 }
-type StatusNamespaceCreate struct {
-	StatusNamespaceCreate struct {
-		StatusNamespace struct {
-			ID        gidx.PrefixedID "json:\"id\" graphql:\"id\""
-			Name      string          "json:\"name\" graphql:\"name\""
-			Private   bool            "json:\"private\" graphql:\"private\""
-			CreatedAt time.Time       "json:\"createdAt\" graphql:\"createdAt\""
-			UpdatedAt time.Time       "json:\"updatedAt\" graphql:\"updatedAt\""
-			Owner     struct {
-				ID gidx.PrefixedID "json:\"id\" graphql:\"id\""
-			} "json:\"owner\" graphql:\"owner\""
-		} "json:\"statusNamespace\" graphql:\"statusNamespace\""
-	} "json:\"statusNamespaceCreate\" graphql:\"statusNamespaceCreate\""
+
+func (t *GetAnnotationNamespace) GetAnnotationNamespace() *GetAnnotationNamespace_AnnotationNamespace {
+	if t == nil {
+		t = &GetAnnotationNamespace{}
+	}
+	return &t.AnnotationNamespace
 }
-type StatusNamespaceDelete struct {
-	StatusNamespaceDelete struct {
-		DeletedID          gidx.PrefixedID "json:\"deletedID\" graphql:\"deletedID\""
-		StatusDeletedCount int64           "json:\"statusDeletedCount\" graphql:\"statusDeletedCount\""
-	} "json:\"statusNamespaceDelete\" graphql:\"statusNamespaceDelete\""
+
+type AnnotationNamespaceCreate struct {
+	AnnotationNamespaceCreate AnnotationNamespaceCreate_AnnotationNamespaceCreate "json:\"annotationNamespaceCreate\" graphql:\"annotationNamespaceCreate\""
 }
-type StatusNamespaceUpdate struct {
-	StatusNamespaceUpdate struct {
-		StatusNamespace struct {
-			ID        gidx.PrefixedID "json:\"id\" graphql:\"id\""
-			Name      string          "json:\"name\" graphql:\"name\""
-			Private   bool            "json:\"private\" graphql:\"private\""
-			CreatedAt time.Time       "json:\"createdAt\" graphql:\"createdAt\""
-			UpdatedAt time.Time       "json:\"updatedAt\" graphql:\"updatedAt\""
-			Owner     struct {
-				ID gidx.PrefixedID "json:\"id\" graphql:\"id\""
-			} "json:\"owner\" graphql:\"owner\""
-		} "json:\"statusNamespace\" graphql:\"statusNamespace\""
-	} "json:\"statusNamespaceUpdate\" graphql:\"statusNamespaceUpdate\""
+
+func (t *AnnotationNamespaceCreate) GetAnnotationNamespaceCreate() *AnnotationNamespaceCreate_AnnotationNamespaceCreate {
+	if t == nil {
+		t = &AnnotationNamespaceCreate{}
+	}
+	return &t.AnnotationNamespaceCreate
 }
+
+type AnnotationNamespaceUpdate struct {
+	AnnotationNamespaceUpdate AnnotationNamespaceUpdate_AnnotationNamespaceUpdate "json:\"annotationNamespaceUpdate\" graphql:\"annotationNamespaceUpdate\""
+}
+
+func (t *AnnotationNamespaceUpdate) GetAnnotationNamespaceUpdate() *AnnotationNamespaceUpdate_AnnotationNamespaceUpdate {
+	if t == nil {
+		t = &AnnotationNamespaceUpdate{}
+	}
+	return &t.AnnotationNamespaceUpdate
+}
+
+type AnnotationNamespaceDelete struct {
+	AnnotationNamespaceDelete AnnotationNamespaceDelete_AnnotationNamespaceDelete "json:\"annotationNamespaceDelete\" graphql:\"annotationNamespaceDelete\""
+}
+
+func (t *AnnotationNamespaceDelete) GetAnnotationNamespaceDelete() *AnnotationNamespaceDelete_AnnotationNamespaceDelete {
+	if t == nil {
+		t = &AnnotationNamespaceDelete{}
+	}
+	return &t.AnnotationNamespaceDelete
+}
+
+type GetNodeMetadata struct {
+	Entities []*GetNodeMetadata_Entities_MetadataNode "json:\"_entities\" graphql:\"_entities\""
+}
+
+func (t *GetNodeMetadata) GetEntities() []*GetNodeMetadata_Entities_MetadataNode {
+	if t == nil {
+		t = &GetNodeMetadata{}
+	}
+	return t.Entities
+}
+
 type StatusUpdate struct {
-	StatusUpdate struct {
-		Status struct {
-			ID       gidx.PrefixedID "json:\"id\" graphql:\"id\""
-			Metadata struct {
-				ID   gidx.PrefixedID "json:\"id\" graphql:\"id\""
-				Node struct {
-					ID gidx.PrefixedID "json:\"id\" graphql:\"id\""
-				} "json:\"node\" graphql:\"node\""
-			} "json:\"metadata\" graphql:\"metadata\""
-			Namespace struct {
-				ID      gidx.PrefixedID "json:\"id\" graphql:\"id\""
-				Name    string          "json:\"name\" graphql:\"name\""
-				Private bool            "json:\"private\" graphql:\"private\""
-			} "json:\"namespace\" graphql:\"namespace\""
-			Source    string          "json:\"source\" graphql:\"source\""
-			Data      json.RawMessage "json:\"data\" graphql:\"data\""
-			CreatedAt time.Time       "json:\"createdAt\" graphql:\"createdAt\""
-			UpdatedAt time.Time       "json:\"updatedAt\" graphql:\"updatedAt\""
-		} "json:\"status\" graphql:\"status\""
-	} "json:\"statusUpdate\" graphql:\"statusUpdate\""
+	StatusUpdate StatusUpdate_StatusUpdate "json:\"statusUpdate\" graphql:\"statusUpdate\""
 }
 
-const AnnotationDeleteDocument = `mutation AnnotationDelete ($input: AnnotationDeleteInput!) {
-	annotationDelete(input: $input) {
-		deletedID
+func (t *StatusUpdate) GetStatusUpdate() *StatusUpdate_StatusUpdate {
+	if t == nil {
+		t = &StatusUpdate{}
 	}
-}
-`
-
-func (c *Client) AnnotationDelete(ctx context.Context, input AnnotationDeleteInput, httpRequestOptions ...client.HTTPRequestOption) (*AnnotationDelete, error) {
-	vars := map[string]interface{}{
-		"input": input,
-	}
-
-	var res AnnotationDelete
-	if err := c.Client.Post(ctx, "AnnotationDelete", AnnotationDeleteDocument, &res, vars, httpRequestOptions...); err != nil {
-		return nil, err
-	}
-
-	return &res, nil
+	return &t.StatusUpdate
 }
 
-const AnnotationNamespaceCreateDocument = `mutation AnnotationNamespaceCreate ($input: CreateAnnotationNamespaceInput!) {
-	annotationNamespaceCreate(input: $input) {
-		annotationNamespace {
-			id
-			name
-			private
-			createdAt
-			updatedAt
-			owner {
-				id
-			}
-		}
-	}
-}
-`
-
-func (c *Client) AnnotationNamespaceCreate(ctx context.Context, input CreateAnnotationNamespaceInput, httpRequestOptions ...client.HTTPRequestOption) (*AnnotationNamespaceCreate, error) {
-	vars := map[string]interface{}{
-		"input": input,
-	}
-
-	var res AnnotationNamespaceCreate
-	if err := c.Client.Post(ctx, "AnnotationNamespaceCreate", AnnotationNamespaceCreateDocument, &res, vars, httpRequestOptions...); err != nil {
-		return nil, err
-	}
-
-	return &res, nil
+type StatusDelete struct {
+	StatusDelete StatusDelete_StatusDelete "json:\"statusDelete\" graphql:\"statusDelete\""
 }
 
-const AnnotationNamespaceDeleteDocument = `mutation AnnotationNamespaceDelete ($id: ID!, $force: Boolean! = false) {
-	annotationNamespaceDelete(id: $id, force: $force) {
-		deletedID
-		annotationDeletedCount
+func (t *StatusDelete) GetStatusDelete() *StatusDelete_StatusDelete {
+	if t == nil {
+		t = &StatusDelete{}
 	}
-}
-`
-
-func (c *Client) AnnotationNamespaceDelete(ctx context.Context, id gidx.PrefixedID, force bool, httpRequestOptions ...client.HTTPRequestOption) (*AnnotationNamespaceDelete, error) {
-	vars := map[string]interface{}{
-		"id":    id,
-		"force": force,
-	}
-
-	var res AnnotationNamespaceDelete
-	if err := c.Client.Post(ctx, "AnnotationNamespaceDelete", AnnotationNamespaceDeleteDocument, &res, vars, httpRequestOptions...); err != nil {
-		return nil, err
-	}
-
-	return &res, nil
+	return &t.StatusDelete
 }
 
-const AnnotationNamespaceUpdateDocument = `mutation AnnotationNamespaceUpdate ($id: ID!, $input: UpdateAnnotationNamespaceInput!) {
-	annotationNamespaceUpdate(id: $id, input: $input) {
-		annotationNamespace {
-			id
-			name
-			private
-			createdAt
-			updatedAt
-			owner {
-				id
-			}
-		}
-	}
+type GetResourceProviderStatusNamespaces struct {
+	Entities []*GetResourceProviderStatusNamespaces_Entities_StatusOwner "json:\"_entities\" graphql:\"_entities\""
 }
-`
 
-func (c *Client) AnnotationNamespaceUpdate(ctx context.Context, id gidx.PrefixedID, input UpdateAnnotationNamespaceInput, httpRequestOptions ...client.HTTPRequestOption) (*AnnotationNamespaceUpdate, error) {
-	vars := map[string]interface{}{
-		"id":    id,
-		"input": input,
+func (t *GetResourceProviderStatusNamespaces) GetEntities() []*GetResourceProviderStatusNamespaces_Entities_StatusOwner {
+	if t == nil {
+		t = &GetResourceProviderStatusNamespaces{}
 	}
+	return t.Entities
+}
 
-	var res AnnotationNamespaceUpdate
-	if err := c.Client.Post(ctx, "AnnotationNamespaceUpdate", AnnotationNamespaceUpdateDocument, &res, vars, httpRequestOptions...); err != nil {
-		return nil, err
+type StatusNamespaceCreate struct {
+	StatusNamespaceCreate StatusNamespaceCreate_StatusNamespaceCreate "json:\"statusNamespaceCreate\" graphql:\"statusNamespaceCreate\""
+}
+
+func (t *StatusNamespaceCreate) GetStatusNamespaceCreate() *StatusNamespaceCreate_StatusNamespaceCreate {
+	if t == nil {
+		t = &StatusNamespaceCreate{}
 	}
+	return &t.StatusNamespaceCreate
+}
 
-	return &res, nil
+type StatusNamespaceUpdate struct {
+	StatusNamespaceUpdate StatusNamespaceUpdate_StatusNamespaceUpdate "json:\"statusNamespaceUpdate\" graphql:\"statusNamespaceUpdate\""
+}
+
+func (t *StatusNamespaceUpdate) GetStatusNamespaceUpdate() *StatusNamespaceUpdate_StatusNamespaceUpdate {
+	if t == nil {
+		t = &StatusNamespaceUpdate{}
+	}
+	return &t.StatusNamespaceUpdate
+}
+
+type StatusNamespaceDelete struct {
+	StatusNamespaceDelete StatusNamespaceDelete_StatusNamespaceDelete "json:\"statusNamespaceDelete\" graphql:\"statusNamespaceDelete\""
+}
+
+func (t *StatusNamespaceDelete) GetStatusNamespaceDelete() *StatusNamespaceDelete_StatusNamespaceDelete {
+	if t == nil {
+		t = &StatusNamespaceDelete{}
+	}
+	return &t.StatusNamespaceDelete
 }
 
 const AnnotationUpdateDocument = `mutation AnnotationUpdate ($input: AnnotationUpdateInput!) {
@@ -364,13 +1085,78 @@ const AnnotationUpdateDocument = `mutation AnnotationUpdate ($input: AnnotationU
 }
 `
 
-func (c *Client) AnnotationUpdate(ctx context.Context, input AnnotationUpdateInput, httpRequestOptions ...client.HTTPRequestOption) (*AnnotationUpdate, error) {
-	vars := map[string]interface{}{
+func (c *Client) AnnotationUpdate(ctx context.Context, input AnnotationUpdateInput, interceptors ...clientv2.RequestInterceptor) (*AnnotationUpdate, error) {
+	vars := map[string]any{
 		"input": input,
 	}
 
 	var res AnnotationUpdate
-	if err := c.Client.Post(ctx, "AnnotationUpdate", AnnotationUpdateDocument, &res, vars, httpRequestOptions...); err != nil {
+	if err := c.Client.Post(ctx, "AnnotationUpdate", AnnotationUpdateDocument, &res, vars, interceptors...); err != nil {
+		if c.Client.ParseDataWhenErrors {
+			return &res, err
+		}
+
+		return nil, err
+	}
+
+	return &res, nil
+}
+
+const AnnotationDeleteDocument = `mutation AnnotationDelete ($input: AnnotationDeleteInput!) {
+	annotationDelete(input: $input) {
+		deletedID
+	}
+}
+`
+
+func (c *Client) AnnotationDelete(ctx context.Context, input AnnotationDeleteInput, interceptors ...clientv2.RequestInterceptor) (*AnnotationDelete, error) {
+	vars := map[string]any{
+		"input": input,
+	}
+
+	var res AnnotationDelete
+	if err := c.Client.Post(ctx, "AnnotationDelete", AnnotationDeleteDocument, &res, vars, interceptors...); err != nil {
+		if c.Client.ParseDataWhenErrors {
+			return &res, err
+		}
+
+		return nil, err
+	}
+
+	return &res, nil
+}
+
+const GetResourceOwnerAnnotationNamespacesDocument = `query GetResourceOwnerAnnotationNamespaces ($id: ID!, $orderBy: AnnotationNamespaceOrder) {
+	_entities(representations: {__typename:"ResourceOwner",id:$id}) {
+		... on ResourceOwner {
+			annotationNamespaces(orderBy: $orderBy) {
+				edges {
+					node {
+						id
+						name
+						private
+						createdAt
+						updatedAt
+					}
+				}
+			}
+		}
+	}
+}
+`
+
+func (c *Client) GetResourceOwnerAnnotationNamespaces(ctx context.Context, id gidx.PrefixedID, orderBy *AnnotationNamespaceOrder, interceptors ...clientv2.RequestInterceptor) (*GetResourceOwnerAnnotationNamespaces, error) {
+	vars := map[string]any{
+		"id":      id,
+		"orderBy": orderBy,
+	}
+
+	var res GetResourceOwnerAnnotationNamespaces
+	if err := c.Client.Post(ctx, "GetResourceOwnerAnnotationNamespaces", GetResourceOwnerAnnotationNamespacesDocument, &res, vars, interceptors...); err != nil {
+		if c.Client.ParseDataWhenErrors {
+			return &res, err
+		}
+
 		return nil, err
 	}
 
@@ -397,13 +1183,110 @@ const GetAnnotationNamespaceDocument = `query GetAnnotationNamespace ($annotatio
 }
 `
 
-func (c *Client) GetAnnotationNamespace(ctx context.Context, annotationNamespaceID gidx.PrefixedID, httpRequestOptions ...client.HTTPRequestOption) (*GetAnnotationNamespace, error) {
-	vars := map[string]interface{}{
+func (c *Client) GetAnnotationNamespace(ctx context.Context, annotationNamespaceID gidx.PrefixedID, interceptors ...clientv2.RequestInterceptor) (*GetAnnotationNamespace, error) {
+	vars := map[string]any{
 		"annotationNamespaceId": annotationNamespaceID,
 	}
 
 	var res GetAnnotationNamespace
-	if err := c.Client.Post(ctx, "GetAnnotationNamespace", GetAnnotationNamespaceDocument, &res, vars, httpRequestOptions...); err != nil {
+	if err := c.Client.Post(ctx, "GetAnnotationNamespace", GetAnnotationNamespaceDocument, &res, vars, interceptors...); err != nil {
+		if c.Client.ParseDataWhenErrors {
+			return &res, err
+		}
+
+		return nil, err
+	}
+
+	return &res, nil
+}
+
+const AnnotationNamespaceCreateDocument = `mutation AnnotationNamespaceCreate ($input: CreateAnnotationNamespaceInput!) {
+	annotationNamespaceCreate(input: $input) {
+		annotationNamespace {
+			id
+			name
+			private
+			createdAt
+			updatedAt
+			owner {
+				id
+			}
+		}
+	}
+}
+`
+
+func (c *Client) AnnotationNamespaceCreate(ctx context.Context, input CreateAnnotationNamespaceInput, interceptors ...clientv2.RequestInterceptor) (*AnnotationNamespaceCreate, error) {
+	vars := map[string]any{
+		"input": input,
+	}
+
+	var res AnnotationNamespaceCreate
+	if err := c.Client.Post(ctx, "AnnotationNamespaceCreate", AnnotationNamespaceCreateDocument, &res, vars, interceptors...); err != nil {
+		if c.Client.ParseDataWhenErrors {
+			return &res, err
+		}
+
+		return nil, err
+	}
+
+	return &res, nil
+}
+
+const AnnotationNamespaceUpdateDocument = `mutation AnnotationNamespaceUpdate ($id: ID!, $input: UpdateAnnotationNamespaceInput!) {
+	annotationNamespaceUpdate(id: $id, input: $input) {
+		annotationNamespace {
+			id
+			name
+			private
+			createdAt
+			updatedAt
+			owner {
+				id
+			}
+		}
+	}
+}
+`
+
+func (c *Client) AnnotationNamespaceUpdate(ctx context.Context, id gidx.PrefixedID, input UpdateAnnotationNamespaceInput, interceptors ...clientv2.RequestInterceptor) (*AnnotationNamespaceUpdate, error) {
+	vars := map[string]any{
+		"id":    id,
+		"input": input,
+	}
+
+	var res AnnotationNamespaceUpdate
+	if err := c.Client.Post(ctx, "AnnotationNamespaceUpdate", AnnotationNamespaceUpdateDocument, &res, vars, interceptors...); err != nil {
+		if c.Client.ParseDataWhenErrors {
+			return &res, err
+		}
+
+		return nil, err
+	}
+
+	return &res, nil
+}
+
+const AnnotationNamespaceDeleteDocument = `mutation AnnotationNamespaceDelete ($id: ID!, $force: Boolean! = false) {
+	annotationNamespaceDelete(id: $id, force: $force) {
+		deletedID
+		annotationDeletedCount
+	}
+}
+`
+
+func (c *Client) AnnotationNamespaceDelete(ctx context.Context, id gidx.PrefixedID, force bool, interceptors ...clientv2.RequestInterceptor) (*AnnotationNamespaceDelete, error) {
+	vars := map[string]any{
+		"id":    id,
+		"force": force,
+	}
+
+	var res AnnotationNamespaceDelete
+	if err := c.Client.Post(ctx, "AnnotationNamespaceDelete", AnnotationNamespaceDeleteDocument, &res, vars, interceptors...); err != nil {
+		if c.Client.ParseDataWhenErrors {
+			return &res, err
+		}
+
 		return nil, err
 	}
 
@@ -430,180 +1313,17 @@ const GetNodeMetadataDocument = `query GetNodeMetadata ($id: ID!) {
 }
 `
 
-func (c *Client) GetNodeMetadata(ctx context.Context, id gidx.PrefixedID, httpRequestOptions ...client.HTTPRequestOption) (*GetNodeMetadata, error) {
-	vars := map[string]interface{}{
+func (c *Client) GetNodeMetadata(ctx context.Context, id gidx.PrefixedID, interceptors ...clientv2.RequestInterceptor) (*GetNodeMetadata, error) {
+	vars := map[string]any{
 		"id": id,
 	}
 
 	var res GetNodeMetadata
-	if err := c.Client.Post(ctx, "GetNodeMetadata", GetNodeMetadataDocument, &res, vars, httpRequestOptions...); err != nil {
-		return nil, err
-	}
-
-	return &res, nil
-}
-
-const GetResourceOwnerAnnotationNamespacesDocument = `query GetResourceOwnerAnnotationNamespaces ($id: ID!, $orderBy: AnnotationNamespaceOrder) {
-	_entities(representations: {__typename:"ResourceOwner",id:$id}) {
-		... on ResourceOwner {
-			annotationNamespaces(orderBy: $orderBy) {
-				edges {
-					node {
-						id
-						name
-						private
-						createdAt
-						updatedAt
-					}
-				}
-			}
+	if err := c.Client.Post(ctx, "GetNodeMetadata", GetNodeMetadataDocument, &res, vars, interceptors...); err != nil {
+		if c.Client.ParseDataWhenErrors {
+			return &res, err
 		}
-	}
-}
-`
 
-func (c *Client) GetResourceOwnerAnnotationNamespaces(ctx context.Context, id gidx.PrefixedID, orderBy *AnnotationNamespaceOrder, httpRequestOptions ...client.HTTPRequestOption) (*GetResourceOwnerAnnotationNamespaces, error) {
-	vars := map[string]interface{}{
-		"id":      id,
-		"orderBy": orderBy,
-	}
-
-	var res GetResourceOwnerAnnotationNamespaces
-	if err := c.Client.Post(ctx, "GetResourceOwnerAnnotationNamespaces", GetResourceOwnerAnnotationNamespacesDocument, &res, vars, httpRequestOptions...); err != nil {
-		return nil, err
-	}
-
-	return &res, nil
-}
-
-const GetResourceProviderStatusNamespacesDocument = `query GetResourceProviderStatusNamespaces ($id: ID!, $orderBy: StatusNamespaceOrder) {
-	_entities(representations: {__typename:"StatusOwner",id:$id}) {
-		... on StatusOwner {
-			statusNamespaces(orderBy: $orderBy) {
-				edges {
-					node {
-						id
-						name
-						private
-						createdAt
-						updatedAt
-					}
-				}
-			}
-		}
-	}
-}
-`
-
-func (c *Client) GetResourceProviderStatusNamespaces(ctx context.Context, id gidx.PrefixedID, orderBy *StatusNamespaceOrder, httpRequestOptions ...client.HTTPRequestOption) (*GetResourceProviderStatusNamespaces, error) {
-	vars := map[string]interface{}{
-		"id":      id,
-		"orderBy": orderBy,
-	}
-
-	var res GetResourceProviderStatusNamespaces
-	if err := c.Client.Post(ctx, "GetResourceProviderStatusNamespaces", GetResourceProviderStatusNamespacesDocument, &res, vars, httpRequestOptions...); err != nil {
-		return nil, err
-	}
-
-	return &res, nil
-}
-
-const StatusDeleteDocument = `mutation StatusDelete ($input: StatusDeleteInput!) {
-	statusDelete(input: $input) {
-		deletedID
-	}
-}
-`
-
-func (c *Client) StatusDelete(ctx context.Context, input StatusDeleteInput, httpRequestOptions ...client.HTTPRequestOption) (*StatusDelete, error) {
-	vars := map[string]interface{}{
-		"input": input,
-	}
-
-	var res StatusDelete
-	if err := c.Client.Post(ctx, "StatusDelete", StatusDeleteDocument, &res, vars, httpRequestOptions...); err != nil {
-		return nil, err
-	}
-
-	return &res, nil
-}
-
-const StatusNamespaceCreateDocument = `mutation StatusNamespaceCreate ($input: CreateStatusNamespaceInput!) {
-	statusNamespaceCreate(input: $input) {
-		statusNamespace {
-			id
-			name
-			private
-			createdAt
-			updatedAt
-			owner {
-				id
-			}
-		}
-	}
-}
-`
-
-func (c *Client) StatusNamespaceCreate(ctx context.Context, input CreateStatusNamespaceInput, httpRequestOptions ...client.HTTPRequestOption) (*StatusNamespaceCreate, error) {
-	vars := map[string]interface{}{
-		"input": input,
-	}
-
-	var res StatusNamespaceCreate
-	if err := c.Client.Post(ctx, "StatusNamespaceCreate", StatusNamespaceCreateDocument, &res, vars, httpRequestOptions...); err != nil {
-		return nil, err
-	}
-
-	return &res, nil
-}
-
-const StatusNamespaceDeleteDocument = `mutation StatusNamespaceDelete ($id: ID!, $force: Boolean! = false) {
-	statusNamespaceDelete(id: $id, force: $force) {
-		deletedID
-		statusDeletedCount
-	}
-}
-`
-
-func (c *Client) StatusNamespaceDelete(ctx context.Context, id gidx.PrefixedID, force bool, httpRequestOptions ...client.HTTPRequestOption) (*StatusNamespaceDelete, error) {
-	vars := map[string]interface{}{
-		"id":    id,
-		"force": force,
-	}
-
-	var res StatusNamespaceDelete
-	if err := c.Client.Post(ctx, "StatusNamespaceDelete", StatusNamespaceDeleteDocument, &res, vars, httpRequestOptions...); err != nil {
-		return nil, err
-	}
-
-	return &res, nil
-}
-
-const StatusNamespaceUpdateDocument = `mutation StatusNamespaceUpdate ($id: ID!, $input: UpdateStatusNamespaceInput!) {
-	statusNamespaceUpdate(id: $id, input: $input) {
-		statusNamespace {
-			id
-			name
-			private
-			createdAt
-			updatedAt
-			owner {
-				id
-			}
-		}
-	}
-}
-`
-
-func (c *Client) StatusNamespaceUpdate(ctx context.Context, id gidx.PrefixedID, input UpdateStatusNamespaceInput, httpRequestOptions ...client.HTTPRequestOption) (*StatusNamespaceUpdate, error) {
-	vars := map[string]interface{}{
-		"id":    id,
-		"input": input,
-	}
-
-	var res StatusNamespaceUpdate
-	if err := c.Client.Post(ctx, "StatusNamespaceUpdate", StatusNamespaceUpdateDocument, &res, vars, httpRequestOptions...); err != nil {
 		return nil, err
 	}
 
@@ -634,15 +1354,190 @@ const StatusUpdateDocument = `mutation StatusUpdate ($input: StatusUpdateInput!)
 }
 `
 
-func (c *Client) StatusUpdate(ctx context.Context, input StatusUpdateInput, httpRequestOptions ...client.HTTPRequestOption) (*StatusUpdate, error) {
-	vars := map[string]interface{}{
+func (c *Client) StatusUpdate(ctx context.Context, input StatusUpdateInput, interceptors ...clientv2.RequestInterceptor) (*StatusUpdate, error) {
+	vars := map[string]any{
 		"input": input,
 	}
 
 	var res StatusUpdate
-	if err := c.Client.Post(ctx, "StatusUpdate", StatusUpdateDocument, &res, vars, httpRequestOptions...); err != nil {
+	if err := c.Client.Post(ctx, "StatusUpdate", StatusUpdateDocument, &res, vars, interceptors...); err != nil {
+		if c.Client.ParseDataWhenErrors {
+			return &res, err
+		}
+
 		return nil, err
 	}
 
 	return &res, nil
+}
+
+const StatusDeleteDocument = `mutation StatusDelete ($input: StatusDeleteInput!) {
+	statusDelete(input: $input) {
+		deletedID
+	}
+}
+`
+
+func (c *Client) StatusDelete(ctx context.Context, input StatusDeleteInput, interceptors ...clientv2.RequestInterceptor) (*StatusDelete, error) {
+	vars := map[string]any{
+		"input": input,
+	}
+
+	var res StatusDelete
+	if err := c.Client.Post(ctx, "StatusDelete", StatusDeleteDocument, &res, vars, interceptors...); err != nil {
+		if c.Client.ParseDataWhenErrors {
+			return &res, err
+		}
+
+		return nil, err
+	}
+
+	return &res, nil
+}
+
+const GetResourceProviderStatusNamespacesDocument = `query GetResourceProviderStatusNamespaces ($id: ID!, $orderBy: StatusNamespaceOrder) {
+	_entities(representations: {__typename:"StatusOwner",id:$id}) {
+		... on StatusOwner {
+			statusNamespaces(orderBy: $orderBy) {
+				edges {
+					node {
+						id
+						name
+						private
+						createdAt
+						updatedAt
+					}
+				}
+			}
+		}
+	}
+}
+`
+
+func (c *Client) GetResourceProviderStatusNamespaces(ctx context.Context, id gidx.PrefixedID, orderBy *StatusNamespaceOrder, interceptors ...clientv2.RequestInterceptor) (*GetResourceProviderStatusNamespaces, error) {
+	vars := map[string]any{
+		"id":      id,
+		"orderBy": orderBy,
+	}
+
+	var res GetResourceProviderStatusNamespaces
+	if err := c.Client.Post(ctx, "GetResourceProviderStatusNamespaces", GetResourceProviderStatusNamespacesDocument, &res, vars, interceptors...); err != nil {
+		if c.Client.ParseDataWhenErrors {
+			return &res, err
+		}
+
+		return nil, err
+	}
+
+	return &res, nil
+}
+
+const StatusNamespaceCreateDocument = `mutation StatusNamespaceCreate ($input: CreateStatusNamespaceInput!) {
+	statusNamespaceCreate(input: $input) {
+		statusNamespace {
+			id
+			name
+			private
+			createdAt
+			updatedAt
+			owner {
+				id
+			}
+		}
+	}
+}
+`
+
+func (c *Client) StatusNamespaceCreate(ctx context.Context, input CreateStatusNamespaceInput, interceptors ...clientv2.RequestInterceptor) (*StatusNamespaceCreate, error) {
+	vars := map[string]any{
+		"input": input,
+	}
+
+	var res StatusNamespaceCreate
+	if err := c.Client.Post(ctx, "StatusNamespaceCreate", StatusNamespaceCreateDocument, &res, vars, interceptors...); err != nil {
+		if c.Client.ParseDataWhenErrors {
+			return &res, err
+		}
+
+		return nil, err
+	}
+
+	return &res, nil
+}
+
+const StatusNamespaceUpdateDocument = `mutation StatusNamespaceUpdate ($id: ID!, $input: UpdateStatusNamespaceInput!) {
+	statusNamespaceUpdate(id: $id, input: $input) {
+		statusNamespace {
+			id
+			name
+			private
+			createdAt
+			updatedAt
+			owner {
+				id
+			}
+		}
+	}
+}
+`
+
+func (c *Client) StatusNamespaceUpdate(ctx context.Context, id gidx.PrefixedID, input UpdateStatusNamespaceInput, interceptors ...clientv2.RequestInterceptor) (*StatusNamespaceUpdate, error) {
+	vars := map[string]any{
+		"id":    id,
+		"input": input,
+	}
+
+	var res StatusNamespaceUpdate
+	if err := c.Client.Post(ctx, "StatusNamespaceUpdate", StatusNamespaceUpdateDocument, &res, vars, interceptors...); err != nil {
+		if c.Client.ParseDataWhenErrors {
+			return &res, err
+		}
+
+		return nil, err
+	}
+
+	return &res, nil
+}
+
+const StatusNamespaceDeleteDocument = `mutation StatusNamespaceDelete ($id: ID!, $force: Boolean! = false) {
+	statusNamespaceDelete(id: $id, force: $force) {
+		deletedID
+		statusDeletedCount
+	}
+}
+`
+
+func (c *Client) StatusNamespaceDelete(ctx context.Context, id gidx.PrefixedID, force bool, interceptors ...clientv2.RequestInterceptor) (*StatusNamespaceDelete, error) {
+	vars := map[string]any{
+		"id":    id,
+		"force": force,
+	}
+
+	var res StatusNamespaceDelete
+	if err := c.Client.Post(ctx, "StatusNamespaceDelete", StatusNamespaceDeleteDocument, &res, vars, interceptors...); err != nil {
+		if c.Client.ParseDataWhenErrors {
+			return &res, err
+		}
+
+		return nil, err
+	}
+
+	return &res, nil
+}
+
+var DocumentOperationNames = map[string]string{
+	AnnotationUpdateDocument:                     "AnnotationUpdate",
+	AnnotationDeleteDocument:                     "AnnotationDelete",
+	GetResourceOwnerAnnotationNamespacesDocument: "GetResourceOwnerAnnotationNamespaces",
+	GetAnnotationNamespaceDocument:               "GetAnnotationNamespace",
+	AnnotationNamespaceCreateDocument:            "AnnotationNamespaceCreate",
+	AnnotationNamespaceUpdateDocument:            "AnnotationNamespaceUpdate",
+	AnnotationNamespaceDeleteDocument:            "AnnotationNamespaceDelete",
+	GetNodeMetadataDocument:                      "GetNodeMetadata",
+	StatusUpdateDocument:                         "StatusUpdate",
+	StatusDeleteDocument:                         "StatusDelete",
+	GetResourceProviderStatusNamespacesDocument:  "GetResourceProviderStatusNamespaces",
+	StatusNamespaceCreateDocument:                "StatusNamespaceCreate",
+	StatusNamespaceUpdateDocument:                "StatusNamespaceUpdate",
+	StatusNamespaceDeleteDocument:                "StatusNamespaceDelete",
 }

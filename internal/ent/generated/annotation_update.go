@@ -98,10 +98,10 @@ func (au *AnnotationUpdate) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (au *AnnotationUpdate) check() error {
-	if _, ok := au.mutation.NamespaceID(); au.mutation.NamespaceCleared() && !ok {
+	if au.mutation.NamespaceCleared() && len(au.mutation.NamespaceIDs()) > 0 {
 		return errors.New(`generated: clearing a required unique edge "Annotation.namespace"`)
 	}
-	if _, ok := au.mutation.MetadataID(); au.mutation.MetadataCleared() && !ok {
+	if au.mutation.MetadataCleared() && len(au.mutation.MetadataIDs()) > 0 {
 		return errors.New(`generated: clearing a required unique edge "Annotation.metadata"`)
 	}
 	return nil
@@ -218,10 +218,10 @@ func (auo *AnnotationUpdateOne) defaults() {
 
 // check runs all checks and user-defined validators on the builder.
 func (auo *AnnotationUpdateOne) check() error {
-	if _, ok := auo.mutation.NamespaceID(); auo.mutation.NamespaceCleared() && !ok {
+	if auo.mutation.NamespaceCleared() && len(auo.mutation.NamespaceIDs()) > 0 {
 		return errors.New(`generated: clearing a required unique edge "Annotation.namespace"`)
 	}
-	if _, ok := auo.mutation.MetadataID(); auo.mutation.MetadataCleared() && !ok {
+	if auo.mutation.MetadataCleared() && len(auo.mutation.MetadataIDs()) > 0 {
 		return errors.New(`generated: clearing a required unique edge "Annotation.metadata"`)
 	}
 	return nil

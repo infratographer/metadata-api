@@ -18,10 +18,13 @@ package eventhooks
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"entgo.io/ent"
+	"github.com/metal-toolbox/iam-runtime-contrib/iamruntime"
+	"github.com/metal-toolbox/iam-runtime/pkg/iam/runtime/authorization"
 	"go.infratographer.com/metadata-api/internal/ent/generated"
 	"go.infratographer.com/metadata-api/internal/ent/generated/hook"
 	"go.infratographer.com/permissions-api/pkg/permissions"
@@ -36,7 +39,7 @@ func AnnotationHooks() []ent.Hook {
 				return hook.AnnotationFunc(func(ctx context.Context, m *generated.AnnotationMutation) (ent.Value, error) {
 					var err error
 					additionalSubjects := []gidx.PrefixedID{}
-					relationships := []events.AuthRelationshipRelation{}
+					relationships := []*authorization.Relationship{}
 
 					objID, ok := m.ID()
 					if !ok {
@@ -168,8 +171,8 @@ func AnnotationHooks() []ent.Hook {
 						return retValue, err
 					}
 
-					if len(relationships) != 0 {
-						if err := permissions.CreateAuthRelationships(ctx, "annotation", objID, relationships...); err != nil {
+					if len(relationships) != 0 && m.Op().Is(ent.OpCreate) {
+						if err := createAuthRelationships(ctx, "annotation", objID, relationships...); err != nil {
 							return nil, fmt.Errorf("relationship request failed with error: %w", err)
 						}
 					}
@@ -189,16 +192,11 @@ func AnnotationHooks() []ent.Hook {
 			func(next ent.Mutator) ent.Mutator {
 				return hook.AnnotationFunc(func(ctx context.Context, m *generated.AnnotationMutation) (ent.Value, error) {
 					additionalSubjects := []gidx.PrefixedID{}
-					relationships := []events.AuthRelationshipRelation{}
+					relationships := []*authorization.Relationship{}
 
 					objID, ok := m.ID()
 					if !ok {
 						return nil, fmt.Errorf("object doesn't have an id %s", objID)
-					}
-
-					_, err := m.Client().Annotation.Get(ctx, objID)
-					if err != nil {
-						return nil, fmt.Errorf("failed to load object to get values for event, err %w", err)
 					}
 
 					// we have all the info we need, now complete the mutation before we process the event
@@ -208,7 +206,7 @@ func AnnotationHooks() []ent.Hook {
 					}
 
 					if len(relationships) != 0 {
-						if err := permissions.DeleteAuthRelationships(ctx, "annotation", objID, relationships...); err != nil {
+						if err := deleteAuthRelationships(ctx, "annotation", objID, relationships...); err != nil {
 							return nil, fmt.Errorf("relationship request failed with error: %w", err)
 						}
 					}
@@ -238,7 +236,7 @@ func AnnotationNamespaceHooks() []ent.Hook {
 				return hook.AnnotationNamespaceFunc(func(ctx context.Context, m *generated.AnnotationNamespaceMutation) (ent.Value, error) {
 					var err error
 					additionalSubjects := []gidx.PrefixedID{}
-					relationships := []events.AuthRelationshipRelation{}
+					relationships := []*authorization.Relationship{}
 
 					objID, ok := m.ID()
 					if !ok {
@@ -322,10 +320,9 @@ func AnnotationNamespaceHooks() []ent.Hook {
 						}
 					}
 					additionalSubjects = append(additionalSubjects, owner_id)
-
-					relationships = append(relationships, events.AuthRelationshipRelation{
+					relationships = append(relationships, &authorization.Relationship{
 						Relation:  "owner",
-						SubjectID: owner_id,
+						SubjectId: owner_id.String(),
 					})
 
 					if ok {
@@ -383,8 +380,8 @@ func AnnotationNamespaceHooks() []ent.Hook {
 						return retValue, err
 					}
 
-					if len(relationships) != 0 {
-						if err := permissions.CreateAuthRelationships(ctx, "annotation-namespace", objID, relationships...); err != nil {
+					if len(relationships) != 0 && m.Op().Is(ent.OpCreate) {
+						if err := createAuthRelationships(ctx, "annotation-namespace", objID, relationships...); err != nil {
 							return nil, fmt.Errorf("relationship request failed with error: %w", err)
 						}
 					}
@@ -404,23 +401,21 @@ func AnnotationNamespaceHooks() []ent.Hook {
 			func(next ent.Mutator) ent.Mutator {
 				return hook.AnnotationNamespaceFunc(func(ctx context.Context, m *generated.AnnotationNamespaceMutation) (ent.Value, error) {
 					additionalSubjects := []gidx.PrefixedID{}
-					relationships := []events.AuthRelationshipRelation{}
+					relationships := []*authorization.Relationship{}
 
 					objID, ok := m.ID()
 					if !ok {
 						return nil, fmt.Errorf("object doesn't have an id %s", objID)
 					}
-
 					dbObj, err := m.Client().AnnotationNamespace.Get(ctx, objID)
 					if err != nil {
 						return nil, fmt.Errorf("failed to load object to get values for event, err %w", err)
 					}
 
 					additionalSubjects = append(additionalSubjects, dbObj.OwnerID)
-
-					relationships = append(relationships, events.AuthRelationshipRelation{
+					relationships = append(relationships, &authorization.Relationship{
 						Relation:  "owner",
-						SubjectID: dbObj.OwnerID,
+						SubjectId: dbObj.OwnerID.String(),
 					})
 
 					// we have all the info we need, now complete the mutation before we process the event
@@ -430,7 +425,7 @@ func AnnotationNamespaceHooks() []ent.Hook {
 					}
 
 					if len(relationships) != 0 {
-						if err := permissions.DeleteAuthRelationships(ctx, "annotation-namespace", objID, relationships...); err != nil {
+						if err := deleteAuthRelationships(ctx, "annotation-namespace", objID, relationships...); err != nil {
 							return nil, fmt.Errorf("relationship request failed with error: %w", err)
 						}
 					}
@@ -460,7 +455,7 @@ func MetadataHooks() []ent.Hook {
 				return hook.MetadataFunc(func(ctx context.Context, m *generated.MetadataMutation) (ent.Value, error) {
 					var err error
 					additionalSubjects := []gidx.PrefixedID{}
-					relationships := []events.AuthRelationshipRelation{}
+					relationships := []*authorization.Relationship{}
 
 					objID, ok := m.ID()
 					if !ok {
@@ -548,8 +543,8 @@ func MetadataHooks() []ent.Hook {
 						return retValue, err
 					}
 
-					if len(relationships) != 0 {
-						if err := permissions.CreateAuthRelationships(ctx, "metadata", objID, relationships...); err != nil {
+					if len(relationships) != 0 && m.Op().Is(ent.OpCreate) {
+						if err := createAuthRelationships(ctx, "metadata", objID, relationships...); err != nil {
 							return nil, fmt.Errorf("relationship request failed with error: %w", err)
 						}
 					}
@@ -569,16 +564,11 @@ func MetadataHooks() []ent.Hook {
 			func(next ent.Mutator) ent.Mutator {
 				return hook.MetadataFunc(func(ctx context.Context, m *generated.MetadataMutation) (ent.Value, error) {
 					additionalSubjects := []gidx.PrefixedID{}
-					relationships := []events.AuthRelationshipRelation{}
+					relationships := []*authorization.Relationship{}
 
 					objID, ok := m.ID()
 					if !ok {
 						return nil, fmt.Errorf("object doesn't have an id %s", objID)
-					}
-
-					_, err := m.Client().Metadata.Get(ctx, objID)
-					if err != nil {
-						return nil, fmt.Errorf("failed to load object to get values for event, err %w", err)
 					}
 
 					// we have all the info we need, now complete the mutation before we process the event
@@ -588,7 +578,7 @@ func MetadataHooks() []ent.Hook {
 					}
 
 					if len(relationships) != 0 {
-						if err := permissions.DeleteAuthRelationships(ctx, "metadata", objID, relationships...); err != nil {
+						if err := deleteAuthRelationships(ctx, "metadata", objID, relationships...); err != nil {
 							return nil, fmt.Errorf("relationship request failed with error: %w", err)
 						}
 					}
@@ -618,7 +608,7 @@ func StatusHooks() []ent.Hook {
 				return hook.StatusFunc(func(ctx context.Context, m *generated.StatusMutation) (ent.Value, error) {
 					var err error
 					additionalSubjects := []gidx.PrefixedID{}
-					relationships := []events.AuthRelationshipRelation{}
+					relationships := []*authorization.Relationship{}
 
 					objID, ok := m.ID()
 					if !ok {
@@ -772,8 +762,8 @@ func StatusHooks() []ent.Hook {
 						return retValue, err
 					}
 
-					if len(relationships) != 0 {
-						if err := permissions.CreateAuthRelationships(ctx, "status", objID, relationships...); err != nil {
+					if len(relationships) != 0 && m.Op().Is(ent.OpCreate) {
+						if err := createAuthRelationships(ctx, "status", objID, relationships...); err != nil {
 							return nil, fmt.Errorf("relationship request failed with error: %w", err)
 						}
 					}
@@ -793,16 +783,11 @@ func StatusHooks() []ent.Hook {
 			func(next ent.Mutator) ent.Mutator {
 				return hook.StatusFunc(func(ctx context.Context, m *generated.StatusMutation) (ent.Value, error) {
 					additionalSubjects := []gidx.PrefixedID{}
-					relationships := []events.AuthRelationshipRelation{}
+					relationships := []*authorization.Relationship{}
 
 					objID, ok := m.ID()
 					if !ok {
 						return nil, fmt.Errorf("object doesn't have an id %s", objID)
-					}
-
-					_, err := m.Client().Status.Get(ctx, objID)
-					if err != nil {
-						return nil, fmt.Errorf("failed to load object to get values for event, err %w", err)
 					}
 
 					// we have all the info we need, now complete the mutation before we process the event
@@ -812,7 +797,7 @@ func StatusHooks() []ent.Hook {
 					}
 
 					if len(relationships) != 0 {
-						if err := permissions.DeleteAuthRelationships(ctx, "status", objID, relationships...); err != nil {
+						if err := deleteAuthRelationships(ctx, "status", objID, relationships...); err != nil {
 							return nil, fmt.Errorf("relationship request failed with error: %w", err)
 						}
 					}
@@ -842,7 +827,7 @@ func StatusNamespaceHooks() []ent.Hook {
 				return hook.StatusNamespaceFunc(func(ctx context.Context, m *generated.StatusNamespaceMutation) (ent.Value, error) {
 					var err error
 					additionalSubjects := []gidx.PrefixedID{}
-					relationships := []events.AuthRelationshipRelation{}
+					relationships := []*authorization.Relationship{}
 
 					objID, ok := m.ID()
 					if !ok {
@@ -926,10 +911,9 @@ func StatusNamespaceHooks() []ent.Hook {
 						}
 					}
 					additionalSubjects = append(additionalSubjects, resource_provider_id)
-
-					relationships = append(relationships, events.AuthRelationshipRelation{
+					relationships = append(relationships, &authorization.Relationship{
 						Relation:  "owner",
-						SubjectID: resource_provider_id,
+						SubjectId: resource_provider_id.String(),
 					})
 
 					if ok {
@@ -987,8 +971,8 @@ func StatusNamespaceHooks() []ent.Hook {
 						return retValue, err
 					}
 
-					if len(relationships) != 0 {
-						if err := permissions.CreateAuthRelationships(ctx, "status-namespace", objID, relationships...); err != nil {
+					if len(relationships) != 0 && m.Op().Is(ent.OpCreate) {
+						if err := createAuthRelationships(ctx, "status-namespace", objID, relationships...); err != nil {
 							return nil, fmt.Errorf("relationship request failed with error: %w", err)
 						}
 					}
@@ -1008,23 +992,21 @@ func StatusNamespaceHooks() []ent.Hook {
 			func(next ent.Mutator) ent.Mutator {
 				return hook.StatusNamespaceFunc(func(ctx context.Context, m *generated.StatusNamespaceMutation) (ent.Value, error) {
 					additionalSubjects := []gidx.PrefixedID{}
-					relationships := []events.AuthRelationshipRelation{}
+					relationships := []*authorization.Relationship{}
 
 					objID, ok := m.ID()
 					if !ok {
 						return nil, fmt.Errorf("object doesn't have an id %s", objID)
 					}
-
 					dbObj, err := m.Client().StatusNamespace.Get(ctx, objID)
 					if err != nil {
 						return nil, fmt.Errorf("failed to load object to get values for event, err %w", err)
 					}
 
 					additionalSubjects = append(additionalSubjects, dbObj.ResourceProviderID)
-
-					relationships = append(relationships, events.AuthRelationshipRelation{
+					relationships = append(relationships, &authorization.Relationship{
 						Relation:  "owner",
-						SubjectID: dbObj.ResourceProviderID,
+						SubjectId: dbObj.ResourceProviderID.String(),
 					})
 
 					// we have all the info we need, now complete the mutation before we process the event
@@ -1034,7 +1016,7 @@ func StatusNamespaceHooks() []ent.Hook {
 					}
 
 					if len(relationships) != 0 {
-						if err := permissions.DeleteAuthRelationships(ctx, "status-namespace", objID, relationships...); err != nil {
+						if err := deleteAuthRelationships(ctx, "status-namespace", objID, relationships...); err != nil {
 							return nil, fmt.Errorf("relationship request failed with error: %w", err)
 						}
 					}
@@ -1082,4 +1064,48 @@ func eventType(op ent.Op) string {
 	default:
 		return "unknown"
 	}
+}
+
+func createAuthRelationships(ctx context.Context, resourceType string, resourceID gidx.PrefixedID, relationships ...*authorization.Relationship) error {
+	request := &authorization.CreateRelationshipsRequest{
+		ResourceId:    resourceID.String(),
+		Relationships: relationships,
+	}
+
+	if _, err := iamruntime.ContextCreateRelationships(ctx, request); err == nil || !errors.Is(err, iamruntime.ErrRuntimeNotFound) {
+		return err
+	}
+
+	eventRelationships := make([]events.AuthRelationshipRelation, len(request.Relationships))
+
+	for i, rel := range request.Relationships {
+		eventRelationships[i] = events.AuthRelationshipRelation{
+			Relation:  rel.Relation,
+			SubjectID: gidx.PrefixedID(rel.SubjectId),
+		}
+	}
+
+	return permissions.CreateAuthRelationships(ctx, resourceType, gidx.PrefixedID(request.ResourceId), eventRelationships...)
+}
+
+func deleteAuthRelationships(ctx context.Context, resourceType string, resourceID gidx.PrefixedID, relationships ...*authorization.Relationship) error {
+	request := &authorization.DeleteRelationshipsRequest{
+		ResourceId:    resourceID.String(),
+		Relationships: relationships,
+	}
+
+	if _, err := iamruntime.ContextDeleteRelationships(ctx, request); err == nil || !errors.Is(err, iamruntime.ErrRuntimeNotFound) {
+		return err
+	}
+
+	eventRelationships := make([]events.AuthRelationshipRelation, len(request.Relationships))
+
+	for i, rel := range request.Relationships {
+		eventRelationships[i] = events.AuthRelationshipRelation{
+			Relation:  rel.Relation,
+			SubjectID: gidx.PrefixedID(rel.SubjectId),
+		}
+	}
+
+	return permissions.DeleteAuthRelationships(ctx, resourceType, gidx.PrefixedID(request.ResourceId), eventRelationships...)
 }

@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"math"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -125,7 +126,7 @@ func (aq *AnnotationQuery) QueryMetadata() *MetadataQuery {
 // First returns the first Annotation entity from the query.
 // Returns a *NotFoundError when no Annotation was found.
 func (aq *AnnotationQuery) First(ctx context.Context) (*Annotation, error) {
-	nodes, err := aq.Limit(1).All(setContextOp(ctx, aq.ctx, "First"))
+	nodes, err := aq.Limit(1).All(setContextOp(ctx, aq.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
@@ -148,7 +149,7 @@ func (aq *AnnotationQuery) FirstX(ctx context.Context) *Annotation {
 // Returns a *NotFoundError when no Annotation ID was found.
 func (aq *AnnotationQuery) FirstID(ctx context.Context) (id gidx.PrefixedID, err error) {
 	var ids []gidx.PrefixedID
-	if ids, err = aq.Limit(1).IDs(setContextOp(ctx, aq.ctx, "FirstID")); err != nil {
+	if ids, err = aq.Limit(1).IDs(setContextOp(ctx, aq.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -171,7 +172,7 @@ func (aq *AnnotationQuery) FirstIDX(ctx context.Context) gidx.PrefixedID {
 // Returns a *NotSingularError when more than one Annotation entity is found.
 // Returns a *NotFoundError when no Annotation entities are found.
 func (aq *AnnotationQuery) Only(ctx context.Context) (*Annotation, error) {
-	nodes, err := aq.Limit(2).All(setContextOp(ctx, aq.ctx, "Only"))
+	nodes, err := aq.Limit(2).All(setContextOp(ctx, aq.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
 	}
@@ -199,7 +200,7 @@ func (aq *AnnotationQuery) OnlyX(ctx context.Context) *Annotation {
 // Returns a *NotFoundError when no entities are found.
 func (aq *AnnotationQuery) OnlyID(ctx context.Context) (id gidx.PrefixedID, err error) {
 	var ids []gidx.PrefixedID
-	if ids, err = aq.Limit(2).IDs(setContextOp(ctx, aq.ctx, "OnlyID")); err != nil {
+	if ids, err = aq.Limit(2).IDs(setContextOp(ctx, aq.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -224,7 +225,7 @@ func (aq *AnnotationQuery) OnlyIDX(ctx context.Context) gidx.PrefixedID {
 
 // All executes the query and returns a list of Annotations.
 func (aq *AnnotationQuery) All(ctx context.Context) ([]*Annotation, error) {
-	ctx = setContextOp(ctx, aq.ctx, "All")
+	ctx = setContextOp(ctx, aq.ctx, ent.OpQueryAll)
 	if err := aq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
@@ -246,7 +247,7 @@ func (aq *AnnotationQuery) IDs(ctx context.Context) (ids []gidx.PrefixedID, err 
 	if aq.ctx.Unique == nil && aq.path != nil {
 		aq.Unique(true)
 	}
-	ctx = setContextOp(ctx, aq.ctx, "IDs")
+	ctx = setContextOp(ctx, aq.ctx, ent.OpQueryIDs)
 	if err = aq.Select(annotation.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
@@ -264,7 +265,7 @@ func (aq *AnnotationQuery) IDsX(ctx context.Context) []gidx.PrefixedID {
 
 // Count returns the count of the given query.
 func (aq *AnnotationQuery) Count(ctx context.Context) (int, error) {
-	ctx = setContextOp(ctx, aq.ctx, "Count")
+	ctx = setContextOp(ctx, aq.ctx, ent.OpQueryCount)
 	if err := aq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
@@ -282,7 +283,7 @@ func (aq *AnnotationQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (aq *AnnotationQuery) Exist(ctx context.Context) (bool, error) {
-	ctx = setContextOp(ctx, aq.ctx, "Exist")
+	ctx = setContextOp(ctx, aq.ctx, ent.OpQueryExist)
 	switch _, err := aq.FirstID(ctx); {
 	case IsNotFound(err):
 		return false, nil
@@ -631,7 +632,7 @@ func (agb *AnnotationGroupBy) Aggregate(fns ...AggregateFunc) *AnnotationGroupBy
 
 // Scan applies the selector query and scans the result into the given value.
 func (agb *AnnotationGroupBy) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, agb.build.ctx, "GroupBy")
+	ctx = setContextOp(ctx, agb.build.ctx, ent.OpQueryGroupBy)
 	if err := agb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
@@ -679,7 +680,7 @@ func (as *AnnotationSelect) Aggregate(fns ...AggregateFunc) *AnnotationSelect {
 
 // Scan applies the selector query and scans the result into the given value.
 func (as *AnnotationSelect) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, as.ctx, "Select")
+	ctx = setContextOp(ctx, as.ctx, ent.OpQuerySelect)
 	if err := as.prepareQuery(ctx); err != nil {
 		return err
 	}
