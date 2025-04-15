@@ -104,7 +104,7 @@ require (
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/nats-io/jwt/v2 v2.7.3 // indirect
-	github.com/nats-io/nats-server/v2 v2.11.0 // indirect
+	github.com/nats-io/nats-server/v2 v2.11.1 // indirect
 	github.com/nats-io/nats.go v1.41.0 // indirect
 	github.com/nats-io/nkeys v0.4.10 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
