@@ -23,7 +23,7 @@ require (
 	github.com/vektah/gqlparser/v2 v2.5.24
 	github.com/wundergraph/graphql-go-tools v1.67.4
 	go.infratographer.com/permissions-api v0.7.0
-	go.infratographer.com/x v0.9.1
+	go.infratographer.com/x v0.9.2
 	go.uber.org/zap v1.27.0
 )
 
@@ -102,8 +102,8 @@ require (
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/nats-io/jwt/v2 v2.7.3 // indirect
-	github.com/nats-io/nats-server/v2 v2.11.0 // indirect
-	github.com/nats-io/nats.go v1.41.0 // indirect
+	github.com/nats-io/nats-server/v2 v2.11.1 // indirect
+	github.com/nats-io/nats.go v1.41.1 // indirect
 	github.com/nats-io/nkeys v0.4.10 // indirect
 	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
@@ -154,7 +154,7 @@ require (
 	go.step.sm/crypto v0.60.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.37.0 // indirect
-	golang.org/x/exp v0.0.0-20250305212735-054e65f0b394 // indirect
+	golang.org/x/exp v0.0.0-20250408133849-7e4ce0ab07d0 // indirect
 	golang.org/x/mod v0.24.0 // indirect
 	golang.org/x/net v0.39.0 // indirect
 	golang.org/x/oauth2 v0.29.0 // indirect
