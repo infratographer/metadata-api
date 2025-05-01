@@ -5,8 +5,8 @@ go 1.24.2
 require (
 	entgo.io/contrib v0.6.0
 	entgo.io/ent v0.14.4
-	github.com/99designs/gqlgen v0.17.70
-	github.com/Yamashou/gqlgenc v0.32.0
+	github.com/99designs/gqlgen v0.17.71
+	github.com/Yamashou/gqlgenc v0.32.1
 	github.com/brianvoe/gofakeit/v7 v7.2.1
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hasura/go-graphql-client v0.10.2
