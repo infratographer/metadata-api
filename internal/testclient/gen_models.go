@@ -48,7 +48,7 @@ func (Annotation) IsEntity() {}
 // A connection to a list of items.
 type AnnotationConnection struct {
 	// A list of edges.
-	Edges []*AnnotationEdge `json:"edges,omitempty,omitzero"`
+	Edges []*AnnotationEdge `json:"edges,omitempty"`
 	// Information to aid in pagination.
 	PageInfo *PageInfo `json:"pageInfo"`
 	// Identifies the total count of items in the connection.
@@ -72,7 +72,7 @@ type AnnotationDeleteResponse struct {
 // An edge in a connection.
 type AnnotationEdge struct {
 	// The item at the end of the edge.
-	Node *Annotation `json:"node,omitempty,omitzero"`
+	Node *Annotation `json:"node,omitempty"`
 	// A cursor for use in pagination.
 	Cursor string `json:"cursor"`
 }
@@ -86,7 +86,7 @@ type AnnotationNamespace struct {
 	Name string `json:"name"`
 	// Flag for if this namespace is private.
 	Private     bool          `json:"private"`
-	Annotations []*Annotation `json:"annotations,omitempty,omitzero"`
+	Annotations []*Annotation `json:"annotations,omitempty"`
 	// The owner of the annotation namespace.
 	Owner *ResourceOwner `json:"owner"`
 }
@@ -101,7 +101,7 @@ func (AnnotationNamespace) IsEntity() {}
 // A connection to a list of items.
 type AnnotationNamespaceConnection struct {
 	// A list of edges.
-	Edges []*AnnotationNamespaceEdge `json:"edges,omitempty,omitzero"`
+	Edges []*AnnotationNamespaceEdge `json:"edges,omitempty"`
 	// Information to aid in pagination.
 	PageInfo *PageInfo `json:"pageInfo"`
 	// Identifies the total count of items in the connection.
@@ -125,7 +125,7 @@ type AnnotationNamespaceDeletePayload struct {
 // An edge in a connection.
 type AnnotationNamespaceEdge struct {
 	// The item at the end of the edge.
-	Node *AnnotationNamespace `json:"node,omitempty,omitzero"`
+	Node *AnnotationNamespace `json:"node,omitempty"`
 	// A cursor for use in pagination.
 	Cursor string `json:"cursor"`
 }
@@ -313,7 +313,7 @@ func (Metadata) IsEntity() {}
 // A connection to a list of items.
 type MetadataConnection struct {
 	// A list of edges.
-	Edges []*MetadataEdge `json:"edges,omitempty,omitzero"`
+	Edges []*MetadataEdge `json:"edges,omitempty"`
 	// Information to aid in pagination.
 	PageInfo *PageInfo `json:"pageInfo"`
 	// Identifies the total count of items in the connection.
@@ -323,7 +323,7 @@ type MetadataConnection struct {
 // An edge in a connection.
 type MetadataEdge struct {
 	// The item at the end of the edge.
-	Node *Metadata `json:"node,omitempty,omitzero"`
+	Node *Metadata `json:"node,omitempty"`
 	// A cursor for use in pagination.
 	Cursor string `json:"cursor"`
 }
@@ -332,7 +332,7 @@ type MetadataEdge struct {
 type MetadataNode struct {
 	ID gidx.PrefixedID `json:"id"`
 	// Metadata about this node, including annotations and statuses.
-	Metadata *Metadata `json:"metadata,omitempty,omitzero"`
+	Metadata *Metadata `json:"metadata,omitempty"`
 }
 
 func (MetadataNode) IsEntity() {}
@@ -397,9 +397,9 @@ type PageInfo struct {
 	// When paginating backwards, are there more items?
 	HasPreviousPage bool `json:"hasPreviousPage"`
 	// When paginating backwards, the cursor to continue.
-	StartCursor *string `json:"startCursor,omitempty,omitzero"`
+	StartCursor *string `json:"startCursor,omitempty"`
 	// When paginating forwards, the cursor to continue.
-	EndCursor *string `json:"endCursor,omitempty,omitzero"`
+	EndCursor *string `json:"endCursor,omitempty"`
 }
 
 type Query struct {
@@ -409,7 +409,7 @@ type ResourceOwner struct {
 	ID                   gidx.PrefixedID                `json:"id"`
 	AnnotationNamespaces *AnnotationNamespaceConnection `json:"annotationNamespaces"`
 	// Metadata about this node, including annotations and statuses.
-	Metadata *Metadata `json:"metadata,omitempty,omitzero"`
+	Metadata *Metadata `json:"metadata,omitempty"`
 }
 
 func (ResourceOwner) IsEntity() {}
@@ -438,7 +438,7 @@ func (Status) IsEntity() {}
 // A connection to a list of items.
 type StatusConnection struct {
 	// A list of edges.
-	Edges []*StatusEdge `json:"edges,omitempty,omitzero"`
+	Edges []*StatusEdge `json:"edges,omitempty"`
 	// Information to aid in pagination.
 	PageInfo *PageInfo `json:"pageInfo"`
 	// Identifies the total count of items in the connection.
@@ -464,7 +464,7 @@ type StatusDeleteResponse struct {
 // An edge in a connection.
 type StatusEdge struct {
 	// The item at the end of the edge.
-	Node *Status `json:"node,omitempty,omitzero"`
+	Node *Status `json:"node,omitempty"`
 	// A cursor for use in pagination.
 	Cursor string `json:"cursor"`
 }
@@ -492,7 +492,7 @@ func (StatusNamespace) IsEntity() {}
 // A connection to a list of items.
 type StatusNamespaceConnection struct {
 	// A list of edges.
-	Edges []*StatusNamespaceEdge `json:"edges,omitempty,omitzero"`
+	Edges []*StatusNamespaceEdge `json:"edges,omitempty"`
 	// Information to aid in pagination.
 	PageInfo *PageInfo `json:"pageInfo"`
 	// Identifies the total count of items in the connection.
@@ -516,7 +516,7 @@ type StatusNamespaceDeletePayload struct {
 // An edge in a connection.
 type StatusNamespaceEdge struct {
 	// The item at the end of the edge.
-	Node *StatusNamespace `json:"node,omitempty,omitzero"`
+	Node *StatusNamespace `json:"node,omitempty"`
 	// A cursor for use in pagination.
 	Cursor string `json:"cursor"`
 }
@@ -596,7 +596,7 @@ type StatusOwner struct {
 	ID               gidx.PrefixedID            `json:"id"`
 	StatusNamespaces *StatusNamespaceConnection `json:"statusNamespaces"`
 	// Metadata about this node, including annotations and statuses.
-	Metadata *Metadata `json:"metadata,omitempty,omitzero"`
+	Metadata *Metadata `json:"metadata,omitempty"`
 }
 
 func (StatusOwner) IsEntity() {}
@@ -698,7 +698,7 @@ type UpdateStatusNamespaceInput struct {
 }
 
 type Service struct {
-	Sdl *string `json:"sdl,omitempty,omitzero"`
+	Sdl *string `json:"sdl,omitempty"`
 }
 
 // Properties by which AnnotationNamespace connections can be ordered.
