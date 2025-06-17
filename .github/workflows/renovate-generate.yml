@@ -40,7 +40,7 @@ jobs:
 
       - name: Commit and push changes
         if: steps.check_renovate.outputs.is_renovate == 'true'
-        uses: EndBug/add-and-commit@v9
+        uses: EndBug/add-and-commit@a94899bca583c204427a224a7af87c02f9b325d5 # v9
         with:
           message: "chore: run go generate"
           author_name: Infratographer Actions Bot
