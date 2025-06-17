@@ -17,6 +17,7 @@ jobs:
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.ref }}
+          token: ${{ secrets.INFRATOGRAPHER_ACTIONS_BOT_TOKEN }}
 
       - name: Check if PR is from Renovate bot
         id: check_renovate
@@ -42,4 +43,6 @@ jobs:
         uses: EndBug/add-and-commit@v9
         with:
           message: "chore: run go generate"
+          author_name: Infratographer Actions Bot
+          author_email: actions-bot@infratographer.com
           commit: --signoff
