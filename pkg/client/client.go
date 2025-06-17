@@ -61,9 +61,9 @@ func (c *Client) StatusUpdate(ctx context.Context, input *StatusUpdateInput) (*S
 
 func translateGQLErr(err error) error {
 	switch {
-	case strings.Contains(err.Error(), "invalid or expired jwt"):
+	case strings.Contains(err.Error(), "401 Unauthorized"):
 		return ErrUnauthorized
-	case strings.Contains(err.Error(), "subject doesn't have access"):
+	case strings.Contains(err.Error(), "403 Forbidden"):
 		return ErrPermissionDenied
 	}
 
