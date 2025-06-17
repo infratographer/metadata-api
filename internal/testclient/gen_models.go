@@ -3,6 +3,7 @@
 package testclient
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -47,7 +48,7 @@ func (Annotation) IsEntity() {}
 // A connection to a list of items.
 type AnnotationConnection struct {
 	// A list of edges.
-	Edges []*AnnotationEdge `json:"edges,omitempty"`
+	Edges []*AnnotationEdge `json:"edges,omitempty,omitzero"`
 	// Information to aid in pagination.
 	PageInfo *PageInfo `json:"pageInfo"`
 	// Identifies the total count of items in the connection.
@@ -71,7 +72,7 @@ type AnnotationDeleteResponse struct {
 // An edge in a connection.
 type AnnotationEdge struct {
 	// The item at the end of the edge.
-	Node *Annotation `json:"node,omitempty"`
+	Node *Annotation `json:"node,omitempty,omitzero"`
 	// A cursor for use in pagination.
 	Cursor string `json:"cursor"`
 }
@@ -85,7 +86,7 @@ type AnnotationNamespace struct {
 	Name string `json:"name"`
 	// Flag for if this namespace is private.
 	Private     bool          `json:"private"`
-	Annotations []*Annotation `json:"annotations,omitempty"`
+	Annotations []*Annotation `json:"annotations,omitempty,omitzero"`
 	// The owner of the annotation namespace.
 	Owner *ResourceOwner `json:"owner"`
 }
@@ -100,7 +101,7 @@ func (AnnotationNamespace) IsEntity() {}
 // A connection to a list of items.
 type AnnotationNamespaceConnection struct {
 	// A list of edges.
-	Edges []*AnnotationNamespaceEdge `json:"edges,omitempty"`
+	Edges []*AnnotationNamespaceEdge `json:"edges,omitempty,omitzero"`
 	// Information to aid in pagination.
 	PageInfo *PageInfo `json:"pageInfo"`
 	// Identifies the total count of items in the connection.
@@ -124,7 +125,7 @@ type AnnotationNamespaceDeletePayload struct {
 // An edge in a connection.
 type AnnotationNamespaceEdge struct {
 	// The item at the end of the edge.
-	Node *AnnotationNamespace `json:"node,omitempty"`
+	Node *AnnotationNamespace `json:"node,omitempty,omitzero"`
 	// A cursor for use in pagination.
 	Cursor string `json:"cursor"`
 }
@@ -312,7 +313,7 @@ func (Metadata) IsEntity() {}
 // A connection to a list of items.
 type MetadataConnection struct {
 	// A list of edges.
-	Edges []*MetadataEdge `json:"edges,omitempty"`
+	Edges []*MetadataEdge `json:"edges,omitempty,omitzero"`
 	// Information to aid in pagination.
 	PageInfo *PageInfo `json:"pageInfo"`
 	// Identifies the total count of items in the connection.
@@ -322,7 +323,7 @@ type MetadataConnection struct {
 // An edge in a connection.
 type MetadataEdge struct {
 	// The item at the end of the edge.
-	Node *Metadata `json:"node,omitempty"`
+	Node *Metadata `json:"node,omitempty,omitzero"`
 	// A cursor for use in pagination.
 	Cursor string `json:"cursor"`
 }
@@ -331,7 +332,7 @@ type MetadataEdge struct {
 type MetadataNode struct {
 	ID gidx.PrefixedID `json:"id"`
 	// Metadata about this node, including annotations and statuses.
-	Metadata *Metadata `json:"metadata,omitempty"`
+	Metadata *Metadata `json:"metadata,omitempty,omitzero"`
 }
 
 func (MetadataNode) IsEntity() {}
@@ -396,9 +397,9 @@ type PageInfo struct {
 	// When paginating backwards, are there more items?
 	HasPreviousPage bool `json:"hasPreviousPage"`
 	// When paginating backwards, the cursor to continue.
-	StartCursor *string `json:"startCursor,omitempty"`
+	StartCursor *string `json:"startCursor,omitempty,omitzero"`
 	// When paginating forwards, the cursor to continue.
-	EndCursor *string `json:"endCursor,omitempty"`
+	EndCursor *string `json:"endCursor,omitempty,omitzero"`
 }
 
 type Query struct {
@@ -408,7 +409,7 @@ type ResourceOwner struct {
 	ID                   gidx.PrefixedID                `json:"id"`
 	AnnotationNamespaces *AnnotationNamespaceConnection `json:"annotationNamespaces"`
 	// Metadata about this node, including annotations and statuses.
-	Metadata *Metadata `json:"metadata,omitempty"`
+	Metadata *Metadata `json:"metadata,omitempty,omitzero"`
 }
 
 func (ResourceOwner) IsEntity() {}
@@ -437,7 +438,7 @@ func (Status) IsEntity() {}
 // A connection to a list of items.
 type StatusConnection struct {
 	// A list of edges.
-	Edges []*StatusEdge `json:"edges,omitempty"`
+	Edges []*StatusEdge `json:"edges,omitempty,omitzero"`
 	// Information to aid in pagination.
 	PageInfo *PageInfo `json:"pageInfo"`
 	// Identifies the total count of items in the connection.
@@ -463,7 +464,7 @@ type StatusDeleteResponse struct {
 // An edge in a connection.
 type StatusEdge struct {
 	// The item at the end of the edge.
-	Node *Status `json:"node,omitempty"`
+	Node *Status `json:"node,omitempty,omitzero"`
 	// A cursor for use in pagination.
 	Cursor string `json:"cursor"`
 }
@@ -491,7 +492,7 @@ func (StatusNamespace) IsEntity() {}
 // A connection to a list of items.
 type StatusNamespaceConnection struct {
 	// A list of edges.
-	Edges []*StatusNamespaceEdge `json:"edges,omitempty"`
+	Edges []*StatusNamespaceEdge `json:"edges,omitempty,omitzero"`
 	// Information to aid in pagination.
 	PageInfo *PageInfo `json:"pageInfo"`
 	// Identifies the total count of items in the connection.
@@ -515,7 +516,7 @@ type StatusNamespaceDeletePayload struct {
 // An edge in a connection.
 type StatusNamespaceEdge struct {
 	// The item at the end of the edge.
-	Node *StatusNamespace `json:"node,omitempty"`
+	Node *StatusNamespace `json:"node,omitempty,omitzero"`
 	// A cursor for use in pagination.
 	Cursor string `json:"cursor"`
 }
@@ -595,7 +596,7 @@ type StatusOwner struct {
 	ID               gidx.PrefixedID            `json:"id"`
 	StatusNamespaces *StatusNamespaceConnection `json:"statusNamespaces"`
 	// Metadata about this node, including annotations and statuses.
-	Metadata *Metadata `json:"metadata,omitempty"`
+	Metadata *Metadata `json:"metadata,omitempty,omitzero"`
 }
 
 func (StatusOwner) IsEntity() {}
@@ -697,7 +698,7 @@ type UpdateStatusNamespaceInput struct {
 }
 
 type Service struct {
-	Sdl *string `json:"sdl,omitempty"`
+	Sdl *string `json:"sdl,omitempty,omitzero"`
 }
 
 // Properties by which AnnotationNamespace connections can be ordered.
@@ -750,6 +751,20 @@ func (e AnnotationNamespaceOrderField) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+func (e *AnnotationNamespaceOrderField) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e AnnotationNamespaceOrderField) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
 // Properties by which Annotation connections can be ordered.
 type AnnotationOrderField string
 
@@ -790,6 +805,20 @@ func (e *AnnotationOrderField) UnmarshalGQL(v any) error {
 
 func (e AnnotationOrderField) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *AnnotationOrderField) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e AnnotationOrderField) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }
 
 // Properties by which Metadata connections can be ordered.
@@ -834,6 +863,20 @@ func (e MetadataOrderField) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+func (e *MetadataOrderField) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e MetadataOrderField) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
 // Possible directions in which to order a list of items when provided an `orderBy` argument.
 type OrderDirection string
 
@@ -876,6 +919,20 @@ func (e *OrderDirection) UnmarshalGQL(v any) error {
 
 func (e OrderDirection) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *OrderDirection) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e OrderDirection) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }
 
 // Properties by which StatusNamespace connections can be ordered.
@@ -928,6 +985,20 @@ func (e StatusNamespaceOrderField) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+func (e *StatusNamespaceOrderField) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e StatusNamespaceOrderField) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
 // Properties by which Status connections can be ordered.
 type StatusOrderField string
 
@@ -968,4 +1039,18 @@ func (e *StatusOrderField) UnmarshalGQL(v any) error {
 
 func (e StatusOrderField) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *StatusOrderField) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e StatusOrderField) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }

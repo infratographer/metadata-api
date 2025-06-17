@@ -328,7 +328,7 @@ func (e *executableSchema) Schema() *ast.Schema {
 	return parsedSchema
 }
 
-func (e *executableSchema) Complexity(typeName, field string, childComplexity int, rawArgs map[string]any) (int, bool) {
+func (e *executableSchema) Complexity(ctx context.Context, typeName, field string, childComplexity int, rawArgs map[string]any) (int, bool) {
 	ec := executionContext{nil, e, 0, 0, nil}
 	_ = ec
 	switch typeName + "." + field {
@@ -548,7 +548,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Entity_findAnnotationByID_args(context.TODO(), rawArgs)
+		args, err := ec.field_Entity_findAnnotationByID_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -560,7 +560,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Entity_findAnnotationNamespaceByID_args(context.TODO(), rawArgs)
+		args, err := ec.field_Entity_findAnnotationNamespaceByID_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -572,7 +572,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Entity_findMetadataByID_args(context.TODO(), rawArgs)
+		args, err := ec.field_Entity_findMetadataByID_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -584,7 +584,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Entity_findMetadataByNodeID_args(context.TODO(), rawArgs)
+		args, err := ec.field_Entity_findMetadataByNodeID_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -596,7 +596,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Entity_findMetadataNodeByID_args(context.TODO(), rawArgs)
+		args, err := ec.field_Entity_findMetadataNodeByID_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -608,7 +608,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Entity_findResourceOwnerByID_args(context.TODO(), rawArgs)
+		args, err := ec.field_Entity_findResourceOwnerByID_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -620,7 +620,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Entity_findStatusByID_args(context.TODO(), rawArgs)
+		args, err := ec.field_Entity_findStatusByID_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -632,7 +632,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Entity_findStatusNamespaceByID_args(context.TODO(), rawArgs)
+		args, err := ec.field_Entity_findStatusNamespaceByID_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -644,7 +644,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Entity_findStatusOwnerByID_args(context.TODO(), rawArgs)
+		args, err := ec.field_Entity_findStatusOwnerByID_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -656,7 +656,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Metadata_annotations_args(context.TODO(), rawArgs)
+		args, err := ec.field_Metadata_annotations_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -696,7 +696,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Metadata_statuses_args(context.TODO(), rawArgs)
+		args, err := ec.field_Metadata_statuses_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -764,7 +764,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Mutation_annotationDelete_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_annotationDelete_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -776,7 +776,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Mutation_annotationNamespaceCreate_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_annotationNamespaceCreate_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -788,7 +788,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Mutation_annotationNamespaceDelete_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_annotationNamespaceDelete_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -800,7 +800,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Mutation_annotationNamespaceUpdate_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_annotationNamespaceUpdate_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -812,7 +812,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Mutation_annotationUpdate_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_annotationUpdate_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -824,7 +824,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Mutation_statusDelete_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_statusDelete_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -836,7 +836,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Mutation_statusNamespaceCreate_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_statusNamespaceCreate_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -848,7 +848,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Mutation_statusNamespaceDelete_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_statusNamespaceDelete_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -860,7 +860,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Mutation_statusNamespaceUpdate_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_statusNamespaceUpdate_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -872,7 +872,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Mutation_statusUpdate_args(context.TODO(), rawArgs)
+		args, err := ec.field_Mutation_statusUpdate_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -912,7 +912,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Query_annotationNamespace_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_annotationNamespace_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -931,7 +931,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_Query__entities_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query__entities_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -943,7 +943,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_ResourceOwner_annotationNamespaces_args(context.TODO(), rawArgs)
+		args, err := ec.field_ResourceOwner_annotationNamespaces_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -1193,7 +1193,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			break
 		}
 
-		args, err := ec.field_StatusOwner_statusNamespaces_args(context.TODO(), rawArgs)
+		args, err := ec.field_StatusOwner_statusNamespaces_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
@@ -16695,6 +16695,7 @@ func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v any) (
 }
 
 func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.SelectionSet, v bool) graphql.Marshaler {
+	_ = sel
 	res := graphql.MarshalBoolean(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -16730,6 +16731,7 @@ func (ec *executionContext) unmarshalNFieldSet2string(ctx context.Context, v any
 }
 
 func (ec *executionContext) marshalNFieldSet2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
+	_ = sel
 	res := graphql.MarshalString(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -16755,6 +16757,7 @@ func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v any) (int, 
 }
 
 func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
+	_ = sel
 	res := graphql.MarshalInt(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -16776,6 +16779,7 @@ func (ec *executionContext) marshalNJSON2encodingᚋjsonᚐRawMessage(ctx contex
 		}
 		return graphql.Null
 	}
+	_ = sel
 	res := entx.MarshalRawMessage(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -17056,6 +17060,7 @@ func (ec *executionContext) unmarshalNString2string(ctx context.Context, v any) 
 }
 
 func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
+	_ = sel
 	res := graphql.MarshalString(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -17071,6 +17076,7 @@ func (ec *executionContext) unmarshalNTime2timeᚐTime(ctx context.Context, v an
 }
 
 func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel ast.SelectionSet, v time.Time) graphql.Marshaler {
+	_ = sel
 	res := graphql.MarshalTime(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -17102,6 +17108,7 @@ func (ec *executionContext) marshalN_Any2map(ctx context.Context, sel ast.Select
 		}
 		return graphql.Null
 	}
+	_ = sel
 	res := graphql.MarshalMap(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -17237,6 +17244,7 @@ func (ec *executionContext) unmarshalN__DirectiveLocation2string(ctx context.Con
 }
 
 func (ec *executionContext) marshalN__DirectiveLocation2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
+	_ = sel
 	res := graphql.MarshalString(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -17425,6 +17433,7 @@ func (ec *executionContext) unmarshalN__TypeKind2string(ctx context.Context, v a
 }
 
 func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
+	_ = sel
 	res := graphql.MarshalString(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -17440,6 +17449,7 @@ func (ec *executionContext) unmarshalNfederation__Policy2string(ctx context.Cont
 }
 
 func (ec *executionContext) marshalNfederation__Policy2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
+	_ = sel
 	res := graphql.MarshalString(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -17515,6 +17525,7 @@ func (ec *executionContext) unmarshalNfederation__Scope2string(ctx context.Conte
 }
 
 func (ec *executionContext) marshalNfederation__Scope2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
+	_ = sel
 	res := graphql.MarshalString(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -17815,6 +17826,8 @@ func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v any) (
 }
 
 func (ec *executionContext) marshalOBoolean2bool(ctx context.Context, sel ast.SelectionSet, v bool) graphql.Marshaler {
+	_ = sel
+	_ = ctx
 	res := graphql.MarshalBoolean(v)
 	return res
 }
@@ -17831,6 +17844,8 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	if v == nil {
 		return graphql.Null
 	}
+	_ = sel
+	_ = ctx
 	res := graphql.MarshalBoolean(*v)
 	return res
 }
@@ -17915,6 +17930,8 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	if v == nil {
 		return graphql.Null
 	}
+	_ = sel
+	_ = ctx
 	res := graphql.MarshalInt(*v)
 	return res
 }
@@ -17931,6 +17948,8 @@ func (ec *executionContext) marshalOJSON2encodingᚋjsonᚐRawMessage(ctx contex
 	if v == nil {
 		return graphql.Null
 	}
+	_ = sel
+	_ = ctx
 	res := entx.MarshalRawMessage(v)
 	return res
 }
@@ -18200,6 +18219,8 @@ func (ec *executionContext) unmarshalOString2string(ctx context.Context, v any) 
 }
 
 func (ec *executionContext) marshalOString2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
+	_ = sel
+	_ = ctx
 	res := graphql.MarshalString(v)
 	return res
 }
@@ -18252,6 +18273,8 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 	if v == nil {
 		return graphql.Null
 	}
+	_ = sel
+	_ = ctx
 	res := graphql.MarshalString(*v)
 	return res
 }
@@ -18304,6 +18327,8 @@ func (ec *executionContext) marshalOTime2ᚖtimeᚐTime(ctx context.Context, sel
 	if v == nil {
 		return graphql.Null
 	}
+	_ = sel
+	_ = ctx
 	res := graphql.MarshalTime(*v)
 	return res
 }
