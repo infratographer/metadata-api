@@ -78,8 +78,6 @@ func main() {
 	fmtr := formatter.NewFormatter(f)
 	fmtr.FormatSchema(schema)
 
-	f.Write(federationSchema)
-
 	// Write testclient schema, include all federation params
 	// find the internal federation src and mark it as not builtin. "interfaceObject" is a federation directive,
 	// so we use that to look up the source
@@ -98,20 +96,3 @@ func main() {
 	fmtr = formatter.NewFormatter(clientSchema)
 	fmtr.FormatSchema(schema)
 }
-
-var federationSchema = []byte(`
-extend schema
-  @link(
-    url: "https://specs.apollo.dev/federation/v2.3"
-    import: [
-			"@key",
-			"@interfaceObject",
-			"@shareable",
-			"@inaccessible",
-			"@override",
-			"@provides",
-			"@requires",
-			"@tag"
-      ]
-  )
-`)

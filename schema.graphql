@@ -1182,18 +1182,3 @@ union _Entity = Annotation | AnnotationNamespace | Metadata | MetadataNode | Res
 type _Service {
 	sdl: String
 }
-
-extend schema
-  @link(
-    url: "https://specs.apollo.dev/federation/v2.3"
-    import: [
-			"@key",
-			"@interfaceObject",
-			"@shareable",
-			"@inaccessible",
-			"@override",
-			"@provides",
-			"@requires",
-			"@tag"
-      ]
-  )
