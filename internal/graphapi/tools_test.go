@@ -41,6 +41,7 @@ import (
 var (
 	TestDBURI   = os.Getenv("METADATAAPI_TESTDB_URI")
 	EntClient   *ent.Client
+	NATSServer  *eventtools.TestNats
 	DBContainer *containersx.DBContainer
 )
 
@@ -126,6 +127,7 @@ func setupDB() {
 
 	eventhooks.EventHooks(c)
 
+	NATSServer = nats
 	EntClient = c
 }
 
@@ -138,6 +140,10 @@ func teardownDB() {
 
 	if DBContainer != nil {
 		errPanic("teardown failed to terminate test db container", DBContainer.Container.Terminate(ctx))
+	}
+
+	if NATSServer != nil {
+		NATSServer.Close()
 	}
 }
 

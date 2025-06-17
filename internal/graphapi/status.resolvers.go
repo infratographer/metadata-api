@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/nsf/jsondiff"
 	"go.infratographer.com/metadata-api/internal/ent/generated"
 	"go.infratographer.com/metadata-api/internal/ent/generated/metadata"
 	"go.infratographer.com/metadata-api/internal/ent/generated/status"
@@ -98,7 +99,16 @@ func (r *mutationResolver) StatusUpdate(ctx context.Context, input StatusUpdateI
 		return &StatusUpdateResponse{Status: status}, nil
 	}
 
-	status, err = status.Update().SetData(input.Data).Save(ctx)
+	update := status.Update()
+
+	opts := jsondiff.DefaultJSONOptions()
+	diffResult, _ := jsondiff.Compare(status.Data, input.Data, &opts)
+	if diffResult != jsondiff.FullMatch {
+		update.SetData(input.Data)
+	}
+
+	// trigger update even when data doesn't change to update the updated_at timestamp
+	status, err = update.Save(ctx)
 	if err != nil {
 		logger.Errorw("failed to update status", "error", err)
 		return nil, ErrInternalServerError

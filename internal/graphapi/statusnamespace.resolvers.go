@@ -77,7 +77,11 @@ func (r *mutationResolver) StatusNamespaceDelete(ctx context.Context, id gidx.Pr
 		return nil, ErrInternalServerError
 	}
 
-	defer tx.Rollback()
+	defer func() {
+		if err := tx.Rollback(); err != nil {
+			logger.Errorw("failed to rollback transaction", "error", err)
+		}
+	}()
 
 	statuses, err := tx.Status.Query().Where(status.StatusNamespaceID(id)).All(ctx)
 	if err != nil {

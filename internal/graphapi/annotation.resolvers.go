@@ -8,6 +8,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/nsf/jsondiff"
 	"go.infratographer.com/metadata-api/internal/ent/generated"
 	"go.infratographer.com/metadata-api/internal/ent/generated/annotation"
 	"go.infratographer.com/metadata-api/internal/ent/generated/metadata"
@@ -87,8 +88,16 @@ func (r *mutationResolver) AnnotationUpdate(ctx context.Context, input Annotatio
 			return nil, ErrInternalServerError
 		}
 	}
+	update := ant.Update()
 
-	ant, err = ant.Update().SetData(input.Data).Save(ctx)
+	opts := jsondiff.DefaultJSONOptions()
+	diffResult, _ := jsondiff.Compare(ant.Data, input.Data, &opts)
+	if diffResult != jsondiff.FullMatch {
+		update.SetData(input.Data)
+	}
+
+	// trigger update even when data doesn't change to update the updated_at timestamp
+	ant, err = update.Save(ctx)
 	if err != nil {
 		logger.Errorw("failed to update annotation", "error", err)
 		return nil, ErrInternalServerError

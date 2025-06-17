@@ -12,19 +12,20 @@ jobs:
     name: go-generate
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
-        with:
-          repository: ${{ github.event.pull_request.head.repo.full_name }}
-          ref: ${{ github.event.pull_request.head.ref }}
-          token: ${{ secrets.INFRATOGRAPHER_ACTIONS_BOT_TOKEN }}
-
       - name: Check if PR is from Renovate bot
         id: check_renovate
         run: |
           if [ "${{ github.event.pull_request.user.login }}" == "renovate[bot]" ]; then
             echo "is_renovate=true" >> $GITHUB_OUTPUT
           fi
+
+      - name: Checkout code
+        if: steps.check_renovate.outputs.is_renovate == 'true'
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+          token: ${{ secrets.INFRATOGRAPHER_ACTIONS_BOT_TOKEN }}
 
       - name: Setup Go
         if: steps.check_renovate.outputs.is_renovate == 'true'

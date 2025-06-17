@@ -63,6 +63,7 @@ func (Annotation) Fields() []ent.Field {
 			StorageKey("json_data").
 			Annotations(
 				entgql.Type("JSON"),
+				entx.EventsHookJSONFieldWithDiff(),
 			),
 	}
 }

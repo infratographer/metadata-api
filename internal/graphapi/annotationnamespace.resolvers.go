@@ -81,7 +81,11 @@ func (r *mutationResolver) AnnotationNamespaceDelete(ctx context.Context, id gid
 		return nil, err
 	}
 
-	defer tx.Rollback()
+	defer func() {
+		if err := tx.Rollback(); err != nil {
+			logger.Errorw("failed to rollback transaction", "error", err)
+		}
+	}()
 
 	annotations, err := tx.Annotation.Query().Where(annotation.AnnotationNamespaceID(id)).All(ctx)
 	if err != nil {
