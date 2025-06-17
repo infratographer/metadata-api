@@ -168,10 +168,7 @@ func TestStatusUpdateIsNoopWithSameValue(t *testing.T) {
 
 	jsonDataUpdate1 := json.RawMessage(`{"third":"db-sorts-by-key","first":"fun","second":"weeee"}`)
 	jsonDataUpdate2 := json.RawMessage(`{"second": "weeee", "third": "db-sorts-by-key", "first": "fun"}`)
-	jsonSorted := `{"first":"fun","second":"weeee","third":"db-sorts-by-key"}`
-
 	require.JSONEq(t, string(jsonDataUpdate1), string(jsonDataUpdate2))
-	require.JSONEq(t, string(jsonDataUpdate1), jsonSorted)
 
 	// Subscribe to NATs changes
 	natsCfg := NATSServer.Config.NATS
@@ -193,7 +190,7 @@ func TestStatusUpdateIsNoopWithSameValue(t *testing.T) {
 	createdResp, err := graphTestClient().StatusUpdate(ctx, testclient.StatusUpdateInput{NodeID: meta.NodeID, NamespaceID: status.StatusNamespaceID, Source: source, Data: jsonDataUpdate1})
 	require.NoError(t, err)
 	assert.NotNil(t, createdResp.StatusUpdate.Status)
-	assert.Equal(t, string(jsonSorted), string(createdResp.StatusUpdate.Status.Data))
+	assert.JSONEq(t, string(jsonDataUpdate1), string(createdResp.StatusUpdate.Status.Data))
 
 	// Ensure event was sent with string json data and a json diff
 	receivedMsg, err := getSingleMessage(messages, time.Second*1)
@@ -210,7 +207,7 @@ func TestStatusUpdateIsNoopWithSameValue(t *testing.T) {
 			continue
 		}
 
-		assert.EqualValues(t, jsonSorted, field.CurrentValue)
+		assert.JSONEq(t, string(jsonDataUpdate1), field.CurrentValue)
 		dataChecked = true
 	}
 	assert.True(t, dataChecked)
@@ -222,7 +219,7 @@ func TestStatusUpdateIsNoopWithSameValue(t *testing.T) {
 	updatedResp, err := graphTestClient().StatusUpdate(ctx, testclient.StatusUpdateInput{NodeID: meta.NodeID, NamespaceID: status.StatusNamespaceID, Source: source, Data: jsonDataUpdate2})
 	require.NoError(t, err)
 	assert.NotNil(t, updatedResp.StatusUpdate.Status)
-	assert.Equal(t, string(jsonSorted), string(updatedResp.StatusUpdate.Status.Data))
+	assert.JSONEq(t, string(jsonDataUpdate1), string(updatedResp.StatusUpdate.Status.Data))
 
 	assert.NotEqual(t, createdResp.StatusUpdate.Status.UpdatedAt, updatedResp.StatusUpdate.Status.UpdatedAt)
 
