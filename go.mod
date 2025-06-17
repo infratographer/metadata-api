@@ -9,7 +9,7 @@ require (
 	github.com/Yamashou/gqlgenc v0.32.1
 	github.com/brianvoe/gofakeit/v7 v7.2.1
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/hasura/go-graphql-client v0.10.2
+	github.com/hasura/go-graphql-client v0.14.3
 	github.com/labstack/echo/v4 v4.13.4
 	github.com/lib/pq v1.10.9
 	github.com/mattn/go-sqlite3 v1.14.28
@@ -46,6 +46,7 @@ require (
 	github.com/cenkalti/backoff/v5 v5.0.2 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/cockroachdb/cockroach-go/v2 v2.4.0 // indirect
+	github.com/coder/websocket v1.8.13 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/containerd/platforms v0.2.1 // indirect
 	github.com/cpuguy83/dockercfg v0.3.2 // indirect
@@ -169,5 +170,4 @@ require (
 	google.golang.org/grpc v1.72.2 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	nhooyr.io/websocket v1.8.10 // indirect
 )
