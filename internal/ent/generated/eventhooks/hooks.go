@@ -47,6 +47,7 @@ func AnnotationHooks() []ent.Hook {
 					}
 
 					changeset := []events.FieldChange{}
+					additionalData := map[string]interface{}{}
 					cv_created_at := ""
 					created_at, ok := m.CreatedAt()
 
@@ -165,6 +166,10 @@ func AnnotationHooks() []ent.Hook {
 						FieldChanges:         changeset,
 					}
 
+					if len(additionalData) != 0 {
+						msg.AdditionalData = additionalData
+					}
+
 					// complete the mutation before we process the event
 					retValue, err := next.Mutate(ctx, m)
 					if err != nil {
@@ -244,6 +249,7 @@ func AnnotationNamespaceHooks() []ent.Hook {
 					}
 
 					changeset := []events.FieldChange{}
+					additionalData := map[string]interface{}{}
 					cv_created_at := ""
 					created_at, ok := m.CreatedAt()
 
@@ -374,6 +380,10 @@ func AnnotationNamespaceHooks() []ent.Hook {
 						FieldChanges:         changeset,
 					}
 
+					if len(additionalData) != 0 {
+						msg.AdditionalData = additionalData
+					}
+
 					// complete the mutation before we process the event
 					retValue, err := next.Mutate(ctx, m)
 					if err != nil {
@@ -463,6 +473,7 @@ func MetadataHooks() []ent.Hook {
 					}
 
 					changeset := []events.FieldChange{}
+					additionalData := map[string]interface{}{}
 					cv_created_at := ""
 					created_at, ok := m.CreatedAt()
 
@@ -535,6 +546,10 @@ func MetadataHooks() []ent.Hook {
 						AdditionalSubjectIDs: additionalSubjects,
 						Timestamp:            time.Now().UTC(),
 						FieldChanges:         changeset,
+					}
+
+					if len(additionalData) != 0 {
+						msg.AdditionalData = additionalData
 					}
 
 					// complete the mutation before we process the event
@@ -616,6 +631,7 @@ func StatusHooks() []ent.Hook {
 					}
 
 					changeset := []events.FieldChange{}
+					additionalData := map[string]interface{}{}
 					cv_created_at := ""
 					created_at, ok := m.CreatedAt()
 
@@ -756,6 +772,10 @@ func StatusHooks() []ent.Hook {
 						FieldChanges:         changeset,
 					}
 
+					if len(additionalData) != 0 {
+						msg.AdditionalData = additionalData
+					}
+
 					// complete the mutation before we process the event
 					retValue, err := next.Mutate(ctx, m)
 					if err != nil {
@@ -835,6 +855,7 @@ func StatusNamespaceHooks() []ent.Hook {
 					}
 
 					changeset := []events.FieldChange{}
+					additionalData := map[string]interface{}{}
 					cv_created_at := ""
 					created_at, ok := m.CreatedAt()
 
@@ -963,6 +984,10 @@ func StatusNamespaceHooks() []ent.Hook {
 						AdditionalSubjectIDs: additionalSubjects,
 						Timestamp:            time.Now().UTC(),
 						FieldChanges:         changeset,
+					}
+
+					if len(additionalData) != 0 {
+						msg.AdditionalData = additionalData
 					}
 
 					// complete the mutation before we process the event

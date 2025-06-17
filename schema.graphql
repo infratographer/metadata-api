@@ -1,3 +1,4 @@
+extend schema @link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@key","@interfaceObject","@external","@shareable"])
 directive @prefixedID(prefix: String!) on OBJECT
 type Annotation implements Node @key(fields: "id") @prefixedID(prefix: "metaano") {
 	"""
