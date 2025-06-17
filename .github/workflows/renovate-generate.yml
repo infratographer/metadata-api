@@ -1,0 +1,45 @@
+name: Renovate - Generate
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+jobs:
+  go-generate:
+    name: go-generate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: Check if PR is from Renovate bot
+        id: check_renovate
+        run: |
+          if [ "${{ github.event.pull_request.user.login }}" == "renovate[bot]" ]; then
+            echo "is_renovate=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup Go
+        if: steps.check_renovate.outputs.is_renovate == 'true'
+        uses: actions/setup-go@0aaccfd150d50ccaeb58ebd88d36e91967a5f35b # v5
+        with:
+          go-version-file: "go.mod"
+
+      - name: Generate
+        if: steps.check_renovate.outputs.is_renovate == 'true'
+        run: |
+          go generate ./...
+          git checkout -- go.sum
+
+      - name: Commit and push changes
+        if: steps.check_renovate.outputs.is_renovate == 'true'
+        uses: EndBug/add-and-commit@v9
+        with:
+          message: "chore: run go generate"
+          commit: --signoff
