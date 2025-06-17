@@ -14,7 +14,7 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/mattn/go-sqlite3 v1.14.28
 	github.com/metal-toolbox/iam-runtime v0.4.1
-	github.com/metal-toolbox/iam-runtime-contrib v1.0.0
+	github.com/metal-toolbox/iam-runtime-contrib v1.0.1
 	github.com/mitchellh/go-homedir v1.1.0
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.20.1
