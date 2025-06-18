@@ -3,7 +3,9 @@ package graphapi_test
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"testing"
+	"time"
 
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/stretchr/testify/assert"
@@ -11,12 +13,16 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.infratographer.com/permissions-api/pkg/permissions"
 	"go.infratographer.com/permissions-api/pkg/permissions/mockpermissions"
+	"go.infratographer.com/x/events"
 	"go.infratographer.com/x/gidx"
+	"go.infratographer.com/x/testing/eventtools"
 
 	"go.infratographer.com/metadata-api/internal/ent/generated/metadata"
 	"go.infratographer.com/metadata-api/internal/ent/generated/status"
 	"go.infratographer.com/metadata-api/internal/testclient"
 )
+
+var errTimeout = errors.New("timeout waiting for event")
 
 func TestStatusUpdate(t *testing.T) {
 	ctx := context.Background()
@@ -142,6 +148,95 @@ func TestStatusUpdate(t *testing.T) {
 	}
 }
 
+func TestStatusUpdateIsNoopWithSameValue(t *testing.T) {
+	ctx := context.Background()
+	perms := new(mockpermissions.MockPermissions)
+	perms.On("CreateAuthRelationships", mock.Anything, mock.Anything, mock.Anything).Return(nil)
+
+	ctx = perms.ContextWithHandler(ctx)
+
+	// Permit request
+	ctx = context.WithValue(ctx, permissions.CheckerCtxKey, permissions.DefaultAllowChecker)
+
+	source := "go-test-noop"
+	meta := MetadataBuilder{}.MustNew(ctx)
+	status := StatusBuilder{
+		Metadata: meta,
+		Data:     json.RawMessage(`{"first": "first", "last": "last"}`),
+		Source:   source,
+	}.MustNew(ctx)
+
+	jsonDataUpdate1 := json.RawMessage(`{"third":"db-sorts-by-key","first":"fun","second":"weeee"}`)
+	jsonDataUpdate2 := json.RawMessage(`{"second": "weeee", "third": "db-sorts-by-key", "first": "fun"}`)
+	require.JSONEq(t, string(jsonDataUpdate1), string(jsonDataUpdate2))
+
+	// Subscribe to NATs changes
+	natsCfg := NATSServer.Config.NATS
+	natsCfg.QueueGroup = "event-noop-test"
+	conn, err := events.NewNATSConnection(natsCfg)
+	require.NoError(t, err)
+	messages, err := conn.SubscribeChanges(context.Background(), ">")
+	require.NoError(t, err)
+
+	// clear out any existing events in the queue
+	for {
+		_, err = getSingleMessage(messages, time.Second*1)
+		if err != nil {
+			break
+		}
+	}
+
+	// Set the status and ensure we get the data we passed back
+	createdResp, err := graphTestClient().StatusUpdate(ctx, testclient.StatusUpdateInput{NodeID: meta.NodeID, NamespaceID: status.StatusNamespaceID, Source: source, Data: jsonDataUpdate1})
+	require.NoError(t, err)
+	assert.NotNil(t, createdResp.StatusUpdate.Status)
+	assert.JSONEq(t, string(jsonDataUpdate1), string(createdResp.StatusUpdate.Status.Data))
+
+	// Ensure event was sent with string json data and a json diff
+	receivedMsg, err := getSingleMessage(messages, time.Second*1)
+	require.NoError(t, err)
+	require.NoError(t, receivedMsg.Error())
+	require.NoError(t, receivedMsg.Ack())
+
+	require.Equal(t, "update", receivedMsg.Message().EventType)
+	require.Equal(t, eventtools.Prefix+".changes.update.status", receivedMsg.Topic())
+
+	dataChecked := false
+	for _, field := range receivedMsg.Message().FieldChanges {
+		if field.Field != "data" {
+			continue
+		}
+
+		assert.JSONEq(t, string(jsonDataUpdate1), field.CurrentValue)
+		dataChecked = true
+	}
+	assert.True(t, dataChecked)
+
+	expectedDiff := `{"first":{"changed": ["first", "fun"]}, "prop-added":{"second": "weee"}, "prop-added":{"third": "db-sorts-by-key"}, "prop-removed":{"last": "last"} }`
+	assert.JSONEq(t, expectedDiff, receivedMsg.Message().AdditionalData["data-json-diff"].(string))
+
+	// update the status, since the JSON is functionally the same, ensure we get the sorted json back
+	updatedResp, err := graphTestClient().StatusUpdate(ctx, testclient.StatusUpdateInput{NodeID: meta.NodeID, NamespaceID: status.StatusNamespaceID, Source: source, Data: jsonDataUpdate2})
+	require.NoError(t, err)
+	assert.NotNil(t, updatedResp.StatusUpdate.Status)
+	assert.JSONEq(t, string(jsonDataUpdate1), string(updatedResp.StatusUpdate.Status.Data))
+
+	assert.NotEqual(t, createdResp.StatusUpdate.Status.UpdatedAt, updatedResp.StatusUpdate.Status.UpdatedAt)
+
+	// Ensure no data was sent for update event since there is no diff
+	receivedMsg, err = getSingleMessage(messages, time.Second*1)
+	require.NoError(t, err)
+	require.NoError(t, receivedMsg.Error())
+	require.NoError(t, receivedMsg.Ack())
+
+	require.Equal(t, "update", receivedMsg.Message().EventType)
+	require.Equal(t, eventtools.Prefix+".changes.update.status", receivedMsg.Topic())
+
+	require.Len(t, receivedMsg.Message().FieldChanges, 1)
+	require.Equal(t, "updated_at", receivedMsg.Message().FieldChanges[0].Field)
+
+}
+
 func TestStatusDelete(t *testing.T) {
 	ctx := context.Background()
 	perms := new(mockpermissions.MockPermissions)
@@ -224,5 +319,14 @@ func TestStatusDelete(t *testing.T) {
 			count := EntClient.Status.Query().Where(status.Source(tt.Source), status.HasMetadataWith(metadata.NodeID(tt.NodeID))).CountX(ctx)
 			assert.Equal(t, 0, count)
 		})
+	}
+}
+
+func getSingleMessage[T any](messages <-chan events.Message[T], timeout time.Duration) (events.Message[T], error) {
+	select {
+	case message := <-messages:
+		return message, nil
+	case <-time.After(timeout):
+		return nil, errTimeout
 	}
 }

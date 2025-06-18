@@ -25,6 +25,7 @@ import (
 	"entgo.io/ent"
 	"github.com/metal-toolbox/iam-runtime-contrib/iamruntime"
 	"github.com/metal-toolbox/iam-runtime/pkg/iam/runtime/authorization"
+	"github.com/nsf/jsondiff"
 	"go.infratographer.com/metadata-api/internal/ent/generated"
 	"go.infratographer.com/metadata-api/internal/ent/generated/hook"
 	"go.infratographer.com/permissions-api/pkg/permissions"
@@ -140,14 +141,19 @@ func AnnotationHooks() []ent.Hook {
 					data, ok := m.Data()
 
 					if ok {
-						cv_data = fmt.Sprintf("%s", fmt.Sprint(data))
+						cv_data = string(data)
 						pv_data := ""
 						if !m.Op().Is(ent.OpCreate) {
 							ov, err := m.OldData(ctx)
 							if err != nil {
 								pv_data = "<unknown>"
 							} else {
-								pv_data = fmt.Sprintf("%s", fmt.Sprint(ov))
+								pv_data = string(ov)
+								opts := jsondiff.DefaultJSONOptions()
+								opts.SkipMatches = true
+
+								_, diff := jsondiff.Compare(ov, data, &opts)
+								additionalData["data-json-diff"] = diff
 							}
 						}
 
@@ -746,14 +752,19 @@ func StatusHooks() []ent.Hook {
 					data, ok := m.Data()
 
 					if ok {
-						cv_data = fmt.Sprintf("%s", fmt.Sprint(data))
+						cv_data = string(data)
 						pv_data := ""
 						if !m.Op().Is(ent.OpCreate) {
 							ov, err := m.OldData(ctx)
 							if err != nil {
 								pv_data = "<unknown>"
 							} else {
-								pv_data = fmt.Sprintf("%s", fmt.Sprint(ov))
+								pv_data = string(ov)
+								opts := jsondiff.DefaultJSONOptions()
+								opts.SkipMatches = true
+
+								_, diff := jsondiff.Compare(ov, data, &opts)
+								additionalData["data-json-diff"] = diff
 							}
 						}
 
