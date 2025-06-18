@@ -330,8 +330,8 @@ github.com/zclconf/go-cty-yaml v1.1.0 h1:nP+jp0qPHv2IhUVqmQSzjvqAWcObN0KBkUl2rWB
 github.com/zclconf/go-cty-yaml v1.1.0/go.mod h1:9YLUH4g7lOhVWqUbctnVlZ5KLpg7JAprQNgxSZ1Gyxs=
 go.infratographer.com/permissions-api v0.7.2 h1:xGQqkB7Y5uRBsxx8YJxfRKUEccUAcWbaYyV8BXfISqQ=
 go.infratographer.com/permissions-api v0.7.2/go.mod h1:AeR5p5uv3snQjAI7ML7qgMdSTkdWADNgqgJp870IilQ=
-go.infratographer.com/x v0.11.0 h1:NXqDNxIiygKxriXP5i7OmP83OTxEb4WNuhD46cRTHYo=
-go.infratographer.com/x v0.11.0/go.mod h1:KU+6U5LSmaUZlAhCbnBNj7he4yD2iw6yiGqAZzNcj1Y=
+go.infratographer.com/x v0.11.1 h1:dyLaUVYl6KZhz42ZudPR5NGPN6bZpdJqo7knpg+VnjQ=
+go.infratographer.com/x v0.11.1/go.mod h1:KU+6U5LSmaUZlAhCbnBNj7he4yD2iw6yiGqAZzNcj1Y=
 go.opentelemetry.io/auto/sdk v1.1.0 h1:cH53jehLUN6UFLY71z+NDOiNJqDdPRaXzTel0sJySYA=
 go.opentelemetry.io/auto/sdk v1.1.0/go.mod h1:3wSPjt5PWp2RhlCcmmOial7AvC4DQqZb7a7wCow3W8A=
 go.opentelemetry.io/contrib/instrumentation/github.com/labstack/echo/otelecho v0.61.0 h1:xUA/nAR2CsyadSjADVOwu6ZRpAtvB8HUqg/+bbuqhZ4=
