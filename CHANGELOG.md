@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/infratographer/metadata-api/compare/v0.2.0...v0.2.1) (2025-06-20)
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/hasura/go-graphql-client to v0.14.4 ([#182](https://github.com/infratographer/metadata-api/issues/182)) ([285378f](https://github.com/infratographer/metadata-api/commit/285378f7056abe7d975310ef4b623c19c28d29b5))
+
 ## [0.2.0](https://github.com/infratographer/metadata-api/compare/v0.1.2...v0.2.0) (2025-06-18)
 
 
