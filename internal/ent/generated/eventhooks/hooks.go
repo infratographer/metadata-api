@@ -188,6 +188,11 @@ func AnnotationHooks() []ent.Hook {
 						}
 					}
 
+					// don't send a change message if the only thing that changed was the updated_at timestamp, that's not a real change
+					if len(msg.FieldChanges) == 1 && msg.FieldChanges[0].Field == "updated_at" {
+						return retValue, nil
+					}
+
 					if _, err := m.EventsPublisher.PublishChange(ctx, "annotation", msg); err != nil {
 						return nil, fmt.Errorf("failed to publish change: %w", err)
 					}
@@ -402,6 +407,11 @@ func AnnotationNamespaceHooks() []ent.Hook {
 						}
 					}
 
+					// don't send a change message if the only thing that changed was the updated_at timestamp, that's not a real change
+					if len(msg.FieldChanges) == 1 && msg.FieldChanges[0].Field == "updated_at" {
+						return retValue, nil
+					}
+
 					if _, err := m.EventsPublisher.PublishChange(ctx, "annotation-namespace", msg); err != nil {
 						return nil, fmt.Errorf("failed to publish change: %w", err)
 					}
@@ -568,6 +578,11 @@ func MetadataHooks() []ent.Hook {
 						if err := createAuthRelationships(ctx, "metadata", objID, relationships...); err != nil {
 							return nil, fmt.Errorf("relationship request failed with error: %w", err)
 						}
+					}
+
+					// don't send a change message if the only thing that changed was the updated_at timestamp, that's not a real change
+					if len(msg.FieldChanges) == 1 && msg.FieldChanges[0].Field == "updated_at" {
+						return retValue, nil
 					}
 
 					if _, err := m.EventsPublisher.PublishChange(ctx, "metadata", msg); err != nil {
@@ -799,6 +814,11 @@ func StatusHooks() []ent.Hook {
 						}
 					}
 
+					// don't send a change message if the only thing that changed was the updated_at timestamp, that's not a real change
+					if len(msg.FieldChanges) == 1 && msg.FieldChanges[0].Field == "updated_at" {
+						return retValue, nil
+					}
+
 					if _, err := m.EventsPublisher.PublishChange(ctx, "status", msg); err != nil {
 						return nil, fmt.Errorf("failed to publish change: %w", err)
 					}
@@ -1011,6 +1031,11 @@ func StatusNamespaceHooks() []ent.Hook {
 						if err := createAuthRelationships(ctx, "status-namespace", objID, relationships...); err != nil {
 							return nil, fmt.Errorf("relationship request failed with error: %w", err)
 						}
+					}
+
+					// don't send a change message if the only thing that changed was the updated_at timestamp, that's not a real change
+					if len(msg.FieldChanges) == 1 && msg.FieldChanges[0].Field == "updated_at" {
+						return retValue, nil
 					}
 
 					if _, err := m.EventsPublisher.PublishChange(ctx, "status-namespace", msg); err != nil {

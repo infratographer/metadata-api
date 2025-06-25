@@ -223,18 +223,10 @@ func TestStatusUpdateIsNoopWithSameValue(t *testing.T) {
 
 	assert.NotEqual(t, createdResp.StatusUpdate.Status.UpdatedAt, updatedResp.StatusUpdate.Status.UpdatedAt)
 
-	// Ensure no data was sent for update event since there is no diff
+	// Ensure no eventa was sent for update event since there was no update
 	receivedMsg, err = getSingleMessage(messages, time.Second*1)
-	require.NoError(t, err)
-	require.NoError(t, receivedMsg.Error())
-	require.NoError(t, receivedMsg.Ack())
-
-	require.Equal(t, "update", receivedMsg.Message().EventType)
-	require.Equal(t, eventtools.Prefix+".changes.update.status", receivedMsg.Topic())
-
-	require.Len(t, receivedMsg.Message().FieldChanges, 1)
-	require.Equal(t, "updated_at", receivedMsg.Message().FieldChanges[0].Field)
-
+	assert.Nil(t, receivedMsg)
+	assert.ErrorIs(t, err, errTimeout)
 }
 
 func TestStatusDelete(t *testing.T) {
