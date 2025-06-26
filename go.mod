@@ -7,7 +7,7 @@ require (
 	entgo.io/ent v0.14.4
 	github.com/99designs/gqlgen v0.17.75
 	github.com/Yamashou/gqlgenc v0.32.1
-	github.com/brianvoe/gofakeit/v7 v7.2.1
+	github.com/brianvoe/gofakeit/v7 v7.3.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hasura/go-graphql-client v0.14.4
 	github.com/labstack/echo/v4 v4.13.4
