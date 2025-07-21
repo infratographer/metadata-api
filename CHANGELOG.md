@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.2.2](https://github.com/infratographer/metadata-api/compare/v0.2.1...v0.2.2) (2025-07-20)
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/99designs/gqlgen to v0.17.76 ([#192](https://github.com/infratographer/metadata-api/issues/192)) ([1c36640](https://github.com/infratographer/metadata-api/commit/1c36640b3eaafcf4ded6ee73f5c67df32f08f917))
+* **deps:** update module github.com/brianvoe/gofakeit/v7 to v7.3.0 ([#186](https://github.com/infratographer/metadata-api/issues/186)) ([40fc07c](https://github.com/infratographer/metadata-api/commit/40fc07cff9b3604fbb3776dc3826b71a6e8cbc4d))
+* **deps:** update module github.com/testcontainers/testcontainers-go/modules/postgres to v0.38.0 ([#196](https://github.com/infratographer/metadata-api/issues/196)) ([fb19f9c](https://github.com/infratographer/metadata-api/commit/fb19f9ccae43bbf5f02219e87423cc64911ee2bf))
+* **deps:** update module github.com/vektah/gqlparser/v2 to v2.5.29 ([#191](https://github.com/infratographer/metadata-api/issues/191)) ([d2ea839](https://github.com/infratographer/metadata-api/commit/d2ea839d6d8387aa80f29d342e65a54e8cee94c5))
+* **deps:** update module github.com/vektah/gqlparser/v2 to v2.5.30 ([#193](https://github.com/infratographer/metadata-api/issues/193)) ([36a29c0](https://github.com/infratographer/metadata-api/commit/36a29c0fe80bd5de954a93e1894d318af22321fb))
+* **deps:** update module github.com/yamashou/gqlgenc to v0.33.0 ([#194](https://github.com/infratographer/metadata-api/issues/194)) ([fe9575d](https://github.com/infratographer/metadata-api/commit/fe9575d55fe0cb031a5f3fa9032af0bbd300aeb1))
+* **deps:** update module go.infratographer.com/x to v0.11.3 ([#188](https://github.com/infratographer/metadata-api/issues/188)) ([24523d4](https://github.com/infratographer/metadata-api/commit/24523d4e047a50cc3f32da52ab0cb04a41c8095f))
+* **deps:** update module go.infratographer.com/x to v0.11.4 ([#190](https://github.com/infratographer/metadata-api/issues/190)) ([4d3c69e](https://github.com/infratographer/metadata-api/commit/4d3c69ef0ea66e1cf16eb7e56d2c14b962202f26))
+* **deps:** update module go.infratographer.com/x to v0.12.0 ([#198](https://github.com/infratographer/metadata-api/issues/198)) ([73f830c](https://github.com/infratographer/metadata-api/commit/73f830c1414024f01a821edf846e80aae5612f2f))
+
 ## [0.2.1](https://github.com/infratographer/metadata-api/compare/v0.2.0...v0.2.1) (2025-06-25)
 
 
