@@ -1297,6 +1297,26 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	}
 }
 
+func processArgField[T any](
+	ctx context.Context,
+	rawArgs map[string]any,
+	fieldName string,
+	valueMapperFn func(ctx context.Context, value any) (T, error),
+) (T, error) {
+	if _, ok := rawArgs[fieldName]; !ok {
+		var zeroVal T
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField(fieldName))
+	if tmp, ok := rawArgs[fieldName]; ok {
+		return valueMapperFn(ctx, tmp)
+	}
+
+	var zeroVal T
+	return zeroVal, nil
+}
+
 type executionContext struct {
 	*graphql.OperationContext
 	*executableSchema
@@ -2662,1393 +2682,451 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 func (ec *executionContext) field_Entity_findAnnotationByID_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Entity_findAnnotationByID_argsID(ctx, rawArgs)
+	arg0, err := processArgField(ctx, rawArgs, "id", ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID)
 	if err != nil {
 		return nil, err
 	}
 	args["id"] = arg0
 	return args, nil
-}
-func (ec *executionContext) field_Entity_findAnnotationByID_argsID(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (gidx.PrefixedID, error) {
-	if _, ok := rawArgs["id"]; !ok {
-		var zeroVal gidx.PrefixedID
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-	if tmp, ok := rawArgs["id"]; ok {
-		return ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, tmp)
-	}
-
-	var zeroVal gidx.PrefixedID
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Entity_findAnnotationNamespaceByID_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Entity_findAnnotationNamespaceByID_argsID(ctx, rawArgs)
+	arg0, err := processArgField(ctx, rawArgs, "id", ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID)
 	if err != nil {
 		return nil, err
 	}
 	args["id"] = arg0
 	return args, nil
-}
-func (ec *executionContext) field_Entity_findAnnotationNamespaceByID_argsID(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (gidx.PrefixedID, error) {
-	if _, ok := rawArgs["id"]; !ok {
-		var zeroVal gidx.PrefixedID
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-	if tmp, ok := rawArgs["id"]; ok {
-		return ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, tmp)
-	}
-
-	var zeroVal gidx.PrefixedID
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Entity_findMetadataByID_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Entity_findMetadataByID_argsID(ctx, rawArgs)
+	arg0, err := processArgField(ctx, rawArgs, "id", ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID)
 	if err != nil {
 		return nil, err
 	}
 	args["id"] = arg0
 	return args, nil
 }
-func (ec *executionContext) field_Entity_findMetadataByID_argsID(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (gidx.PrefixedID, error) {
-	if _, ok := rawArgs["id"]; !ok {
-		var zeroVal gidx.PrefixedID
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-	if tmp, ok := rawArgs["id"]; ok {
-		return ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, tmp)
-	}
-
-	var zeroVal gidx.PrefixedID
-	return zeroVal, nil
-}
 
 func (ec *executionContext) field_Entity_findMetadataByNodeID_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Entity_findMetadataByNodeID_argsNodeID(ctx, rawArgs)
+	arg0, err := processArgField(ctx, rawArgs, "nodeID", ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID)
 	if err != nil {
 		return nil, err
 	}
 	args["nodeID"] = arg0
 	return args, nil
 }
-func (ec *executionContext) field_Entity_findMetadataByNodeID_argsNodeID(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (gidx.PrefixedID, error) {
-	if _, ok := rawArgs["nodeID"]; !ok {
-		var zeroVal gidx.PrefixedID
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("nodeID"))
-	if tmp, ok := rawArgs["nodeID"]; ok {
-		return ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, tmp)
-	}
-
-	var zeroVal gidx.PrefixedID
-	return zeroVal, nil
-}
 
 func (ec *executionContext) field_Entity_findMetadataNodeByID_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Entity_findMetadataNodeByID_argsID(ctx, rawArgs)
+	arg0, err := processArgField(ctx, rawArgs, "id", ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID)
 	if err != nil {
 		return nil, err
 	}
 	args["id"] = arg0
 	return args, nil
-}
-func (ec *executionContext) field_Entity_findMetadataNodeByID_argsID(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (gidx.PrefixedID, error) {
-	if _, ok := rawArgs["id"]; !ok {
-		var zeroVal gidx.PrefixedID
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-	if tmp, ok := rawArgs["id"]; ok {
-		return ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, tmp)
-	}
-
-	var zeroVal gidx.PrefixedID
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Entity_findResourceOwnerByID_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Entity_findResourceOwnerByID_argsID(ctx, rawArgs)
+	arg0, err := processArgField(ctx, rawArgs, "id", ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID)
 	if err != nil {
 		return nil, err
 	}
 	args["id"] = arg0
 	return args, nil
-}
-func (ec *executionContext) field_Entity_findResourceOwnerByID_argsID(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (gidx.PrefixedID, error) {
-	if _, ok := rawArgs["id"]; !ok {
-		var zeroVal gidx.PrefixedID
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-	if tmp, ok := rawArgs["id"]; ok {
-		return ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, tmp)
-	}
-
-	var zeroVal gidx.PrefixedID
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Entity_findStatusByID_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Entity_findStatusByID_argsID(ctx, rawArgs)
+	arg0, err := processArgField(ctx, rawArgs, "id", ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID)
 	if err != nil {
 		return nil, err
 	}
 	args["id"] = arg0
 	return args, nil
-}
-func (ec *executionContext) field_Entity_findStatusByID_argsID(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (gidx.PrefixedID, error) {
-	if _, ok := rawArgs["id"]; !ok {
-		var zeroVal gidx.PrefixedID
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-	if tmp, ok := rawArgs["id"]; ok {
-		return ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, tmp)
-	}
-
-	var zeroVal gidx.PrefixedID
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Entity_findStatusNamespaceByID_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Entity_findStatusNamespaceByID_argsID(ctx, rawArgs)
+	arg0, err := processArgField(ctx, rawArgs, "id", ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID)
 	if err != nil {
 		return nil, err
 	}
 	args["id"] = arg0
 	return args, nil
-}
-func (ec *executionContext) field_Entity_findStatusNamespaceByID_argsID(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (gidx.PrefixedID, error) {
-	if _, ok := rawArgs["id"]; !ok {
-		var zeroVal gidx.PrefixedID
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-	if tmp, ok := rawArgs["id"]; ok {
-		return ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, tmp)
-	}
-
-	var zeroVal gidx.PrefixedID
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Entity_findStatusOwnerByID_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Entity_findStatusOwnerByID_argsID(ctx, rawArgs)
+	arg0, err := processArgField(ctx, rawArgs, "id", ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID)
 	if err != nil {
 		return nil, err
 	}
 	args["id"] = arg0
 	return args, nil
-}
-func (ec *executionContext) field_Entity_findStatusOwnerByID_argsID(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (gidx.PrefixedID, error) {
-	if _, ok := rawArgs["id"]; !ok {
-		var zeroVal gidx.PrefixedID
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-	if tmp, ok := rawArgs["id"]; ok {
-		return ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, tmp)
-	}
-
-	var zeroVal gidx.PrefixedID
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Metadata_annotations_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Metadata_annotations_argsAfter(ctx, rawArgs)
+	arg0, err := processArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := ec.field_Metadata_annotations_argsFirst(ctx, rawArgs)
+	arg1, err := processArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := ec.field_Metadata_annotations_argsBefore(ctx, rawArgs)
+	arg2, err := processArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := ec.field_Metadata_annotations_argsLast(ctx, rawArgs)
+	arg3, err := processArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := ec.field_Metadata_annotations_argsOrderBy(ctx, rawArgs)
+	arg4, err := processArgField(ctx, rawArgs, "orderBy", ec.unmarshalOAnnotationOrder2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationOrder)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg4
-	arg5, err := ec.field_Metadata_annotations_argsWhere(ctx, rawArgs)
+	arg5, err := processArgField(ctx, rawArgs, "where", ec.unmarshalOAnnotationWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationWhereInput)
 	if err != nil {
 		return nil, err
 	}
 	args["where"] = arg5
 	return args, nil
-}
-func (ec *executionContext) field_Metadata_annotations_argsAfter(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[gidx.PrefixedID], error) {
-	if _, ok := rawArgs["after"]; !ok {
-		var zeroVal *entgql.Cursor[gidx.PrefixedID]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-	if tmp, ok := rawArgs["after"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[gidx.PrefixedID]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Metadata_annotations_argsFirst(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["first"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-	if tmp, ok := rawArgs["first"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Metadata_annotations_argsBefore(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[gidx.PrefixedID], error) {
-	if _, ok := rawArgs["before"]; !ok {
-		var zeroVal *entgql.Cursor[gidx.PrefixedID]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-	if tmp, ok := rawArgs["before"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[gidx.PrefixedID]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Metadata_annotations_argsLast(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["last"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-	if tmp, ok := rawArgs["last"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Metadata_annotations_argsOrderBy(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*generated.AnnotationOrder, error) {
-	if _, ok := rawArgs["orderBy"]; !ok {
-		var zeroVal *generated.AnnotationOrder
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		return ec.unmarshalOAnnotationOrder2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationOrder(ctx, tmp)
-	}
-
-	var zeroVal *generated.AnnotationOrder
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Metadata_annotations_argsWhere(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*generated.AnnotationWhereInput, error) {
-	if _, ok := rawArgs["where"]; !ok {
-		var zeroVal *generated.AnnotationWhereInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-	if tmp, ok := rawArgs["where"]; ok {
-		return ec.unmarshalOAnnotationWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationWhereInput(ctx, tmp)
-	}
-
-	var zeroVal *generated.AnnotationWhereInput
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Metadata_statuses_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Metadata_statuses_argsAfter(ctx, rawArgs)
+	arg0, err := processArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := ec.field_Metadata_statuses_argsFirst(ctx, rawArgs)
+	arg1, err := processArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := ec.field_Metadata_statuses_argsBefore(ctx, rawArgs)
+	arg2, err := processArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := ec.field_Metadata_statuses_argsLast(ctx, rawArgs)
+	arg3, err := processArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := ec.field_Metadata_statuses_argsOrderBy(ctx, rawArgs)
+	arg4, err := processArgField(ctx, rawArgs, "orderBy", ec.unmarshalOStatusOrder2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusOrder)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg4
-	arg5, err := ec.field_Metadata_statuses_argsWhere(ctx, rawArgs)
+	arg5, err := processArgField(ctx, rawArgs, "where", ec.unmarshalOStatusWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusWhereInput)
 	if err != nil {
 		return nil, err
 	}
 	args["where"] = arg5
 	return args, nil
 }
-func (ec *executionContext) field_Metadata_statuses_argsAfter(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[gidx.PrefixedID], error) {
-	if _, ok := rawArgs["after"]; !ok {
-		var zeroVal *entgql.Cursor[gidx.PrefixedID]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-	if tmp, ok := rawArgs["after"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[gidx.PrefixedID]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Metadata_statuses_argsFirst(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["first"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-	if tmp, ok := rawArgs["first"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Metadata_statuses_argsBefore(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[gidx.PrefixedID], error) {
-	if _, ok := rawArgs["before"]; !ok {
-		var zeroVal *entgql.Cursor[gidx.PrefixedID]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-	if tmp, ok := rawArgs["before"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[gidx.PrefixedID]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Metadata_statuses_argsLast(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["last"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-	if tmp, ok := rawArgs["last"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Metadata_statuses_argsOrderBy(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*generated.StatusOrder, error) {
-	if _, ok := rawArgs["orderBy"]; !ok {
-		var zeroVal *generated.StatusOrder
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		return ec.unmarshalOStatusOrder2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusOrder(ctx, tmp)
-	}
-
-	var zeroVal *generated.StatusOrder
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Metadata_statuses_argsWhere(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*generated.StatusWhereInput, error) {
-	if _, ok := rawArgs["where"]; !ok {
-		var zeroVal *generated.StatusWhereInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-	if tmp, ok := rawArgs["where"]; ok {
-		return ec.unmarshalOStatusWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusWhereInput(ctx, tmp)
-	}
-
-	var zeroVal *generated.StatusWhereInput
-	return zeroVal, nil
-}
 
 func (ec *executionContext) field_Mutation_annotationDelete_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Mutation_annotationDelete_argsInput(ctx, rawArgs)
+	arg0, err := processArgField(ctx, rawArgs, "input", ec.unmarshalNAnnotationDeleteInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋgraphapiᚐAnnotationDeleteInput)
 	if err != nil {
 		return nil, err
 	}
 	args["input"] = arg0
 	return args, nil
-}
-func (ec *executionContext) field_Mutation_annotationDelete_argsInput(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (AnnotationDeleteInput, error) {
-	if _, ok := rawArgs["input"]; !ok {
-		var zeroVal AnnotationDeleteInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-	if tmp, ok := rawArgs["input"]; ok {
-		return ec.unmarshalNAnnotationDeleteInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋgraphapiᚐAnnotationDeleteInput(ctx, tmp)
-	}
-
-	var zeroVal AnnotationDeleteInput
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Mutation_annotationNamespaceCreate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Mutation_annotationNamespaceCreate_argsInput(ctx, rawArgs)
+	arg0, err := processArgField(ctx, rawArgs, "input", ec.unmarshalNCreateAnnotationNamespaceInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐCreateAnnotationNamespaceInput)
 	if err != nil {
 		return nil, err
 	}
 	args["input"] = arg0
 	return args, nil
-}
-func (ec *executionContext) field_Mutation_annotationNamespaceCreate_argsInput(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (generated.CreateAnnotationNamespaceInput, error) {
-	if _, ok := rawArgs["input"]; !ok {
-		var zeroVal generated.CreateAnnotationNamespaceInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-	if tmp, ok := rawArgs["input"]; ok {
-		return ec.unmarshalNCreateAnnotationNamespaceInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐCreateAnnotationNamespaceInput(ctx, tmp)
-	}
-
-	var zeroVal generated.CreateAnnotationNamespaceInput
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Mutation_annotationNamespaceDelete_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Mutation_annotationNamespaceDelete_argsID(ctx, rawArgs)
+	arg0, err := processArgField(ctx, rawArgs, "id", ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID)
 	if err != nil {
 		return nil, err
 	}
 	args["id"] = arg0
-	arg1, err := ec.field_Mutation_annotationNamespaceDelete_argsForce(ctx, rawArgs)
+	arg1, err := processArgField(ctx, rawArgs, "force", ec.unmarshalNBoolean2bool)
 	if err != nil {
 		return nil, err
 	}
 	args["force"] = arg1
 	return args, nil
-}
-func (ec *executionContext) field_Mutation_annotationNamespaceDelete_argsID(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (gidx.PrefixedID, error) {
-	if _, ok := rawArgs["id"]; !ok {
-		var zeroVal gidx.PrefixedID
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-	if tmp, ok := rawArgs["id"]; ok {
-		return ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, tmp)
-	}
-
-	var zeroVal gidx.PrefixedID
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Mutation_annotationNamespaceDelete_argsForce(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (bool, error) {
-	if _, ok := rawArgs["force"]; !ok {
-		var zeroVal bool
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("force"))
-	if tmp, ok := rawArgs["force"]; ok {
-		return ec.unmarshalNBoolean2bool(ctx, tmp)
-	}
-
-	var zeroVal bool
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Mutation_annotationNamespaceUpdate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Mutation_annotationNamespaceUpdate_argsID(ctx, rawArgs)
+	arg0, err := processArgField(ctx, rawArgs, "id", ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID)
 	if err != nil {
 		return nil, err
 	}
 	args["id"] = arg0
-	arg1, err := ec.field_Mutation_annotationNamespaceUpdate_argsInput(ctx, rawArgs)
+	arg1, err := processArgField(ctx, rawArgs, "input", ec.unmarshalNUpdateAnnotationNamespaceInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐUpdateAnnotationNamespaceInput)
 	if err != nil {
 		return nil, err
 	}
 	args["input"] = arg1
 	return args, nil
 }
-func (ec *executionContext) field_Mutation_annotationNamespaceUpdate_argsID(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (gidx.PrefixedID, error) {
-	if _, ok := rawArgs["id"]; !ok {
-		var zeroVal gidx.PrefixedID
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-	if tmp, ok := rawArgs["id"]; ok {
-		return ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, tmp)
-	}
-
-	var zeroVal gidx.PrefixedID
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Mutation_annotationNamespaceUpdate_argsInput(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (generated.UpdateAnnotationNamespaceInput, error) {
-	if _, ok := rawArgs["input"]; !ok {
-		var zeroVal generated.UpdateAnnotationNamespaceInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-	if tmp, ok := rawArgs["input"]; ok {
-		return ec.unmarshalNUpdateAnnotationNamespaceInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐUpdateAnnotationNamespaceInput(ctx, tmp)
-	}
-
-	var zeroVal generated.UpdateAnnotationNamespaceInput
-	return zeroVal, nil
-}
 
 func (ec *executionContext) field_Mutation_annotationUpdate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Mutation_annotationUpdate_argsInput(ctx, rawArgs)
+	arg0, err := processArgField(ctx, rawArgs, "input", ec.unmarshalNAnnotationUpdateInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋgraphapiᚐAnnotationUpdateInput)
 	if err != nil {
 		return nil, err
 	}
 	args["input"] = arg0
 	return args, nil
-}
-func (ec *executionContext) field_Mutation_annotationUpdate_argsInput(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (AnnotationUpdateInput, error) {
-	if _, ok := rawArgs["input"]; !ok {
-		var zeroVal AnnotationUpdateInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-	if tmp, ok := rawArgs["input"]; ok {
-		return ec.unmarshalNAnnotationUpdateInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋgraphapiᚐAnnotationUpdateInput(ctx, tmp)
-	}
-
-	var zeroVal AnnotationUpdateInput
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Mutation_statusDelete_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Mutation_statusDelete_argsInput(ctx, rawArgs)
+	arg0, err := processArgField(ctx, rawArgs, "input", ec.unmarshalNStatusDeleteInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋgraphapiᚐStatusDeleteInput)
 	if err != nil {
 		return nil, err
 	}
 	args["input"] = arg0
 	return args, nil
-}
-func (ec *executionContext) field_Mutation_statusDelete_argsInput(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (StatusDeleteInput, error) {
-	if _, ok := rawArgs["input"]; !ok {
-		var zeroVal StatusDeleteInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-	if tmp, ok := rawArgs["input"]; ok {
-		return ec.unmarshalNStatusDeleteInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋgraphapiᚐStatusDeleteInput(ctx, tmp)
-	}
-
-	var zeroVal StatusDeleteInput
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_Mutation_statusNamespaceCreate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Mutation_statusNamespaceCreate_argsInput(ctx, rawArgs)
+	arg0, err := processArgField(ctx, rawArgs, "input", ec.unmarshalNCreateStatusNamespaceInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐCreateStatusNamespaceInput)
 	if err != nil {
 		return nil, err
 	}
 	args["input"] = arg0
 	return args, nil
 }
-func (ec *executionContext) field_Mutation_statusNamespaceCreate_argsInput(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (generated.CreateStatusNamespaceInput, error) {
-	if _, ok := rawArgs["input"]; !ok {
-		var zeroVal generated.CreateStatusNamespaceInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-	if tmp, ok := rawArgs["input"]; ok {
-		return ec.unmarshalNCreateStatusNamespaceInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐCreateStatusNamespaceInput(ctx, tmp)
-	}
-
-	var zeroVal generated.CreateStatusNamespaceInput
-	return zeroVal, nil
-}
 
 func (ec *executionContext) field_Mutation_statusNamespaceDelete_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Mutation_statusNamespaceDelete_argsID(ctx, rawArgs)
+	arg0, err := processArgField(ctx, rawArgs, "id", ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID)
 	if err != nil {
 		return nil, err
 	}
 	args["id"] = arg0
-	arg1, err := ec.field_Mutation_statusNamespaceDelete_argsForce(ctx, rawArgs)
+	arg1, err := processArgField(ctx, rawArgs, "force", ec.unmarshalNBoolean2bool)
 	if err != nil {
 		return nil, err
 	}
 	args["force"] = arg1
 	return args, nil
 }
-func (ec *executionContext) field_Mutation_statusNamespaceDelete_argsID(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (gidx.PrefixedID, error) {
-	if _, ok := rawArgs["id"]; !ok {
-		var zeroVal gidx.PrefixedID
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-	if tmp, ok := rawArgs["id"]; ok {
-		return ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, tmp)
-	}
-
-	var zeroVal gidx.PrefixedID
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Mutation_statusNamespaceDelete_argsForce(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (bool, error) {
-	if _, ok := rawArgs["force"]; !ok {
-		var zeroVal bool
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("force"))
-	if tmp, ok := rawArgs["force"]; ok {
-		return ec.unmarshalNBoolean2bool(ctx, tmp)
-	}
-
-	var zeroVal bool
-	return zeroVal, nil
-}
 
 func (ec *executionContext) field_Mutation_statusNamespaceUpdate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Mutation_statusNamespaceUpdate_argsID(ctx, rawArgs)
+	arg0, err := processArgField(ctx, rawArgs, "id", ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID)
 	if err != nil {
 		return nil, err
 	}
 	args["id"] = arg0
-	arg1, err := ec.field_Mutation_statusNamespaceUpdate_argsInput(ctx, rawArgs)
+	arg1, err := processArgField(ctx, rawArgs, "input", ec.unmarshalNUpdateStatusNamespaceInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐUpdateStatusNamespaceInput)
 	if err != nil {
 		return nil, err
 	}
 	args["input"] = arg1
 	return args, nil
 }
-func (ec *executionContext) field_Mutation_statusNamespaceUpdate_argsID(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (gidx.PrefixedID, error) {
-	if _, ok := rawArgs["id"]; !ok {
-		var zeroVal gidx.PrefixedID
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-	if tmp, ok := rawArgs["id"]; ok {
-		return ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, tmp)
-	}
-
-	var zeroVal gidx.PrefixedID
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_Mutation_statusNamespaceUpdate_argsInput(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (generated.UpdateStatusNamespaceInput, error) {
-	if _, ok := rawArgs["input"]; !ok {
-		var zeroVal generated.UpdateStatusNamespaceInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-	if tmp, ok := rawArgs["input"]; ok {
-		return ec.unmarshalNUpdateStatusNamespaceInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐUpdateStatusNamespaceInput(ctx, tmp)
-	}
-
-	var zeroVal generated.UpdateStatusNamespaceInput
-	return zeroVal, nil
-}
 
 func (ec *executionContext) field_Mutation_statusUpdate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Mutation_statusUpdate_argsInput(ctx, rawArgs)
+	arg0, err := processArgField(ctx, rawArgs, "input", ec.unmarshalNStatusUpdateInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋgraphapiᚐStatusUpdateInput)
 	if err != nil {
 		return nil, err
 	}
 	args["input"] = arg0
 	return args, nil
 }
-func (ec *executionContext) field_Mutation_statusUpdate_argsInput(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (StatusUpdateInput, error) {
-	if _, ok := rawArgs["input"]; !ok {
-		var zeroVal StatusUpdateInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-	if tmp, ok := rawArgs["input"]; ok {
-		return ec.unmarshalNStatusUpdateInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋgraphapiᚐStatusUpdateInput(ctx, tmp)
-	}
-
-	var zeroVal StatusUpdateInput
-	return zeroVal, nil
-}
 
 func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Query___type_argsName(ctx, rawArgs)
+	arg0, err := processArgField(ctx, rawArgs, "name", ec.unmarshalNString2string)
 	if err != nil {
 		return nil, err
 	}
 	args["name"] = arg0
 	return args, nil
 }
-func (ec *executionContext) field_Query___type_argsName(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (string, error) {
-	if _, ok := rawArgs["name"]; !ok {
-		var zeroVal string
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-	if tmp, ok := rawArgs["name"]; ok {
-		return ec.unmarshalNString2string(ctx, tmp)
-	}
-
-	var zeroVal string
-	return zeroVal, nil
-}
 
 func (ec *executionContext) field_Query__entities_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Query__entities_argsRepresentations(ctx, rawArgs)
+	arg0, err := processArgField(ctx, rawArgs, "representations", ec.unmarshalN_Any2ᚕmapᚄ)
 	if err != nil {
 		return nil, err
 	}
 	args["representations"] = arg0
 	return args, nil
 }
-func (ec *executionContext) field_Query__entities_argsRepresentations(
-	ctx context.Context,
-	rawArgs map[string]any,
-) ([]map[string]any, error) {
-	if _, ok := rawArgs["representations"]; !ok {
-		var zeroVal []map[string]any
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("representations"))
-	if tmp, ok := rawArgs["representations"]; ok {
-		return ec.unmarshalN_Any2ᚕmapᚄ(ctx, tmp)
-	}
-
-	var zeroVal []map[string]any
-	return zeroVal, nil
-}
 
 func (ec *executionContext) field_Query_annotationNamespace_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_Query_annotationNamespace_argsID(ctx, rawArgs)
+	arg0, err := processArgField(ctx, rawArgs, "id", ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID)
 	if err != nil {
 		return nil, err
 	}
 	args["id"] = arg0
 	return args, nil
 }
-func (ec *executionContext) field_Query_annotationNamespace_argsID(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (gidx.PrefixedID, error) {
-	if _, ok := rawArgs["id"]; !ok {
-		var zeroVal gidx.PrefixedID
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
-	if tmp, ok := rawArgs["id"]; ok {
-		return ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID(ctx, tmp)
-	}
-
-	var zeroVal gidx.PrefixedID
-	return zeroVal, nil
-}
 
 func (ec *executionContext) field_ResourceOwner_annotationNamespaces_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_ResourceOwner_annotationNamespaces_argsAfter(ctx, rawArgs)
+	arg0, err := processArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := ec.field_ResourceOwner_annotationNamespaces_argsFirst(ctx, rawArgs)
+	arg1, err := processArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := ec.field_ResourceOwner_annotationNamespaces_argsBefore(ctx, rawArgs)
+	arg2, err := processArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := ec.field_ResourceOwner_annotationNamespaces_argsLast(ctx, rawArgs)
+	arg3, err := processArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := ec.field_ResourceOwner_annotationNamespaces_argsOrderBy(ctx, rawArgs)
+	arg4, err := processArgField(ctx, rawArgs, "orderBy", ec.unmarshalOAnnotationNamespaceOrder2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationNamespaceOrder)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg4
-	arg5, err := ec.field_ResourceOwner_annotationNamespaces_argsWhere(ctx, rawArgs)
+	arg5, err := processArgField(ctx, rawArgs, "where", ec.unmarshalOAnnotationNamespaceWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationNamespaceWhereInput)
 	if err != nil {
 		return nil, err
 	}
 	args["where"] = arg5
 	return args, nil
-}
-func (ec *executionContext) field_ResourceOwner_annotationNamespaces_argsAfter(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[gidx.PrefixedID], error) {
-	if _, ok := rawArgs["after"]; !ok {
-		var zeroVal *entgql.Cursor[gidx.PrefixedID]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-	if tmp, ok := rawArgs["after"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[gidx.PrefixedID]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_ResourceOwner_annotationNamespaces_argsFirst(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["first"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-	if tmp, ok := rawArgs["first"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_ResourceOwner_annotationNamespaces_argsBefore(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[gidx.PrefixedID], error) {
-	if _, ok := rawArgs["before"]; !ok {
-		var zeroVal *entgql.Cursor[gidx.PrefixedID]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-	if tmp, ok := rawArgs["before"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[gidx.PrefixedID]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_ResourceOwner_annotationNamespaces_argsLast(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["last"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-	if tmp, ok := rawArgs["last"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_ResourceOwner_annotationNamespaces_argsOrderBy(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*generated.AnnotationNamespaceOrder, error) {
-	if _, ok := rawArgs["orderBy"]; !ok {
-		var zeroVal *generated.AnnotationNamespaceOrder
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		return ec.unmarshalOAnnotationNamespaceOrder2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationNamespaceOrder(ctx, tmp)
-	}
-
-	var zeroVal *generated.AnnotationNamespaceOrder
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_ResourceOwner_annotationNamespaces_argsWhere(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*generated.AnnotationNamespaceWhereInput, error) {
-	if _, ok := rawArgs["where"]; !ok {
-		var zeroVal *generated.AnnotationNamespaceWhereInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-	if tmp, ok := rawArgs["where"]; ok {
-		return ec.unmarshalOAnnotationNamespaceWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationNamespaceWhereInput(ctx, tmp)
-	}
-
-	var zeroVal *generated.AnnotationNamespaceWhereInput
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field_StatusOwner_statusNamespaces_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_StatusOwner_statusNamespaces_argsAfter(ctx, rawArgs)
+	arg0, err := processArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := ec.field_StatusOwner_statusNamespaces_argsFirst(ctx, rawArgs)
+	arg1, err := processArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := ec.field_StatusOwner_statusNamespaces_argsBefore(ctx, rawArgs)
+	arg2, err := processArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := ec.field_StatusOwner_statusNamespaces_argsLast(ctx, rawArgs)
+	arg3, err := processArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := ec.field_StatusOwner_statusNamespaces_argsOrderBy(ctx, rawArgs)
+	arg4, err := processArgField(ctx, rawArgs, "orderBy", ec.unmarshalOStatusNamespaceOrder2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusNamespaceOrder)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg4
-	arg5, err := ec.field_StatusOwner_statusNamespaces_argsWhere(ctx, rawArgs)
+	arg5, err := processArgField(ctx, rawArgs, "where", ec.unmarshalOStatusNamespaceWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusNamespaceWhereInput)
 	if err != nil {
 		return nil, err
 	}
 	args["where"] = arg5
 	return args, nil
 }
-func (ec *executionContext) field_StatusOwner_statusNamespaces_argsAfter(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[gidx.PrefixedID], error) {
-	if _, ok := rawArgs["after"]; !ok {
-		var zeroVal *entgql.Cursor[gidx.PrefixedID]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-	if tmp, ok := rawArgs["after"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[gidx.PrefixedID]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_StatusOwner_statusNamespaces_argsFirst(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["first"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-	if tmp, ok := rawArgs["first"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_StatusOwner_statusNamespaces_argsBefore(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*entgql.Cursor[gidx.PrefixedID], error) {
-	if _, ok := rawArgs["before"]; !ok {
-		var zeroVal *entgql.Cursor[gidx.PrefixedID]
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("before"))
-	if tmp, ok := rawArgs["before"]; ok {
-		return ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor(ctx, tmp)
-	}
-
-	var zeroVal *entgql.Cursor[gidx.PrefixedID]
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_StatusOwner_statusNamespaces_argsLast(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*int, error) {
-	if _, ok := rawArgs["last"]; !ok {
-		var zeroVal *int
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("last"))
-	if tmp, ok := rawArgs["last"]; ok {
-		return ec.unmarshalOInt2ᚖint(ctx, tmp)
-	}
-
-	var zeroVal *int
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_StatusOwner_statusNamespaces_argsOrderBy(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*generated.StatusNamespaceOrder, error) {
-	if _, ok := rawArgs["orderBy"]; !ok {
-		var zeroVal *generated.StatusNamespaceOrder
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("orderBy"))
-	if tmp, ok := rawArgs["orderBy"]; ok {
-		return ec.unmarshalOStatusNamespaceOrder2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusNamespaceOrder(ctx, tmp)
-	}
-
-	var zeroVal *generated.StatusNamespaceOrder
-	return zeroVal, nil
-}
-
-func (ec *executionContext) field_StatusOwner_statusNamespaces_argsWhere(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*generated.StatusNamespaceWhereInput, error) {
-	if _, ok := rawArgs["where"]; !ok {
-		var zeroVal *generated.StatusNamespaceWhereInput
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("where"))
-	if tmp, ok := rawArgs["where"]; ok {
-		return ec.unmarshalOStatusNamespaceWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusNamespaceWhereInput(ctx, tmp)
-	}
-
-	var zeroVal *generated.StatusNamespaceWhereInput
-	return zeroVal, nil
-}
 
 func (ec *executionContext) field___Directive_args_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field___Directive_args_argsIncludeDeprecated(ctx, rawArgs)
+	arg0, err := processArgField(ctx, rawArgs, "includeDeprecated", ec.unmarshalOBoolean2ᚖbool)
 	if err != nil {
 		return nil, err
 	}
 	args["includeDeprecated"] = arg0
 	return args, nil
-}
-func (ec *executionContext) field___Directive_args_argsIncludeDeprecated(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*bool, error) {
-	if _, ok := rawArgs["includeDeprecated"]; !ok {
-		var zeroVal *bool
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("includeDeprecated"))
-	if tmp, ok := rawArgs["includeDeprecated"]; ok {
-		return ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
-	}
-
-	var zeroVal *bool
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field___Field_args_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field___Field_args_argsIncludeDeprecated(ctx, rawArgs)
+	arg0, err := processArgField(ctx, rawArgs, "includeDeprecated", ec.unmarshalOBoolean2ᚖbool)
 	if err != nil {
 		return nil, err
 	}
 	args["includeDeprecated"] = arg0
 	return args, nil
-}
-func (ec *executionContext) field___Field_args_argsIncludeDeprecated(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (*bool, error) {
-	if _, ok := rawArgs["includeDeprecated"]; !ok {
-		var zeroVal *bool
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("includeDeprecated"))
-	if tmp, ok := rawArgs["includeDeprecated"]; ok {
-		return ec.unmarshalOBoolean2ᚖbool(ctx, tmp)
-	}
-
-	var zeroVal *bool
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field___Type_enumValues_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field___Type_enumValues_argsIncludeDeprecated(ctx, rawArgs)
+	arg0, err := processArgField(ctx, rawArgs, "includeDeprecated", ec.unmarshalOBoolean2bool)
 	if err != nil {
 		return nil, err
 	}
 	args["includeDeprecated"] = arg0
 	return args, nil
-}
-func (ec *executionContext) field___Type_enumValues_argsIncludeDeprecated(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (bool, error) {
-	if _, ok := rawArgs["includeDeprecated"]; !ok {
-		var zeroVal bool
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("includeDeprecated"))
-	if tmp, ok := rawArgs["includeDeprecated"]; ok {
-		return ec.unmarshalOBoolean2bool(ctx, tmp)
-	}
-
-	var zeroVal bool
-	return zeroVal, nil
 }
 
 func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field___Type_fields_argsIncludeDeprecated(ctx, rawArgs)
+	arg0, err := processArgField(ctx, rawArgs, "includeDeprecated", ec.unmarshalOBoolean2bool)
 	if err != nil {
 		return nil, err
 	}
 	args["includeDeprecated"] = arg0
 	return args, nil
-}
-func (ec *executionContext) field___Type_fields_argsIncludeDeprecated(
-	ctx context.Context,
-	rawArgs map[string]any,
-) (bool, error) {
-	if _, ok := rawArgs["includeDeprecated"]; !ok {
-		var zeroVal bool
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("includeDeprecated"))
-	if tmp, ok := rawArgs["includeDeprecated"]; ok {
-		return ec.unmarshalOBoolean2bool(ctx, tmp)
-	}
-
-	var zeroVal bool
-	return zeroVal, nil
 }
 
 // endregion ***************************** args.gotpl *****************************
