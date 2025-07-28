@@ -1297,26 +1297,6 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	}
 }
 
-func processArgField[T any](
-	ctx context.Context,
-	rawArgs map[string]any,
-	fieldName string,
-	valueMapperFn func(ctx context.Context, value any) (T, error),
-) (T, error) {
-	if _, ok := rawArgs[fieldName]; !ok {
-		var zeroVal T
-		return zeroVal, nil
-	}
-
-	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField(fieldName))
-	if tmp, ok := rawArgs[fieldName]; ok {
-		return valueMapperFn(ctx, tmp)
-	}
-
-	var zeroVal T
-	return zeroVal, nil
-}
-
 type executionContext struct {
 	*graphql.OperationContext
 	*executableSchema
@@ -2682,7 +2662,7 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 func (ec *executionContext) field_Entity_findAnnotationByID_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := processArgField(ctx, rawArgs, "id", ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID)
 	if err != nil {
 		return nil, err
 	}
@@ -2693,7 +2673,7 @@ func (ec *executionContext) field_Entity_findAnnotationByID_args(ctx context.Con
 func (ec *executionContext) field_Entity_findAnnotationNamespaceByID_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := processArgField(ctx, rawArgs, "id", ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID)
 	if err != nil {
 		return nil, err
 	}
@@ -2704,7 +2684,7 @@ func (ec *executionContext) field_Entity_findAnnotationNamespaceByID_args(ctx co
 func (ec *executionContext) field_Entity_findMetadataByID_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := processArgField(ctx, rawArgs, "id", ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID)
 	if err != nil {
 		return nil, err
 	}
@@ -2715,7 +2695,7 @@ func (ec *executionContext) field_Entity_findMetadataByID_args(ctx context.Conte
 func (ec *executionContext) field_Entity_findMetadataByNodeID_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := processArgField(ctx, rawArgs, "nodeID", ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "nodeID", ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID)
 	if err != nil {
 		return nil, err
 	}
@@ -2726,7 +2706,7 @@ func (ec *executionContext) field_Entity_findMetadataByNodeID_args(ctx context.C
 func (ec *executionContext) field_Entity_findMetadataNodeByID_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := processArgField(ctx, rawArgs, "id", ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID)
 	if err != nil {
 		return nil, err
 	}
@@ -2737,7 +2717,7 @@ func (ec *executionContext) field_Entity_findMetadataNodeByID_args(ctx context.C
 func (ec *executionContext) field_Entity_findResourceOwnerByID_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := processArgField(ctx, rawArgs, "id", ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID)
 	if err != nil {
 		return nil, err
 	}
@@ -2748,7 +2728,7 @@ func (ec *executionContext) field_Entity_findResourceOwnerByID_args(ctx context.
 func (ec *executionContext) field_Entity_findStatusByID_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := processArgField(ctx, rawArgs, "id", ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID)
 	if err != nil {
 		return nil, err
 	}
@@ -2759,7 +2739,7 @@ func (ec *executionContext) field_Entity_findStatusByID_args(ctx context.Context
 func (ec *executionContext) field_Entity_findStatusNamespaceByID_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := processArgField(ctx, rawArgs, "id", ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID)
 	if err != nil {
 		return nil, err
 	}
@@ -2770,7 +2750,7 @@ func (ec *executionContext) field_Entity_findStatusNamespaceByID_args(ctx contex
 func (ec *executionContext) field_Entity_findStatusOwnerByID_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := processArgField(ctx, rawArgs, "id", ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID)
 	if err != nil {
 		return nil, err
 	}
@@ -2781,32 +2761,32 @@ func (ec *executionContext) field_Entity_findStatusOwnerByID_args(ctx context.Co
 func (ec *executionContext) field_Metadata_annotations_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := processArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := processArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := processArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := processArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := processArgField(ctx, rawArgs, "orderBy", ec.unmarshalOAnnotationOrder2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationOrder)
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOAnnotationOrder2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationOrder)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg4
-	arg5, err := processArgField(ctx, rawArgs, "where", ec.unmarshalOAnnotationWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationWhereInput)
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOAnnotationWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationWhereInput)
 	if err != nil {
 		return nil, err
 	}
@@ -2817,32 +2797,32 @@ func (ec *executionContext) field_Metadata_annotations_args(ctx context.Context,
 func (ec *executionContext) field_Metadata_statuses_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := processArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := processArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := processArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := processArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := processArgField(ctx, rawArgs, "orderBy", ec.unmarshalOStatusOrder2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusOrder)
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOStatusOrder2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusOrder)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg4
-	arg5, err := processArgField(ctx, rawArgs, "where", ec.unmarshalOStatusWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusWhereInput)
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOStatusWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusWhereInput)
 	if err != nil {
 		return nil, err
 	}
@@ -2853,7 +2833,7 @@ func (ec *executionContext) field_Metadata_statuses_args(ctx context.Context, ra
 func (ec *executionContext) field_Mutation_annotationDelete_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := processArgField(ctx, rawArgs, "input", ec.unmarshalNAnnotationDeleteInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋgraphapiᚐAnnotationDeleteInput)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNAnnotationDeleteInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋgraphapiᚐAnnotationDeleteInput)
 	if err != nil {
 		return nil, err
 	}
@@ -2864,7 +2844,7 @@ func (ec *executionContext) field_Mutation_annotationDelete_args(ctx context.Con
 func (ec *executionContext) field_Mutation_annotationNamespaceCreate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := processArgField(ctx, rawArgs, "input", ec.unmarshalNCreateAnnotationNamespaceInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐCreateAnnotationNamespaceInput)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNCreateAnnotationNamespaceInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐCreateAnnotationNamespaceInput)
 	if err != nil {
 		return nil, err
 	}
@@ -2875,12 +2855,12 @@ func (ec *executionContext) field_Mutation_annotationNamespaceCreate_args(ctx co
 func (ec *executionContext) field_Mutation_annotationNamespaceDelete_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := processArgField(ctx, rawArgs, "id", ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID)
 	if err != nil {
 		return nil, err
 	}
 	args["id"] = arg0
-	arg1, err := processArgField(ctx, rawArgs, "force", ec.unmarshalNBoolean2bool)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "force", ec.unmarshalNBoolean2bool)
 	if err != nil {
 		return nil, err
 	}
@@ -2891,12 +2871,12 @@ func (ec *executionContext) field_Mutation_annotationNamespaceDelete_args(ctx co
 func (ec *executionContext) field_Mutation_annotationNamespaceUpdate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := processArgField(ctx, rawArgs, "id", ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID)
 	if err != nil {
 		return nil, err
 	}
 	args["id"] = arg0
-	arg1, err := processArgField(ctx, rawArgs, "input", ec.unmarshalNUpdateAnnotationNamespaceInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐUpdateAnnotationNamespaceInput)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNUpdateAnnotationNamespaceInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐUpdateAnnotationNamespaceInput)
 	if err != nil {
 		return nil, err
 	}
@@ -2907,7 +2887,7 @@ func (ec *executionContext) field_Mutation_annotationNamespaceUpdate_args(ctx co
 func (ec *executionContext) field_Mutation_annotationUpdate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := processArgField(ctx, rawArgs, "input", ec.unmarshalNAnnotationUpdateInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋgraphapiᚐAnnotationUpdateInput)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNAnnotationUpdateInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋgraphapiᚐAnnotationUpdateInput)
 	if err != nil {
 		return nil, err
 	}
@@ -2918,7 +2898,7 @@ func (ec *executionContext) field_Mutation_annotationUpdate_args(ctx context.Con
 func (ec *executionContext) field_Mutation_statusDelete_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := processArgField(ctx, rawArgs, "input", ec.unmarshalNStatusDeleteInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋgraphapiᚐStatusDeleteInput)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNStatusDeleteInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋgraphapiᚐStatusDeleteInput)
 	if err != nil {
 		return nil, err
 	}
@@ -2929,7 +2909,7 @@ func (ec *executionContext) field_Mutation_statusDelete_args(ctx context.Context
 func (ec *executionContext) field_Mutation_statusNamespaceCreate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := processArgField(ctx, rawArgs, "input", ec.unmarshalNCreateStatusNamespaceInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐCreateStatusNamespaceInput)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNCreateStatusNamespaceInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐCreateStatusNamespaceInput)
 	if err != nil {
 		return nil, err
 	}
@@ -2940,12 +2920,12 @@ func (ec *executionContext) field_Mutation_statusNamespaceCreate_args(ctx contex
 func (ec *executionContext) field_Mutation_statusNamespaceDelete_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := processArgField(ctx, rawArgs, "id", ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID)
 	if err != nil {
 		return nil, err
 	}
 	args["id"] = arg0
-	arg1, err := processArgField(ctx, rawArgs, "force", ec.unmarshalNBoolean2bool)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "force", ec.unmarshalNBoolean2bool)
 	if err != nil {
 		return nil, err
 	}
@@ -2956,12 +2936,12 @@ func (ec *executionContext) field_Mutation_statusNamespaceDelete_args(ctx contex
 func (ec *executionContext) field_Mutation_statusNamespaceUpdate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := processArgField(ctx, rawArgs, "id", ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID)
 	if err != nil {
 		return nil, err
 	}
 	args["id"] = arg0
-	arg1, err := processArgField(ctx, rawArgs, "input", ec.unmarshalNUpdateStatusNamespaceInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐUpdateStatusNamespaceInput)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNUpdateStatusNamespaceInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐUpdateStatusNamespaceInput)
 	if err != nil {
 		return nil, err
 	}
@@ -2972,7 +2952,7 @@ func (ec *executionContext) field_Mutation_statusNamespaceUpdate_args(ctx contex
 func (ec *executionContext) field_Mutation_statusUpdate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := processArgField(ctx, rawArgs, "input", ec.unmarshalNStatusUpdateInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋgraphapiᚐStatusUpdateInput)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNStatusUpdateInput2goᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋgraphapiᚐStatusUpdateInput)
 	if err != nil {
 		return nil, err
 	}
@@ -2983,7 +2963,7 @@ func (ec *executionContext) field_Mutation_statusUpdate_args(ctx context.Context
 func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := processArgField(ctx, rawArgs, "name", ec.unmarshalNString2string)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "name", ec.unmarshalNString2string)
 	if err != nil {
 		return nil, err
 	}
@@ -2994,7 +2974,7 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 func (ec *executionContext) field_Query__entities_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := processArgField(ctx, rawArgs, "representations", ec.unmarshalN_Any2ᚕmapᚄ)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "representations", ec.unmarshalN_Any2ᚕmapᚄ)
 	if err != nil {
 		return nil, err
 	}
@@ -3005,7 +2985,7 @@ func (ec *executionContext) field_Query__entities_args(ctx context.Context, rawA
 func (ec *executionContext) field_Query_annotationNamespace_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := processArgField(ctx, rawArgs, "id", ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "id", ec.unmarshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID)
 	if err != nil {
 		return nil, err
 	}
@@ -3016,32 +2996,32 @@ func (ec *executionContext) field_Query_annotationNamespace_args(ctx context.Con
 func (ec *executionContext) field_ResourceOwner_annotationNamespaces_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := processArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := processArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := processArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := processArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := processArgField(ctx, rawArgs, "orderBy", ec.unmarshalOAnnotationNamespaceOrder2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationNamespaceOrder)
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOAnnotationNamespaceOrder2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationNamespaceOrder)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg4
-	arg5, err := processArgField(ctx, rawArgs, "where", ec.unmarshalOAnnotationNamespaceWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationNamespaceWhereInput)
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOAnnotationNamespaceWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationNamespaceWhereInput)
 	if err != nil {
 		return nil, err
 	}
@@ -3052,32 +3032,32 @@ func (ec *executionContext) field_ResourceOwner_annotationNamespaces_args(ctx co
 func (ec *executionContext) field_StatusOwner_statusNamespaces_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := processArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "after", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["after"] = arg0
-	arg1, err := processArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "first", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["first"] = arg1
-	arg2, err := processArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "before", ec.unmarshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor)
 	if err != nil {
 		return nil, err
 	}
 	args["before"] = arg2
-	arg3, err := processArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "last", ec.unmarshalOInt2ᚖint)
 	if err != nil {
 		return nil, err
 	}
 	args["last"] = arg3
-	arg4, err := processArgField(ctx, rawArgs, "orderBy", ec.unmarshalOStatusNamespaceOrder2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusNamespaceOrder)
+	arg4, err := graphql.ProcessArgField(ctx, rawArgs, "orderBy", ec.unmarshalOStatusNamespaceOrder2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusNamespaceOrder)
 	if err != nil {
 		return nil, err
 	}
 	args["orderBy"] = arg4
-	arg5, err := processArgField(ctx, rawArgs, "where", ec.unmarshalOStatusNamespaceWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusNamespaceWhereInput)
+	arg5, err := graphql.ProcessArgField(ctx, rawArgs, "where", ec.unmarshalOStatusNamespaceWhereInput2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusNamespaceWhereInput)
 	if err != nil {
 		return nil, err
 	}
@@ -3088,7 +3068,7 @@ func (ec *executionContext) field_StatusOwner_statusNamespaces_args(ctx context.
 func (ec *executionContext) field___Directive_args_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := processArgField(ctx, rawArgs, "includeDeprecated", ec.unmarshalOBoolean2ᚖbool)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "includeDeprecated", ec.unmarshalOBoolean2ᚖbool)
 	if err != nil {
 		return nil, err
 	}
@@ -3099,7 +3079,7 @@ func (ec *executionContext) field___Directive_args_args(ctx context.Context, raw
 func (ec *executionContext) field___Field_args_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := processArgField(ctx, rawArgs, "includeDeprecated", ec.unmarshalOBoolean2ᚖbool)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "includeDeprecated", ec.unmarshalOBoolean2ᚖbool)
 	if err != nil {
 		return nil, err
 	}
@@ -3110,7 +3090,7 @@ func (ec *executionContext) field___Field_args_args(ctx context.Context, rawArgs
 func (ec *executionContext) field___Type_enumValues_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := processArgField(ctx, rawArgs, "includeDeprecated", ec.unmarshalOBoolean2bool)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "includeDeprecated", ec.unmarshalOBoolean2bool)
 	if err != nil {
 		return nil, err
 	}
@@ -3121,7 +3101,7 @@ func (ec *executionContext) field___Type_enumValues_args(ctx context.Context, ra
 func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := processArgField(ctx, rawArgs, "includeDeprecated", ec.unmarshalOBoolean2bool)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "includeDeprecated", ec.unmarshalOBoolean2bool)
 	if err != nil {
 		return nil, err
 	}
