@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.2.3](https://github.com/infratographer/metadata-api/compare/v0.2.2...v0.2.3) (2025-07-30)
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/99designs/gqlgen to v0.17.77 ([#202](https://github.com/infratographer/metadata-api/issues/202)) ([7919dd0](https://github.com/infratographer/metadata-api/commit/7919dd0a3c95d277bb7a52dd9f3f6c403be16cce))
+* **deps:** update module github.com/99designs/gqlgen to v0.17.78 ([#203](https://github.com/infratographer/metadata-api/issues/203)) ([d49a6cc](https://github.com/infratographer/metadata-api/commit/d49a6cca048f1ba526b190384b6252a028383bcf))
+* **deps:** update module github.com/mattn/go-sqlite3 to v1.14.29 ([#200](https://github.com/infratographer/metadata-api/issues/200)) ([45d467e](https://github.com/infratographer/metadata-api/commit/45d467e8219231e9b7f33e2e742e7579c20f60df))
+* **deps:** update module github.com/mattn/go-sqlite3 to v1.14.30 ([#207](https://github.com/infratographer/metadata-api/issues/207)) ([e98dcc8](https://github.com/infratographer/metadata-api/commit/e98dcc8755f29d898cf04d2ae2969fecd7de045f))
+* **deps:** update module go.infratographer.com/x to v0.13.0 ([#206](https://github.com/infratographer/metadata-api/issues/206)) ([7edabbf](https://github.com/infratographer/metadata-api/commit/7edabbfe9c03ed1dd1a7b29f003fe7d40129e983))
+
 ## [0.2.2](https://github.com/infratographer/metadata-api/compare/v0.2.1...v0.2.2) (2025-07-20)
 
 
