@@ -33,18 +33,18 @@ import (
 )
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
-func (a *AnnotationQuery) CollectFields(ctx context.Context, satisfies ...string) (*AnnotationQuery, error) {
+func (aq *AnnotationQuery) CollectFields(ctx context.Context, satisfies ...string) (*AnnotationQuery, error) {
 	fc := graphql.GetFieldContext(ctx)
 	if fc == nil {
-		return a, nil
+		return aq, nil
 	}
-	if err := a.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+	if err := aq.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
 		return nil, err
 	}
-	return a, nil
+	return aq, nil
 }
 
-func (a *AnnotationQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+func (aq *AnnotationQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
 	var (
 		unknownSeen    bool
@@ -58,12 +58,12 @@ func (a *AnnotationQuery) collectField(ctx context.Context, oneNode bool, opCtx 
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&AnnotationNamespaceClient{config: a.config}).Query()
+				query = (&AnnotationNamespaceClient{config: aq.config}).Query()
 			)
 			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, annotationnamespaceImplementors)...); err != nil {
 				return err
 			}
-			a.withNamespace = query
+			aq.withNamespace = query
 			if _, ok := fieldSeen[annotation.FieldAnnotationNamespaceID]; !ok {
 				selectedFields = append(selectedFields, annotation.FieldAnnotationNamespaceID)
 				fieldSeen[annotation.FieldAnnotationNamespaceID] = struct{}{}
@@ -73,12 +73,12 @@ func (a *AnnotationQuery) collectField(ctx context.Context, oneNode bool, opCtx 
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&MetadataClient{config: a.config}).Query()
+				query = (&MetadataClient{config: aq.config}).Query()
 			)
 			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, metadataImplementors)...); err != nil {
 				return err
 			}
-			a.withMetadata = query
+			aq.withMetadata = query
 			if _, ok := fieldSeen[annotation.FieldMetadataID]; !ok {
 				selectedFields = append(selectedFields, annotation.FieldMetadataID)
 				fieldSeen[annotation.FieldMetadataID] = struct{}{}
@@ -110,7 +110,7 @@ func (a *AnnotationQuery) collectField(ctx context.Context, oneNode bool, opCtx 
 		}
 	}
 	if !unknownSeen {
-		a.Select(selectedFields...)
+		aq.Select(selectedFields...)
 	}
 	return nil
 }
@@ -167,18 +167,18 @@ func newAnnotationPaginateArgs(rv map[string]any) *annotationPaginateArgs {
 }
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
-func (an *AnnotationNamespaceQuery) CollectFields(ctx context.Context, satisfies ...string) (*AnnotationNamespaceQuery, error) {
+func (anq *AnnotationNamespaceQuery) CollectFields(ctx context.Context, satisfies ...string) (*AnnotationNamespaceQuery, error) {
 	fc := graphql.GetFieldContext(ctx)
 	if fc == nil {
-		return an, nil
+		return anq, nil
 	}
-	if err := an.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+	if err := anq.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
 		return nil, err
 	}
-	return an, nil
+	return anq, nil
 }
 
-func (an *AnnotationNamespaceQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+func (anq *AnnotationNamespaceQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
 	var (
 		unknownSeen    bool
@@ -192,12 +192,12 @@ func (an *AnnotationNamespaceQuery) collectField(ctx context.Context, oneNode bo
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&AnnotationClient{config: an.config}).Query()
+				query = (&AnnotationClient{config: anq.config}).Query()
 			)
 			if err := query.collectField(ctx, false, opCtx, field, path, mayAddCondition(satisfies, annotationImplementors)...); err != nil {
 				return err
 			}
-			an.WithNamedAnnotations(alias, func(wq *AnnotationQuery) {
+			anq.WithNamedAnnotations(alias, func(wq *AnnotationQuery) {
 				*wq = *query
 			})
 		case "createdAt":
@@ -227,7 +227,7 @@ func (an *AnnotationNamespaceQuery) collectField(ctx context.Context, oneNode bo
 		}
 	}
 	if !unknownSeen {
-		an.Select(selectedFields...)
+		anq.Select(selectedFields...)
 	}
 	return nil
 }
@@ -284,18 +284,18 @@ func newAnnotationNamespacePaginateArgs(rv map[string]any) *annotationnamespaceP
 }
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
-func (m *MetadataQuery) CollectFields(ctx context.Context, satisfies ...string) (*MetadataQuery, error) {
+func (mq *MetadataQuery) CollectFields(ctx context.Context, satisfies ...string) (*MetadataQuery, error) {
 	fc := graphql.GetFieldContext(ctx)
 	if fc == nil {
-		return m, nil
+		return mq, nil
 	}
-	if err := m.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+	if err := mq.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
 		return nil, err
 	}
-	return m, nil
+	return mq, nil
 }
 
-func (m *MetadataQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+func (mq *MetadataQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
 	var (
 		unknownSeen    bool
@@ -309,7 +309,7 @@ func (m *MetadataQuery) collectField(ctx context.Context, oneNode bool, opCtx *g
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&AnnotationClient{config: m.config}).Query()
+				query = (&AnnotationClient{config: mq.config}).Query()
 			)
 			args := newAnnotationPaginateArgs(fieldArgs(ctx, new(AnnotationWhereInput), path...))
 			if err := validateFirstLast(args.first, args.last); err != nil {
@@ -327,7 +327,7 @@ func (m *MetadataQuery) collectField(ctx context.Context, oneNode bool, opCtx *g
 				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
 				if hasPagination || ignoredEdges {
 					query := query.Clone()
-					m.loadTotal = append(m.loadTotal, func(ctx context.Context, nodes []*Metadata) error {
+					mq.loadTotal = append(mq.loadTotal, func(ctx context.Context, nodes []*Metadata) error {
 						ids := make([]driver.Value, len(nodes))
 						for i := range nodes {
 							ids[i] = nodes[i].ID
@@ -356,7 +356,7 @@ func (m *MetadataQuery) collectField(ctx context.Context, oneNode bool, opCtx *g
 						return nil
 					})
 				} else {
-					m.loadTotal = append(m.loadTotal, func(_ context.Context, nodes []*Metadata) error {
+					mq.loadTotal = append(mq.loadTotal, func(_ context.Context, nodes []*Metadata) error {
 						for i := range nodes {
 							n := len(nodes[i].Edges.Annotations)
 							if nodes[i].Edges.totalCount[0] == nil {
@@ -390,7 +390,7 @@ func (m *MetadataQuery) collectField(ctx context.Context, oneNode bool, opCtx *g
 			} else {
 				query = pager.applyOrder(query)
 			}
-			m.WithNamedAnnotations(alias, func(wq *AnnotationQuery) {
+			mq.WithNamedAnnotations(alias, func(wq *AnnotationQuery) {
 				*wq = *query
 			})
 
@@ -398,7 +398,7 @@ func (m *MetadataQuery) collectField(ctx context.Context, oneNode bool, opCtx *g
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&StatusClient{config: m.config}).Query()
+				query = (&StatusClient{config: mq.config}).Query()
 			)
 			args := newStatusPaginateArgs(fieldArgs(ctx, new(StatusWhereInput), path...))
 			if err := validateFirstLast(args.first, args.last); err != nil {
@@ -416,7 +416,7 @@ func (m *MetadataQuery) collectField(ctx context.Context, oneNode bool, opCtx *g
 				hasPagination := args.after != nil || args.first != nil || args.before != nil || args.last != nil
 				if hasPagination || ignoredEdges {
 					query := query.Clone()
-					m.loadTotal = append(m.loadTotal, func(ctx context.Context, nodes []*Metadata) error {
+					mq.loadTotal = append(mq.loadTotal, func(ctx context.Context, nodes []*Metadata) error {
 						ids := make([]driver.Value, len(nodes))
 						for i := range nodes {
 							ids[i] = nodes[i].ID
@@ -445,7 +445,7 @@ func (m *MetadataQuery) collectField(ctx context.Context, oneNode bool, opCtx *g
 						return nil
 					})
 				} else {
-					m.loadTotal = append(m.loadTotal, func(_ context.Context, nodes []*Metadata) error {
+					mq.loadTotal = append(mq.loadTotal, func(_ context.Context, nodes []*Metadata) error {
 						for i := range nodes {
 							n := len(nodes[i].Edges.Statuses)
 							if nodes[i].Edges.totalCount[1] == nil {
@@ -479,7 +479,7 @@ func (m *MetadataQuery) collectField(ctx context.Context, oneNode bool, opCtx *g
 			} else {
 				query = pager.applyOrder(query)
 			}
-			m.WithNamedStatuses(alias, func(wq *StatusQuery) {
+			mq.WithNamedStatuses(alias, func(wq *StatusQuery) {
 				*wq = *query
 			})
 		case "createdAt":
@@ -504,7 +504,7 @@ func (m *MetadataQuery) collectField(ctx context.Context, oneNode bool, opCtx *g
 		}
 	}
 	if !unknownSeen {
-		m.Select(selectedFields...)
+		mq.Select(selectedFields...)
 	}
 	return nil
 }
@@ -561,18 +561,18 @@ func newMetadataPaginateArgs(rv map[string]any) *metadataPaginateArgs {
 }
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
-func (s *StatusQuery) CollectFields(ctx context.Context, satisfies ...string) (*StatusQuery, error) {
+func (sq *StatusQuery) CollectFields(ctx context.Context, satisfies ...string) (*StatusQuery, error) {
 	fc := graphql.GetFieldContext(ctx)
 	if fc == nil {
-		return s, nil
+		return sq, nil
 	}
-	if err := s.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+	if err := sq.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
 		return nil, err
 	}
-	return s, nil
+	return sq, nil
 }
 
-func (s *StatusQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+func (sq *StatusQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
 	var (
 		unknownSeen    bool
@@ -586,12 +586,12 @@ func (s *StatusQuery) collectField(ctx context.Context, oneNode bool, opCtx *gra
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&StatusNamespaceClient{config: s.config}).Query()
+				query = (&StatusNamespaceClient{config: sq.config}).Query()
 			)
 			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, statusnamespaceImplementors)...); err != nil {
 				return err
 			}
-			s.withNamespace = query
+			sq.withNamespace = query
 			if _, ok := fieldSeen[status.FieldStatusNamespaceID]; !ok {
 				selectedFields = append(selectedFields, status.FieldStatusNamespaceID)
 				fieldSeen[status.FieldStatusNamespaceID] = struct{}{}
@@ -601,12 +601,12 @@ func (s *StatusQuery) collectField(ctx context.Context, oneNode bool, opCtx *gra
 			var (
 				alias = field.Alias
 				path  = append(path, alias)
-				query = (&MetadataClient{config: s.config}).Query()
+				query = (&MetadataClient{config: sq.config}).Query()
 			)
 			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, metadataImplementors)...); err != nil {
 				return err
 			}
-			s.withMetadata = query
+			sq.withMetadata = query
 			if _, ok := fieldSeen[status.FieldMetadataID]; !ok {
 				selectedFields = append(selectedFields, status.FieldMetadataID)
 				fieldSeen[status.FieldMetadataID] = struct{}{}
@@ -648,7 +648,7 @@ func (s *StatusQuery) collectField(ctx context.Context, oneNode bool, opCtx *gra
 		}
 	}
 	if !unknownSeen {
-		s.Select(selectedFields...)
+		sq.Select(selectedFields...)
 	}
 	return nil
 }
@@ -705,18 +705,18 @@ func newStatusPaginateArgs(rv map[string]any) *statusPaginateArgs {
 }
 
 // CollectFields tells the query-builder to eagerly load connected nodes by resolver context.
-func (sn *StatusNamespaceQuery) CollectFields(ctx context.Context, satisfies ...string) (*StatusNamespaceQuery, error) {
+func (snq *StatusNamespaceQuery) CollectFields(ctx context.Context, satisfies ...string) (*StatusNamespaceQuery, error) {
 	fc := graphql.GetFieldContext(ctx)
 	if fc == nil {
-		return sn, nil
+		return snq, nil
 	}
-	if err := sn.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
+	if err := snq.collectField(ctx, false, graphql.GetOperationContext(ctx), fc.Field, nil, satisfies...); err != nil {
 		return nil, err
 	}
-	return sn, nil
+	return snq, nil
 }
 
-func (sn *StatusNamespaceQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
+func (snq *StatusNamespaceQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
 	var (
 		unknownSeen    bool
@@ -752,7 +752,7 @@ func (sn *StatusNamespaceQuery) collectField(ctx context.Context, oneNode bool, 
 		}
 	}
 	if !unknownSeen {
-		sn.Select(selectedFields...)
+		snq.Select(selectedFields...)
 	}
 	return nil
 }
@@ -833,7 +833,7 @@ func fieldArgs(ctx context.Context, whereInput any, path ...string) map[string]a
 func unmarshalArgs(ctx context.Context, whereInput any, args map[string]any) map[string]any {
 	for _, k := range []string{firstField, lastField} {
 		v, ok := args[k]
-		if !ok {
+		if !ok || v == nil {
 			continue
 		}
 		i, err := graphql.UnmarshalInt(v)
