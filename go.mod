@@ -5,7 +5,7 @@ go 1.24.3
 toolchain go1.24.6
 
 require (
-	entgo.io/contrib v0.6.0
+	entgo.io/contrib v0.7.0
 	entgo.io/ent v0.14.4
 	github.com/99designs/gqlgen v0.17.78
 	github.com/Yamashou/gqlgenc v0.33.0
