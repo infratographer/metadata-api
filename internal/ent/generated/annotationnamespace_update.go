@@ -38,89 +38,89 @@ type AnnotationNamespaceUpdate struct {
 }
 
 // Where appends a list predicates to the AnnotationNamespaceUpdate builder.
-func (anu *AnnotationNamespaceUpdate) Where(ps ...predicate.AnnotationNamespace) *AnnotationNamespaceUpdate {
-	anu.mutation.Where(ps...)
-	return anu
+func (_u *AnnotationNamespaceUpdate) Where(ps ...predicate.AnnotationNamespace) *AnnotationNamespaceUpdate {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // SetName sets the "name" field.
-func (anu *AnnotationNamespaceUpdate) SetName(s string) *AnnotationNamespaceUpdate {
-	anu.mutation.SetName(s)
-	return anu
+func (_u *AnnotationNamespaceUpdate) SetName(v string) *AnnotationNamespaceUpdate {
+	_u.mutation.SetName(v)
+	return _u
 }
 
 // SetNillableName sets the "name" field if the given value is not nil.
-func (anu *AnnotationNamespaceUpdate) SetNillableName(s *string) *AnnotationNamespaceUpdate {
-	if s != nil {
-		anu.SetName(*s)
+func (_u *AnnotationNamespaceUpdate) SetNillableName(v *string) *AnnotationNamespaceUpdate {
+	if v != nil {
+		_u.SetName(*v)
 	}
-	return anu
+	return _u
 }
 
 // SetPrivate sets the "private" field.
-func (anu *AnnotationNamespaceUpdate) SetPrivate(b bool) *AnnotationNamespaceUpdate {
-	anu.mutation.SetPrivate(b)
-	return anu
+func (_u *AnnotationNamespaceUpdate) SetPrivate(v bool) *AnnotationNamespaceUpdate {
+	_u.mutation.SetPrivate(v)
+	return _u
 }
 
 // SetNillablePrivate sets the "private" field if the given value is not nil.
-func (anu *AnnotationNamespaceUpdate) SetNillablePrivate(b *bool) *AnnotationNamespaceUpdate {
-	if b != nil {
-		anu.SetPrivate(*b)
+func (_u *AnnotationNamespaceUpdate) SetNillablePrivate(v *bool) *AnnotationNamespaceUpdate {
+	if v != nil {
+		_u.SetPrivate(*v)
 	}
-	return anu
+	return _u
 }
 
 // AddAnnotationIDs adds the "annotations" edge to the Annotation entity by IDs.
-func (anu *AnnotationNamespaceUpdate) AddAnnotationIDs(ids ...gidx.PrefixedID) *AnnotationNamespaceUpdate {
-	anu.mutation.AddAnnotationIDs(ids...)
-	return anu
+func (_u *AnnotationNamespaceUpdate) AddAnnotationIDs(ids ...gidx.PrefixedID) *AnnotationNamespaceUpdate {
+	_u.mutation.AddAnnotationIDs(ids...)
+	return _u
 }
 
 // AddAnnotations adds the "annotations" edges to the Annotation entity.
-func (anu *AnnotationNamespaceUpdate) AddAnnotations(a ...*Annotation) *AnnotationNamespaceUpdate {
-	ids := make([]gidx.PrefixedID, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
+func (_u *AnnotationNamespaceUpdate) AddAnnotations(v ...*Annotation) *AnnotationNamespaceUpdate {
+	ids := make([]gidx.PrefixedID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return anu.AddAnnotationIDs(ids...)
+	return _u.AddAnnotationIDs(ids...)
 }
 
 // Mutation returns the AnnotationNamespaceMutation object of the builder.
-func (anu *AnnotationNamespaceUpdate) Mutation() *AnnotationNamespaceMutation {
-	return anu.mutation
+func (_u *AnnotationNamespaceUpdate) Mutation() *AnnotationNamespaceMutation {
+	return _u.mutation
 }
 
 // ClearAnnotations clears all "annotations" edges to the Annotation entity.
-func (anu *AnnotationNamespaceUpdate) ClearAnnotations() *AnnotationNamespaceUpdate {
-	anu.mutation.ClearAnnotations()
-	return anu
+func (_u *AnnotationNamespaceUpdate) ClearAnnotations() *AnnotationNamespaceUpdate {
+	_u.mutation.ClearAnnotations()
+	return _u
 }
 
 // RemoveAnnotationIDs removes the "annotations" edge to Annotation entities by IDs.
-func (anu *AnnotationNamespaceUpdate) RemoveAnnotationIDs(ids ...gidx.PrefixedID) *AnnotationNamespaceUpdate {
-	anu.mutation.RemoveAnnotationIDs(ids...)
-	return anu
+func (_u *AnnotationNamespaceUpdate) RemoveAnnotationIDs(ids ...gidx.PrefixedID) *AnnotationNamespaceUpdate {
+	_u.mutation.RemoveAnnotationIDs(ids...)
+	return _u
 }
 
 // RemoveAnnotations removes "annotations" edges to Annotation entities.
-func (anu *AnnotationNamespaceUpdate) RemoveAnnotations(a ...*Annotation) *AnnotationNamespaceUpdate {
-	ids := make([]gidx.PrefixedID, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
+func (_u *AnnotationNamespaceUpdate) RemoveAnnotations(v ...*Annotation) *AnnotationNamespaceUpdate {
+	ids := make([]gidx.PrefixedID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return anu.RemoveAnnotationIDs(ids...)
+	return _u.RemoveAnnotationIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
-func (anu *AnnotationNamespaceUpdate) Save(ctx context.Context) (int, error) {
-	anu.defaults()
-	return withHooks(ctx, anu.sqlSave, anu.mutation, anu.hooks)
+func (_u *AnnotationNamespaceUpdate) Save(ctx context.Context) (int, error) {
+	_u.defaults()
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (anu *AnnotationNamespaceUpdate) SaveX(ctx context.Context) int {
-	affected, err := anu.Save(ctx)
+func (_u *AnnotationNamespaceUpdate) SaveX(ctx context.Context) int {
+	affected, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -128,29 +128,29 @@ func (anu *AnnotationNamespaceUpdate) SaveX(ctx context.Context) int {
 }
 
 // Exec executes the query.
-func (anu *AnnotationNamespaceUpdate) Exec(ctx context.Context) error {
-	_, err := anu.Save(ctx)
+func (_u *AnnotationNamespaceUpdate) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (anu *AnnotationNamespaceUpdate) ExecX(ctx context.Context) {
-	if err := anu.Exec(ctx); err != nil {
+func (_u *AnnotationNamespaceUpdate) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (anu *AnnotationNamespaceUpdate) defaults() {
-	if _, ok := anu.mutation.UpdatedAt(); !ok {
+func (_u *AnnotationNamespaceUpdate) defaults() {
+	if _, ok := _u.mutation.UpdatedAt(); !ok {
 		v := annotationnamespace.UpdateDefaultUpdatedAt()
-		anu.mutation.SetUpdatedAt(v)
+		_u.mutation.SetUpdatedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (anu *AnnotationNamespaceUpdate) check() error {
-	if v, ok := anu.mutation.Name(); ok {
+func (_u *AnnotationNamespaceUpdate) check() error {
+	if v, ok := _u.mutation.Name(); ok {
 		if err := annotationnamespace.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`generated: validator failed for field "AnnotationNamespace.name": %w`, err)}
 		}
@@ -158,28 +158,28 @@ func (anu *AnnotationNamespaceUpdate) check() error {
 	return nil
 }
 
-func (anu *AnnotationNamespaceUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	if err := anu.check(); err != nil {
-		return n, err
+func (_u *AnnotationNamespaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(annotationnamespace.Table, annotationnamespace.Columns, sqlgraph.NewFieldSpec(annotationnamespace.FieldID, field.TypeString))
-	if ps := anu.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := anu.mutation.UpdatedAt(); ok {
+	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(annotationnamespace.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if value, ok := anu.mutation.Name(); ok {
+	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(annotationnamespace.FieldName, field.TypeString, value)
 	}
-	if value, ok := anu.mutation.Private(); ok {
+	if value, ok := _u.mutation.Private(); ok {
 		_spec.SetField(annotationnamespace.FieldPrivate, field.TypeBool, value)
 	}
-	if anu.mutation.AnnotationsCleared() {
+	if _u.mutation.AnnotationsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -192,7 +192,7 @@ func (anu *AnnotationNamespaceUpdate) sqlSave(ctx context.Context) (n int, err e
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := anu.mutation.RemovedAnnotationsIDs(); len(nodes) > 0 && !anu.mutation.AnnotationsCleared() {
+	if nodes := _u.mutation.RemovedAnnotationsIDs(); len(nodes) > 0 && !_u.mutation.AnnotationsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -208,7 +208,7 @@ func (anu *AnnotationNamespaceUpdate) sqlSave(ctx context.Context) (n int, err e
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := anu.mutation.AnnotationsIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.AnnotationsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -224,7 +224,7 @@ func (anu *AnnotationNamespaceUpdate) sqlSave(ctx context.Context) (n int, err e
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if n, err = sqlgraph.UpdateNodes(ctx, anu.driver, _spec); err != nil {
+	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{annotationnamespace.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -232,8 +232,8 @@ func (anu *AnnotationNamespaceUpdate) sqlSave(ctx context.Context) (n int, err e
 		}
 		return 0, err
 	}
-	anu.mutation.done = true
-	return n, nil
+	_u.mutation.done = true
+	return _node, nil
 }
 
 // AnnotationNamespaceUpdateOne is the builder for updating a single AnnotationNamespace entity.
@@ -245,96 +245,96 @@ type AnnotationNamespaceUpdateOne struct {
 }
 
 // SetName sets the "name" field.
-func (anuo *AnnotationNamespaceUpdateOne) SetName(s string) *AnnotationNamespaceUpdateOne {
-	anuo.mutation.SetName(s)
-	return anuo
+func (_u *AnnotationNamespaceUpdateOne) SetName(v string) *AnnotationNamespaceUpdateOne {
+	_u.mutation.SetName(v)
+	return _u
 }
 
 // SetNillableName sets the "name" field if the given value is not nil.
-func (anuo *AnnotationNamespaceUpdateOne) SetNillableName(s *string) *AnnotationNamespaceUpdateOne {
-	if s != nil {
-		anuo.SetName(*s)
+func (_u *AnnotationNamespaceUpdateOne) SetNillableName(v *string) *AnnotationNamespaceUpdateOne {
+	if v != nil {
+		_u.SetName(*v)
 	}
-	return anuo
+	return _u
 }
 
 // SetPrivate sets the "private" field.
-func (anuo *AnnotationNamespaceUpdateOne) SetPrivate(b bool) *AnnotationNamespaceUpdateOne {
-	anuo.mutation.SetPrivate(b)
-	return anuo
+func (_u *AnnotationNamespaceUpdateOne) SetPrivate(v bool) *AnnotationNamespaceUpdateOne {
+	_u.mutation.SetPrivate(v)
+	return _u
 }
 
 // SetNillablePrivate sets the "private" field if the given value is not nil.
-func (anuo *AnnotationNamespaceUpdateOne) SetNillablePrivate(b *bool) *AnnotationNamespaceUpdateOne {
-	if b != nil {
-		anuo.SetPrivate(*b)
+func (_u *AnnotationNamespaceUpdateOne) SetNillablePrivate(v *bool) *AnnotationNamespaceUpdateOne {
+	if v != nil {
+		_u.SetPrivate(*v)
 	}
-	return anuo
+	return _u
 }
 
 // AddAnnotationIDs adds the "annotations" edge to the Annotation entity by IDs.
-func (anuo *AnnotationNamespaceUpdateOne) AddAnnotationIDs(ids ...gidx.PrefixedID) *AnnotationNamespaceUpdateOne {
-	anuo.mutation.AddAnnotationIDs(ids...)
-	return anuo
+func (_u *AnnotationNamespaceUpdateOne) AddAnnotationIDs(ids ...gidx.PrefixedID) *AnnotationNamespaceUpdateOne {
+	_u.mutation.AddAnnotationIDs(ids...)
+	return _u
 }
 
 // AddAnnotations adds the "annotations" edges to the Annotation entity.
-func (anuo *AnnotationNamespaceUpdateOne) AddAnnotations(a ...*Annotation) *AnnotationNamespaceUpdateOne {
-	ids := make([]gidx.PrefixedID, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
+func (_u *AnnotationNamespaceUpdateOne) AddAnnotations(v ...*Annotation) *AnnotationNamespaceUpdateOne {
+	ids := make([]gidx.PrefixedID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return anuo.AddAnnotationIDs(ids...)
+	return _u.AddAnnotationIDs(ids...)
 }
 
 // Mutation returns the AnnotationNamespaceMutation object of the builder.
-func (anuo *AnnotationNamespaceUpdateOne) Mutation() *AnnotationNamespaceMutation {
-	return anuo.mutation
+func (_u *AnnotationNamespaceUpdateOne) Mutation() *AnnotationNamespaceMutation {
+	return _u.mutation
 }
 
 // ClearAnnotations clears all "annotations" edges to the Annotation entity.
-func (anuo *AnnotationNamespaceUpdateOne) ClearAnnotations() *AnnotationNamespaceUpdateOne {
-	anuo.mutation.ClearAnnotations()
-	return anuo
+func (_u *AnnotationNamespaceUpdateOne) ClearAnnotations() *AnnotationNamespaceUpdateOne {
+	_u.mutation.ClearAnnotations()
+	return _u
 }
 
 // RemoveAnnotationIDs removes the "annotations" edge to Annotation entities by IDs.
-func (anuo *AnnotationNamespaceUpdateOne) RemoveAnnotationIDs(ids ...gidx.PrefixedID) *AnnotationNamespaceUpdateOne {
-	anuo.mutation.RemoveAnnotationIDs(ids...)
-	return anuo
+func (_u *AnnotationNamespaceUpdateOne) RemoveAnnotationIDs(ids ...gidx.PrefixedID) *AnnotationNamespaceUpdateOne {
+	_u.mutation.RemoveAnnotationIDs(ids...)
+	return _u
 }
 
 // RemoveAnnotations removes "annotations" edges to Annotation entities.
-func (anuo *AnnotationNamespaceUpdateOne) RemoveAnnotations(a ...*Annotation) *AnnotationNamespaceUpdateOne {
-	ids := make([]gidx.PrefixedID, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
+func (_u *AnnotationNamespaceUpdateOne) RemoveAnnotations(v ...*Annotation) *AnnotationNamespaceUpdateOne {
+	ids := make([]gidx.PrefixedID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return anuo.RemoveAnnotationIDs(ids...)
+	return _u.RemoveAnnotationIDs(ids...)
 }
 
 // Where appends a list predicates to the AnnotationNamespaceUpdate builder.
-func (anuo *AnnotationNamespaceUpdateOne) Where(ps ...predicate.AnnotationNamespace) *AnnotationNamespaceUpdateOne {
-	anuo.mutation.Where(ps...)
-	return anuo
+func (_u *AnnotationNamespaceUpdateOne) Where(ps ...predicate.AnnotationNamespace) *AnnotationNamespaceUpdateOne {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
-func (anuo *AnnotationNamespaceUpdateOne) Select(field string, fields ...string) *AnnotationNamespaceUpdateOne {
-	anuo.fields = append([]string{field}, fields...)
-	return anuo
+func (_u *AnnotationNamespaceUpdateOne) Select(field string, fields ...string) *AnnotationNamespaceUpdateOne {
+	_u.fields = append([]string{field}, fields...)
+	return _u
 }
 
 // Save executes the query and returns the updated AnnotationNamespace entity.
-func (anuo *AnnotationNamespaceUpdateOne) Save(ctx context.Context) (*AnnotationNamespace, error) {
-	anuo.defaults()
-	return withHooks(ctx, anuo.sqlSave, anuo.mutation, anuo.hooks)
+func (_u *AnnotationNamespaceUpdateOne) Save(ctx context.Context) (*AnnotationNamespace, error) {
+	_u.defaults()
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (anuo *AnnotationNamespaceUpdateOne) SaveX(ctx context.Context) *AnnotationNamespace {
-	node, err := anuo.Save(ctx)
+func (_u *AnnotationNamespaceUpdateOne) SaveX(ctx context.Context) *AnnotationNamespace {
+	node, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -342,29 +342,29 @@ func (anuo *AnnotationNamespaceUpdateOne) SaveX(ctx context.Context) *Annotation
 }
 
 // Exec executes the query on the entity.
-func (anuo *AnnotationNamespaceUpdateOne) Exec(ctx context.Context) error {
-	_, err := anuo.Save(ctx)
+func (_u *AnnotationNamespaceUpdateOne) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (anuo *AnnotationNamespaceUpdateOne) ExecX(ctx context.Context) {
-	if err := anuo.Exec(ctx); err != nil {
+func (_u *AnnotationNamespaceUpdateOne) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (anuo *AnnotationNamespaceUpdateOne) defaults() {
-	if _, ok := anuo.mutation.UpdatedAt(); !ok {
+func (_u *AnnotationNamespaceUpdateOne) defaults() {
+	if _, ok := _u.mutation.UpdatedAt(); !ok {
 		v := annotationnamespace.UpdateDefaultUpdatedAt()
-		anuo.mutation.SetUpdatedAt(v)
+		_u.mutation.SetUpdatedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (anuo *AnnotationNamespaceUpdateOne) check() error {
-	if v, ok := anuo.mutation.Name(); ok {
+func (_u *AnnotationNamespaceUpdateOne) check() error {
+	if v, ok := _u.mutation.Name(); ok {
 		if err := annotationnamespace.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`generated: validator failed for field "AnnotationNamespace.name": %w`, err)}
 		}
@@ -372,17 +372,17 @@ func (anuo *AnnotationNamespaceUpdateOne) check() error {
 	return nil
 }
 
-func (anuo *AnnotationNamespaceUpdateOne) sqlSave(ctx context.Context) (_node *AnnotationNamespace, err error) {
-	if err := anuo.check(); err != nil {
+func (_u *AnnotationNamespaceUpdateOne) sqlSave(ctx context.Context) (_node *AnnotationNamespace, err error) {
+	if err := _u.check(); err != nil {
 		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(annotationnamespace.Table, annotationnamespace.Columns, sqlgraph.NewFieldSpec(annotationnamespace.FieldID, field.TypeString))
-	id, ok := anuo.mutation.ID()
+	id, ok := _u.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`generated: missing "AnnotationNamespace.id" for update`)}
 	}
 	_spec.Node.ID.Value = id
-	if fields := anuo.fields; len(fields) > 0 {
+	if fields := _u.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, annotationnamespace.FieldID)
 		for _, f := range fields {
@@ -394,23 +394,23 @@ func (anuo *AnnotationNamespaceUpdateOne) sqlSave(ctx context.Context) (_node *A
 			}
 		}
 	}
-	if ps := anuo.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := anuo.mutation.UpdatedAt(); ok {
+	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(annotationnamespace.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if value, ok := anuo.mutation.Name(); ok {
+	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(annotationnamespace.FieldName, field.TypeString, value)
 	}
-	if value, ok := anuo.mutation.Private(); ok {
+	if value, ok := _u.mutation.Private(); ok {
 		_spec.SetField(annotationnamespace.FieldPrivate, field.TypeBool, value)
 	}
-	if anuo.mutation.AnnotationsCleared() {
+	if _u.mutation.AnnotationsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -423,7 +423,7 @@ func (anuo *AnnotationNamespaceUpdateOne) sqlSave(ctx context.Context) (_node *A
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := anuo.mutation.RemovedAnnotationsIDs(); len(nodes) > 0 && !anuo.mutation.AnnotationsCleared() {
+	if nodes := _u.mutation.RemovedAnnotationsIDs(); len(nodes) > 0 && !_u.mutation.AnnotationsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -439,7 +439,7 @@ func (anuo *AnnotationNamespaceUpdateOne) sqlSave(ctx context.Context) (_node *A
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := anuo.mutation.AnnotationsIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.AnnotationsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -455,10 +455,10 @@ func (anuo *AnnotationNamespaceUpdateOne) sqlSave(ctx context.Context) (_node *A
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	_node = &AnnotationNamespace{config: anuo.config}
+	_node = &AnnotationNamespace{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
-	if err = sqlgraph.UpdateNode(ctx, anuo.driver, _spec); err != nil {
+	if err = sqlgraph.UpdateNode(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{annotationnamespace.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -466,6 +466,6 @@ func (anuo *AnnotationNamespaceUpdateOne) sqlSave(ctx context.Context) (_node *A
 		}
 		return nil, err
 	}
-	anuo.mutation.done = true
+	_u.mutation.done = true
 	return _node, nil
 }

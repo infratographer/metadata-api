@@ -39,97 +39,97 @@ type MetadataUpdate struct {
 }
 
 // Where appends a list predicates to the MetadataUpdate builder.
-func (mu *MetadataUpdate) Where(ps ...predicate.Metadata) *MetadataUpdate {
-	mu.mutation.Where(ps...)
-	return mu
+func (_u *MetadataUpdate) Where(ps ...predicate.Metadata) *MetadataUpdate {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // AddAnnotationIDs adds the "annotations" edge to the Annotation entity by IDs.
-func (mu *MetadataUpdate) AddAnnotationIDs(ids ...gidx.PrefixedID) *MetadataUpdate {
-	mu.mutation.AddAnnotationIDs(ids...)
-	return mu
+func (_u *MetadataUpdate) AddAnnotationIDs(ids ...gidx.PrefixedID) *MetadataUpdate {
+	_u.mutation.AddAnnotationIDs(ids...)
+	return _u
 }
 
 // AddAnnotations adds the "annotations" edges to the Annotation entity.
-func (mu *MetadataUpdate) AddAnnotations(a ...*Annotation) *MetadataUpdate {
-	ids := make([]gidx.PrefixedID, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
+func (_u *MetadataUpdate) AddAnnotations(v ...*Annotation) *MetadataUpdate {
+	ids := make([]gidx.PrefixedID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return mu.AddAnnotationIDs(ids...)
+	return _u.AddAnnotationIDs(ids...)
 }
 
 // AddStatusIDs adds the "statuses" edge to the Status entity by IDs.
-func (mu *MetadataUpdate) AddStatusIDs(ids ...gidx.PrefixedID) *MetadataUpdate {
-	mu.mutation.AddStatusIDs(ids...)
-	return mu
+func (_u *MetadataUpdate) AddStatusIDs(ids ...gidx.PrefixedID) *MetadataUpdate {
+	_u.mutation.AddStatusIDs(ids...)
+	return _u
 }
 
 // AddStatuses adds the "statuses" edges to the Status entity.
-func (mu *MetadataUpdate) AddStatuses(s ...*Status) *MetadataUpdate {
-	ids := make([]gidx.PrefixedID, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+func (_u *MetadataUpdate) AddStatuses(v ...*Status) *MetadataUpdate {
+	ids := make([]gidx.PrefixedID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return mu.AddStatusIDs(ids...)
+	return _u.AddStatusIDs(ids...)
 }
 
 // Mutation returns the MetadataMutation object of the builder.
-func (mu *MetadataUpdate) Mutation() *MetadataMutation {
-	return mu.mutation
+func (_u *MetadataUpdate) Mutation() *MetadataMutation {
+	return _u.mutation
 }
 
 // ClearAnnotations clears all "annotations" edges to the Annotation entity.
-func (mu *MetadataUpdate) ClearAnnotations() *MetadataUpdate {
-	mu.mutation.ClearAnnotations()
-	return mu
+func (_u *MetadataUpdate) ClearAnnotations() *MetadataUpdate {
+	_u.mutation.ClearAnnotations()
+	return _u
 }
 
 // RemoveAnnotationIDs removes the "annotations" edge to Annotation entities by IDs.
-func (mu *MetadataUpdate) RemoveAnnotationIDs(ids ...gidx.PrefixedID) *MetadataUpdate {
-	mu.mutation.RemoveAnnotationIDs(ids...)
-	return mu
+func (_u *MetadataUpdate) RemoveAnnotationIDs(ids ...gidx.PrefixedID) *MetadataUpdate {
+	_u.mutation.RemoveAnnotationIDs(ids...)
+	return _u
 }
 
 // RemoveAnnotations removes "annotations" edges to Annotation entities.
-func (mu *MetadataUpdate) RemoveAnnotations(a ...*Annotation) *MetadataUpdate {
-	ids := make([]gidx.PrefixedID, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
+func (_u *MetadataUpdate) RemoveAnnotations(v ...*Annotation) *MetadataUpdate {
+	ids := make([]gidx.PrefixedID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return mu.RemoveAnnotationIDs(ids...)
+	return _u.RemoveAnnotationIDs(ids...)
 }
 
 // ClearStatuses clears all "statuses" edges to the Status entity.
-func (mu *MetadataUpdate) ClearStatuses() *MetadataUpdate {
-	mu.mutation.ClearStatuses()
-	return mu
+func (_u *MetadataUpdate) ClearStatuses() *MetadataUpdate {
+	_u.mutation.ClearStatuses()
+	return _u
 }
 
 // RemoveStatusIDs removes the "statuses" edge to Status entities by IDs.
-func (mu *MetadataUpdate) RemoveStatusIDs(ids ...gidx.PrefixedID) *MetadataUpdate {
-	mu.mutation.RemoveStatusIDs(ids...)
-	return mu
+func (_u *MetadataUpdate) RemoveStatusIDs(ids ...gidx.PrefixedID) *MetadataUpdate {
+	_u.mutation.RemoveStatusIDs(ids...)
+	return _u
 }
 
 // RemoveStatuses removes "statuses" edges to Status entities.
-func (mu *MetadataUpdate) RemoveStatuses(s ...*Status) *MetadataUpdate {
-	ids := make([]gidx.PrefixedID, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+func (_u *MetadataUpdate) RemoveStatuses(v ...*Status) *MetadataUpdate {
+	ids := make([]gidx.PrefixedID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return mu.RemoveStatusIDs(ids...)
+	return _u.RemoveStatusIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
-func (mu *MetadataUpdate) Save(ctx context.Context) (int, error) {
-	mu.defaults()
-	return withHooks(ctx, mu.sqlSave, mu.mutation, mu.hooks)
+func (_u *MetadataUpdate) Save(ctx context.Context) (int, error) {
+	_u.defaults()
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (mu *MetadataUpdate) SaveX(ctx context.Context) int {
-	affected, err := mu.Save(ctx)
+func (_u *MetadataUpdate) SaveX(ctx context.Context) int {
+	affected, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -137,39 +137,39 @@ func (mu *MetadataUpdate) SaveX(ctx context.Context) int {
 }
 
 // Exec executes the query.
-func (mu *MetadataUpdate) Exec(ctx context.Context) error {
-	_, err := mu.Save(ctx)
+func (_u *MetadataUpdate) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (mu *MetadataUpdate) ExecX(ctx context.Context) {
-	if err := mu.Exec(ctx); err != nil {
+func (_u *MetadataUpdate) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (mu *MetadataUpdate) defaults() {
-	if _, ok := mu.mutation.UpdatedAt(); !ok {
+func (_u *MetadataUpdate) defaults() {
+	if _, ok := _u.mutation.UpdatedAt(); !ok {
 		v := metadata.UpdateDefaultUpdatedAt()
-		mu.mutation.SetUpdatedAt(v)
+		_u.mutation.SetUpdatedAt(v)
 	}
 }
 
-func (mu *MetadataUpdate) sqlSave(ctx context.Context) (n int, err error) {
+func (_u *MetadataUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	_spec := sqlgraph.NewUpdateSpec(metadata.Table, metadata.Columns, sqlgraph.NewFieldSpec(metadata.FieldID, field.TypeString))
-	if ps := mu.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := mu.mutation.UpdatedAt(); ok {
+	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(metadata.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if mu.mutation.AnnotationsCleared() {
+	if _u.mutation.AnnotationsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -182,7 +182,7 @@ func (mu *MetadataUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := mu.mutation.RemovedAnnotationsIDs(); len(nodes) > 0 && !mu.mutation.AnnotationsCleared() {
+	if nodes := _u.mutation.RemovedAnnotationsIDs(); len(nodes) > 0 && !_u.mutation.AnnotationsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -198,7 +198,7 @@ func (mu *MetadataUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := mu.mutation.AnnotationsIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.AnnotationsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -214,7 +214,7 @@ func (mu *MetadataUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if mu.mutation.StatusesCleared() {
+	if _u.mutation.StatusesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -227,7 +227,7 @@ func (mu *MetadataUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := mu.mutation.RemovedStatusesIDs(); len(nodes) > 0 && !mu.mutation.StatusesCleared() {
+	if nodes := _u.mutation.RemovedStatusesIDs(); len(nodes) > 0 && !_u.mutation.StatusesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -243,7 +243,7 @@ func (mu *MetadataUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := mu.mutation.StatusesIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.StatusesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -259,7 +259,7 @@ func (mu *MetadataUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if n, err = sqlgraph.UpdateNodes(ctx, mu.driver, _spec); err != nil {
+	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{metadata.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -267,8 +267,8 @@ func (mu *MetadataUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
-	mu.mutation.done = true
-	return n, nil
+	_u.mutation.done = true
+	return _node, nil
 }
 
 // MetadataUpdateOne is the builder for updating a single Metadata entity.
@@ -280,104 +280,104 @@ type MetadataUpdateOne struct {
 }
 
 // AddAnnotationIDs adds the "annotations" edge to the Annotation entity by IDs.
-func (muo *MetadataUpdateOne) AddAnnotationIDs(ids ...gidx.PrefixedID) *MetadataUpdateOne {
-	muo.mutation.AddAnnotationIDs(ids...)
-	return muo
+func (_u *MetadataUpdateOne) AddAnnotationIDs(ids ...gidx.PrefixedID) *MetadataUpdateOne {
+	_u.mutation.AddAnnotationIDs(ids...)
+	return _u
 }
 
 // AddAnnotations adds the "annotations" edges to the Annotation entity.
-func (muo *MetadataUpdateOne) AddAnnotations(a ...*Annotation) *MetadataUpdateOne {
-	ids := make([]gidx.PrefixedID, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
+func (_u *MetadataUpdateOne) AddAnnotations(v ...*Annotation) *MetadataUpdateOne {
+	ids := make([]gidx.PrefixedID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return muo.AddAnnotationIDs(ids...)
+	return _u.AddAnnotationIDs(ids...)
 }
 
 // AddStatusIDs adds the "statuses" edge to the Status entity by IDs.
-func (muo *MetadataUpdateOne) AddStatusIDs(ids ...gidx.PrefixedID) *MetadataUpdateOne {
-	muo.mutation.AddStatusIDs(ids...)
-	return muo
+func (_u *MetadataUpdateOne) AddStatusIDs(ids ...gidx.PrefixedID) *MetadataUpdateOne {
+	_u.mutation.AddStatusIDs(ids...)
+	return _u
 }
 
 // AddStatuses adds the "statuses" edges to the Status entity.
-func (muo *MetadataUpdateOne) AddStatuses(s ...*Status) *MetadataUpdateOne {
-	ids := make([]gidx.PrefixedID, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+func (_u *MetadataUpdateOne) AddStatuses(v ...*Status) *MetadataUpdateOne {
+	ids := make([]gidx.PrefixedID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return muo.AddStatusIDs(ids...)
+	return _u.AddStatusIDs(ids...)
 }
 
 // Mutation returns the MetadataMutation object of the builder.
-func (muo *MetadataUpdateOne) Mutation() *MetadataMutation {
-	return muo.mutation
+func (_u *MetadataUpdateOne) Mutation() *MetadataMutation {
+	return _u.mutation
 }
 
 // ClearAnnotations clears all "annotations" edges to the Annotation entity.
-func (muo *MetadataUpdateOne) ClearAnnotations() *MetadataUpdateOne {
-	muo.mutation.ClearAnnotations()
-	return muo
+func (_u *MetadataUpdateOne) ClearAnnotations() *MetadataUpdateOne {
+	_u.mutation.ClearAnnotations()
+	return _u
 }
 
 // RemoveAnnotationIDs removes the "annotations" edge to Annotation entities by IDs.
-func (muo *MetadataUpdateOne) RemoveAnnotationIDs(ids ...gidx.PrefixedID) *MetadataUpdateOne {
-	muo.mutation.RemoveAnnotationIDs(ids...)
-	return muo
+func (_u *MetadataUpdateOne) RemoveAnnotationIDs(ids ...gidx.PrefixedID) *MetadataUpdateOne {
+	_u.mutation.RemoveAnnotationIDs(ids...)
+	return _u
 }
 
 // RemoveAnnotations removes "annotations" edges to Annotation entities.
-func (muo *MetadataUpdateOne) RemoveAnnotations(a ...*Annotation) *MetadataUpdateOne {
-	ids := make([]gidx.PrefixedID, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
+func (_u *MetadataUpdateOne) RemoveAnnotations(v ...*Annotation) *MetadataUpdateOne {
+	ids := make([]gidx.PrefixedID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return muo.RemoveAnnotationIDs(ids...)
+	return _u.RemoveAnnotationIDs(ids...)
 }
 
 // ClearStatuses clears all "statuses" edges to the Status entity.
-func (muo *MetadataUpdateOne) ClearStatuses() *MetadataUpdateOne {
-	muo.mutation.ClearStatuses()
-	return muo
+func (_u *MetadataUpdateOne) ClearStatuses() *MetadataUpdateOne {
+	_u.mutation.ClearStatuses()
+	return _u
 }
 
 // RemoveStatusIDs removes the "statuses" edge to Status entities by IDs.
-func (muo *MetadataUpdateOne) RemoveStatusIDs(ids ...gidx.PrefixedID) *MetadataUpdateOne {
-	muo.mutation.RemoveStatusIDs(ids...)
-	return muo
+func (_u *MetadataUpdateOne) RemoveStatusIDs(ids ...gidx.PrefixedID) *MetadataUpdateOne {
+	_u.mutation.RemoveStatusIDs(ids...)
+	return _u
 }
 
 // RemoveStatuses removes "statuses" edges to Status entities.
-func (muo *MetadataUpdateOne) RemoveStatuses(s ...*Status) *MetadataUpdateOne {
-	ids := make([]gidx.PrefixedID, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+func (_u *MetadataUpdateOne) RemoveStatuses(v ...*Status) *MetadataUpdateOne {
+	ids := make([]gidx.PrefixedID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return muo.RemoveStatusIDs(ids...)
+	return _u.RemoveStatusIDs(ids...)
 }
 
 // Where appends a list predicates to the MetadataUpdate builder.
-func (muo *MetadataUpdateOne) Where(ps ...predicate.Metadata) *MetadataUpdateOne {
-	muo.mutation.Where(ps...)
-	return muo
+func (_u *MetadataUpdateOne) Where(ps ...predicate.Metadata) *MetadataUpdateOne {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
-func (muo *MetadataUpdateOne) Select(field string, fields ...string) *MetadataUpdateOne {
-	muo.fields = append([]string{field}, fields...)
-	return muo
+func (_u *MetadataUpdateOne) Select(field string, fields ...string) *MetadataUpdateOne {
+	_u.fields = append([]string{field}, fields...)
+	return _u
 }
 
 // Save executes the query and returns the updated Metadata entity.
-func (muo *MetadataUpdateOne) Save(ctx context.Context) (*Metadata, error) {
-	muo.defaults()
-	return withHooks(ctx, muo.sqlSave, muo.mutation, muo.hooks)
+func (_u *MetadataUpdateOne) Save(ctx context.Context) (*Metadata, error) {
+	_u.defaults()
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (muo *MetadataUpdateOne) SaveX(ctx context.Context) *Metadata {
-	node, err := muo.Save(ctx)
+func (_u *MetadataUpdateOne) SaveX(ctx context.Context) *Metadata {
+	node, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -385,34 +385,34 @@ func (muo *MetadataUpdateOne) SaveX(ctx context.Context) *Metadata {
 }
 
 // Exec executes the query on the entity.
-func (muo *MetadataUpdateOne) Exec(ctx context.Context) error {
-	_, err := muo.Save(ctx)
+func (_u *MetadataUpdateOne) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (muo *MetadataUpdateOne) ExecX(ctx context.Context) {
-	if err := muo.Exec(ctx); err != nil {
+func (_u *MetadataUpdateOne) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (muo *MetadataUpdateOne) defaults() {
-	if _, ok := muo.mutation.UpdatedAt(); !ok {
+func (_u *MetadataUpdateOne) defaults() {
+	if _, ok := _u.mutation.UpdatedAt(); !ok {
 		v := metadata.UpdateDefaultUpdatedAt()
-		muo.mutation.SetUpdatedAt(v)
+		_u.mutation.SetUpdatedAt(v)
 	}
 }
 
-func (muo *MetadataUpdateOne) sqlSave(ctx context.Context) (_node *Metadata, err error) {
+func (_u *MetadataUpdateOne) sqlSave(ctx context.Context) (_node *Metadata, err error) {
 	_spec := sqlgraph.NewUpdateSpec(metadata.Table, metadata.Columns, sqlgraph.NewFieldSpec(metadata.FieldID, field.TypeString))
-	id, ok := muo.mutation.ID()
+	id, ok := _u.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`generated: missing "Metadata.id" for update`)}
 	}
 	_spec.Node.ID.Value = id
-	if fields := muo.fields; len(fields) > 0 {
+	if fields := _u.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, metadata.FieldID)
 		for _, f := range fields {
@@ -424,17 +424,17 @@ func (muo *MetadataUpdateOne) sqlSave(ctx context.Context) (_node *Metadata, err
 			}
 		}
 	}
-	if ps := muo.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := muo.mutation.UpdatedAt(); ok {
+	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(metadata.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if muo.mutation.AnnotationsCleared() {
+	if _u.mutation.AnnotationsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -447,7 +447,7 @@ func (muo *MetadataUpdateOne) sqlSave(ctx context.Context) (_node *Metadata, err
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := muo.mutation.RemovedAnnotationsIDs(); len(nodes) > 0 && !muo.mutation.AnnotationsCleared() {
+	if nodes := _u.mutation.RemovedAnnotationsIDs(); len(nodes) > 0 && !_u.mutation.AnnotationsCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -463,7 +463,7 @@ func (muo *MetadataUpdateOne) sqlSave(ctx context.Context) (_node *Metadata, err
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := muo.mutation.AnnotationsIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.AnnotationsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -479,7 +479,7 @@ func (muo *MetadataUpdateOne) sqlSave(ctx context.Context) (_node *Metadata, err
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if muo.mutation.StatusesCleared() {
+	if _u.mutation.StatusesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -492,7 +492,7 @@ func (muo *MetadataUpdateOne) sqlSave(ctx context.Context) (_node *Metadata, err
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := muo.mutation.RemovedStatusesIDs(); len(nodes) > 0 && !muo.mutation.StatusesCleared() {
+	if nodes := _u.mutation.RemovedStatusesIDs(); len(nodes) > 0 && !_u.mutation.StatusesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -508,7 +508,7 @@ func (muo *MetadataUpdateOne) sqlSave(ctx context.Context) (_node *Metadata, err
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := muo.mutation.StatusesIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.StatusesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -524,10 +524,10 @@ func (muo *MetadataUpdateOne) sqlSave(ctx context.Context) (_node *Metadata, err
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	_node = &Metadata{config: muo.config}
+	_node = &Metadata{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
-	if err = sqlgraph.UpdateNode(ctx, muo.driver, _spec); err != nil {
+	if err = sqlgraph.UpdateNode(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{metadata.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -535,6 +535,6 @@ func (muo *MetadataUpdateOne) sqlSave(ctx context.Context) (_node *Metadata, err
 		}
 		return nil, err
 	}
-	muo.mutation.done = true
+	_u.mutation.done = true
 	return _node, nil
 }

@@ -34,56 +34,56 @@ type AnnotationNamespaceDelete struct {
 }
 
 // Where appends a list predicates to the AnnotationNamespaceDelete builder.
-func (and *AnnotationNamespaceDelete) Where(ps ...predicate.AnnotationNamespace) *AnnotationNamespaceDelete {
-	and.mutation.Where(ps...)
-	return and
+func (_d *AnnotationNamespaceDelete) Where(ps ...predicate.AnnotationNamespace) *AnnotationNamespaceDelete {
+	_d.mutation.Where(ps...)
+	return _d
 }
 
 // Exec executes the deletion query and returns how many vertices were deleted.
-func (and *AnnotationNamespaceDelete) Exec(ctx context.Context) (int, error) {
-	return withHooks(ctx, and.sqlExec, and.mutation, and.hooks)
+func (_d *AnnotationNamespaceDelete) Exec(ctx context.Context) (int, error) {
+	return withHooks(ctx, _d.sqlExec, _d.mutation, _d.hooks)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (and *AnnotationNamespaceDelete) ExecX(ctx context.Context) int {
-	n, err := and.Exec(ctx)
+func (_d *AnnotationNamespaceDelete) ExecX(ctx context.Context) int {
+	n, err := _d.Exec(ctx)
 	if err != nil {
 		panic(err)
 	}
 	return n
 }
 
-func (and *AnnotationNamespaceDelete) sqlExec(ctx context.Context) (int, error) {
+func (_d *AnnotationNamespaceDelete) sqlExec(ctx context.Context) (int, error) {
 	_spec := sqlgraph.NewDeleteSpec(annotationnamespace.Table, sqlgraph.NewFieldSpec(annotationnamespace.FieldID, field.TypeString))
-	if ps := and.mutation.predicates; len(ps) > 0 {
+	if ps := _d.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	affected, err := sqlgraph.DeleteNodes(ctx, and.driver, _spec)
+	affected, err := sqlgraph.DeleteNodes(ctx, _d.driver, _spec)
 	if err != nil && sqlgraph.IsConstraintError(err) {
 		err = &ConstraintError{msg: err.Error(), wrap: err}
 	}
-	and.mutation.done = true
+	_d.mutation.done = true
 	return affected, err
 }
 
 // AnnotationNamespaceDeleteOne is the builder for deleting a single AnnotationNamespace entity.
 type AnnotationNamespaceDeleteOne struct {
-	and *AnnotationNamespaceDelete
+	_d *AnnotationNamespaceDelete
 }
 
 // Where appends a list predicates to the AnnotationNamespaceDelete builder.
-func (ando *AnnotationNamespaceDeleteOne) Where(ps ...predicate.AnnotationNamespace) *AnnotationNamespaceDeleteOne {
-	ando.and.mutation.Where(ps...)
-	return ando
+func (_d *AnnotationNamespaceDeleteOne) Where(ps ...predicate.AnnotationNamespace) *AnnotationNamespaceDeleteOne {
+	_d._d.mutation.Where(ps...)
+	return _d
 }
 
 // Exec executes the deletion query.
-func (ando *AnnotationNamespaceDeleteOne) Exec(ctx context.Context) error {
-	n, err := ando.and.Exec(ctx)
+func (_d *AnnotationNamespaceDeleteOne) Exec(ctx context.Context) error {
+	n, err := _d._d.Exec(ctx)
 	switch {
 	case err != nil:
 		return err
@@ -95,8 +95,8 @@ func (ando *AnnotationNamespaceDeleteOne) Exec(ctx context.Context) error {
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (ando *AnnotationNamespaceDeleteOne) ExecX(ctx context.Context) {
-	if err := ando.Exec(ctx); err != nil {
+func (_d *AnnotationNamespaceDeleteOne) ExecX(ctx context.Context) {
+	if err := _d.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

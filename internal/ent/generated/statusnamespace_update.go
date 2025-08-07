@@ -38,89 +38,89 @@ type StatusNamespaceUpdate struct {
 }
 
 // Where appends a list predicates to the StatusNamespaceUpdate builder.
-func (snu *StatusNamespaceUpdate) Where(ps ...predicate.StatusNamespace) *StatusNamespaceUpdate {
-	snu.mutation.Where(ps...)
-	return snu
+func (_u *StatusNamespaceUpdate) Where(ps ...predicate.StatusNamespace) *StatusNamespaceUpdate {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // SetName sets the "name" field.
-func (snu *StatusNamespaceUpdate) SetName(s string) *StatusNamespaceUpdate {
-	snu.mutation.SetName(s)
-	return snu
+func (_u *StatusNamespaceUpdate) SetName(v string) *StatusNamespaceUpdate {
+	_u.mutation.SetName(v)
+	return _u
 }
 
 // SetNillableName sets the "name" field if the given value is not nil.
-func (snu *StatusNamespaceUpdate) SetNillableName(s *string) *StatusNamespaceUpdate {
-	if s != nil {
-		snu.SetName(*s)
+func (_u *StatusNamespaceUpdate) SetNillableName(v *string) *StatusNamespaceUpdate {
+	if v != nil {
+		_u.SetName(*v)
 	}
-	return snu
+	return _u
 }
 
 // SetPrivate sets the "private" field.
-func (snu *StatusNamespaceUpdate) SetPrivate(b bool) *StatusNamespaceUpdate {
-	snu.mutation.SetPrivate(b)
-	return snu
+func (_u *StatusNamespaceUpdate) SetPrivate(v bool) *StatusNamespaceUpdate {
+	_u.mutation.SetPrivate(v)
+	return _u
 }
 
 // SetNillablePrivate sets the "private" field if the given value is not nil.
-func (snu *StatusNamespaceUpdate) SetNillablePrivate(b *bool) *StatusNamespaceUpdate {
-	if b != nil {
-		snu.SetPrivate(*b)
+func (_u *StatusNamespaceUpdate) SetNillablePrivate(v *bool) *StatusNamespaceUpdate {
+	if v != nil {
+		_u.SetPrivate(*v)
 	}
-	return snu
+	return _u
 }
 
 // AddStatusIDs adds the "statuses" edge to the Status entity by IDs.
-func (snu *StatusNamespaceUpdate) AddStatusIDs(ids ...gidx.PrefixedID) *StatusNamespaceUpdate {
-	snu.mutation.AddStatusIDs(ids...)
-	return snu
+func (_u *StatusNamespaceUpdate) AddStatusIDs(ids ...gidx.PrefixedID) *StatusNamespaceUpdate {
+	_u.mutation.AddStatusIDs(ids...)
+	return _u
 }
 
 // AddStatuses adds the "statuses" edges to the Status entity.
-func (snu *StatusNamespaceUpdate) AddStatuses(s ...*Status) *StatusNamespaceUpdate {
-	ids := make([]gidx.PrefixedID, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+func (_u *StatusNamespaceUpdate) AddStatuses(v ...*Status) *StatusNamespaceUpdate {
+	ids := make([]gidx.PrefixedID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return snu.AddStatusIDs(ids...)
+	return _u.AddStatusIDs(ids...)
 }
 
 // Mutation returns the StatusNamespaceMutation object of the builder.
-func (snu *StatusNamespaceUpdate) Mutation() *StatusNamespaceMutation {
-	return snu.mutation
+func (_u *StatusNamespaceUpdate) Mutation() *StatusNamespaceMutation {
+	return _u.mutation
 }
 
 // ClearStatuses clears all "statuses" edges to the Status entity.
-func (snu *StatusNamespaceUpdate) ClearStatuses() *StatusNamespaceUpdate {
-	snu.mutation.ClearStatuses()
-	return snu
+func (_u *StatusNamespaceUpdate) ClearStatuses() *StatusNamespaceUpdate {
+	_u.mutation.ClearStatuses()
+	return _u
 }
 
 // RemoveStatusIDs removes the "statuses" edge to Status entities by IDs.
-func (snu *StatusNamespaceUpdate) RemoveStatusIDs(ids ...gidx.PrefixedID) *StatusNamespaceUpdate {
-	snu.mutation.RemoveStatusIDs(ids...)
-	return snu
+func (_u *StatusNamespaceUpdate) RemoveStatusIDs(ids ...gidx.PrefixedID) *StatusNamespaceUpdate {
+	_u.mutation.RemoveStatusIDs(ids...)
+	return _u
 }
 
 // RemoveStatuses removes "statuses" edges to Status entities.
-func (snu *StatusNamespaceUpdate) RemoveStatuses(s ...*Status) *StatusNamespaceUpdate {
-	ids := make([]gidx.PrefixedID, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+func (_u *StatusNamespaceUpdate) RemoveStatuses(v ...*Status) *StatusNamespaceUpdate {
+	ids := make([]gidx.PrefixedID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return snu.RemoveStatusIDs(ids...)
+	return _u.RemoveStatusIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
-func (snu *StatusNamespaceUpdate) Save(ctx context.Context) (int, error) {
-	snu.defaults()
-	return withHooks(ctx, snu.sqlSave, snu.mutation, snu.hooks)
+func (_u *StatusNamespaceUpdate) Save(ctx context.Context) (int, error) {
+	_u.defaults()
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (snu *StatusNamespaceUpdate) SaveX(ctx context.Context) int {
-	affected, err := snu.Save(ctx)
+func (_u *StatusNamespaceUpdate) SaveX(ctx context.Context) int {
+	affected, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -128,29 +128,29 @@ func (snu *StatusNamespaceUpdate) SaveX(ctx context.Context) int {
 }
 
 // Exec executes the query.
-func (snu *StatusNamespaceUpdate) Exec(ctx context.Context) error {
-	_, err := snu.Save(ctx)
+func (_u *StatusNamespaceUpdate) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (snu *StatusNamespaceUpdate) ExecX(ctx context.Context) {
-	if err := snu.Exec(ctx); err != nil {
+func (_u *StatusNamespaceUpdate) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (snu *StatusNamespaceUpdate) defaults() {
-	if _, ok := snu.mutation.UpdatedAt(); !ok {
+func (_u *StatusNamespaceUpdate) defaults() {
+	if _, ok := _u.mutation.UpdatedAt(); !ok {
 		v := statusnamespace.UpdateDefaultUpdatedAt()
-		snu.mutation.SetUpdatedAt(v)
+		_u.mutation.SetUpdatedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (snu *StatusNamespaceUpdate) check() error {
-	if v, ok := snu.mutation.Name(); ok {
+func (_u *StatusNamespaceUpdate) check() error {
+	if v, ok := _u.mutation.Name(); ok {
 		if err := statusnamespace.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`generated: validator failed for field "StatusNamespace.name": %w`, err)}
 		}
@@ -158,28 +158,28 @@ func (snu *StatusNamespaceUpdate) check() error {
 	return nil
 }
 
-func (snu *StatusNamespaceUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	if err := snu.check(); err != nil {
-		return n, err
+func (_u *StatusNamespaceUpdate) sqlSave(ctx context.Context) (_node int, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(statusnamespace.Table, statusnamespace.Columns, sqlgraph.NewFieldSpec(statusnamespace.FieldID, field.TypeString))
-	if ps := snu.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := snu.mutation.UpdatedAt(); ok {
+	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(statusnamespace.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if value, ok := snu.mutation.Name(); ok {
+	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(statusnamespace.FieldName, field.TypeString, value)
 	}
-	if value, ok := snu.mutation.Private(); ok {
+	if value, ok := _u.mutation.Private(); ok {
 		_spec.SetField(statusnamespace.FieldPrivate, field.TypeBool, value)
 	}
-	if snu.mutation.StatusesCleared() {
+	if _u.mutation.StatusesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -192,7 +192,7 @@ func (snu *StatusNamespaceUpdate) sqlSave(ctx context.Context) (n int, err error
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := snu.mutation.RemovedStatusesIDs(); len(nodes) > 0 && !snu.mutation.StatusesCleared() {
+	if nodes := _u.mutation.RemovedStatusesIDs(); len(nodes) > 0 && !_u.mutation.StatusesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -208,7 +208,7 @@ func (snu *StatusNamespaceUpdate) sqlSave(ctx context.Context) (n int, err error
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := snu.mutation.StatusesIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.StatusesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -224,7 +224,7 @@ func (snu *StatusNamespaceUpdate) sqlSave(ctx context.Context) (n int, err error
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	if n, err = sqlgraph.UpdateNodes(ctx, snu.driver, _spec); err != nil {
+	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{statusnamespace.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -232,8 +232,8 @@ func (snu *StatusNamespaceUpdate) sqlSave(ctx context.Context) (n int, err error
 		}
 		return 0, err
 	}
-	snu.mutation.done = true
-	return n, nil
+	_u.mutation.done = true
+	return _node, nil
 }
 
 // StatusNamespaceUpdateOne is the builder for updating a single StatusNamespace entity.
@@ -245,96 +245,96 @@ type StatusNamespaceUpdateOne struct {
 }
 
 // SetName sets the "name" field.
-func (snuo *StatusNamespaceUpdateOne) SetName(s string) *StatusNamespaceUpdateOne {
-	snuo.mutation.SetName(s)
-	return snuo
+func (_u *StatusNamespaceUpdateOne) SetName(v string) *StatusNamespaceUpdateOne {
+	_u.mutation.SetName(v)
+	return _u
 }
 
 // SetNillableName sets the "name" field if the given value is not nil.
-func (snuo *StatusNamespaceUpdateOne) SetNillableName(s *string) *StatusNamespaceUpdateOne {
-	if s != nil {
-		snuo.SetName(*s)
+func (_u *StatusNamespaceUpdateOne) SetNillableName(v *string) *StatusNamespaceUpdateOne {
+	if v != nil {
+		_u.SetName(*v)
 	}
-	return snuo
+	return _u
 }
 
 // SetPrivate sets the "private" field.
-func (snuo *StatusNamespaceUpdateOne) SetPrivate(b bool) *StatusNamespaceUpdateOne {
-	snuo.mutation.SetPrivate(b)
-	return snuo
+func (_u *StatusNamespaceUpdateOne) SetPrivate(v bool) *StatusNamespaceUpdateOne {
+	_u.mutation.SetPrivate(v)
+	return _u
 }
 
 // SetNillablePrivate sets the "private" field if the given value is not nil.
-func (snuo *StatusNamespaceUpdateOne) SetNillablePrivate(b *bool) *StatusNamespaceUpdateOne {
-	if b != nil {
-		snuo.SetPrivate(*b)
+func (_u *StatusNamespaceUpdateOne) SetNillablePrivate(v *bool) *StatusNamespaceUpdateOne {
+	if v != nil {
+		_u.SetPrivate(*v)
 	}
-	return snuo
+	return _u
 }
 
 // AddStatusIDs adds the "statuses" edge to the Status entity by IDs.
-func (snuo *StatusNamespaceUpdateOne) AddStatusIDs(ids ...gidx.PrefixedID) *StatusNamespaceUpdateOne {
-	snuo.mutation.AddStatusIDs(ids...)
-	return snuo
+func (_u *StatusNamespaceUpdateOne) AddStatusIDs(ids ...gidx.PrefixedID) *StatusNamespaceUpdateOne {
+	_u.mutation.AddStatusIDs(ids...)
+	return _u
 }
 
 // AddStatuses adds the "statuses" edges to the Status entity.
-func (snuo *StatusNamespaceUpdateOne) AddStatuses(s ...*Status) *StatusNamespaceUpdateOne {
-	ids := make([]gidx.PrefixedID, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+func (_u *StatusNamespaceUpdateOne) AddStatuses(v ...*Status) *StatusNamespaceUpdateOne {
+	ids := make([]gidx.PrefixedID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return snuo.AddStatusIDs(ids...)
+	return _u.AddStatusIDs(ids...)
 }
 
 // Mutation returns the StatusNamespaceMutation object of the builder.
-func (snuo *StatusNamespaceUpdateOne) Mutation() *StatusNamespaceMutation {
-	return snuo.mutation
+func (_u *StatusNamespaceUpdateOne) Mutation() *StatusNamespaceMutation {
+	return _u.mutation
 }
 
 // ClearStatuses clears all "statuses" edges to the Status entity.
-func (snuo *StatusNamespaceUpdateOne) ClearStatuses() *StatusNamespaceUpdateOne {
-	snuo.mutation.ClearStatuses()
-	return snuo
+func (_u *StatusNamespaceUpdateOne) ClearStatuses() *StatusNamespaceUpdateOne {
+	_u.mutation.ClearStatuses()
+	return _u
 }
 
 // RemoveStatusIDs removes the "statuses" edge to Status entities by IDs.
-func (snuo *StatusNamespaceUpdateOne) RemoveStatusIDs(ids ...gidx.PrefixedID) *StatusNamespaceUpdateOne {
-	snuo.mutation.RemoveStatusIDs(ids...)
-	return snuo
+func (_u *StatusNamespaceUpdateOne) RemoveStatusIDs(ids ...gidx.PrefixedID) *StatusNamespaceUpdateOne {
+	_u.mutation.RemoveStatusIDs(ids...)
+	return _u
 }
 
 // RemoveStatuses removes "statuses" edges to Status entities.
-func (snuo *StatusNamespaceUpdateOne) RemoveStatuses(s ...*Status) *StatusNamespaceUpdateOne {
-	ids := make([]gidx.PrefixedID, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+func (_u *StatusNamespaceUpdateOne) RemoveStatuses(v ...*Status) *StatusNamespaceUpdateOne {
+	ids := make([]gidx.PrefixedID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return snuo.RemoveStatusIDs(ids...)
+	return _u.RemoveStatusIDs(ids...)
 }
 
 // Where appends a list predicates to the StatusNamespaceUpdate builder.
-func (snuo *StatusNamespaceUpdateOne) Where(ps ...predicate.StatusNamespace) *StatusNamespaceUpdateOne {
-	snuo.mutation.Where(ps...)
-	return snuo
+func (_u *StatusNamespaceUpdateOne) Where(ps ...predicate.StatusNamespace) *StatusNamespaceUpdateOne {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
-func (snuo *StatusNamespaceUpdateOne) Select(field string, fields ...string) *StatusNamespaceUpdateOne {
-	snuo.fields = append([]string{field}, fields...)
-	return snuo
+func (_u *StatusNamespaceUpdateOne) Select(field string, fields ...string) *StatusNamespaceUpdateOne {
+	_u.fields = append([]string{field}, fields...)
+	return _u
 }
 
 // Save executes the query and returns the updated StatusNamespace entity.
-func (snuo *StatusNamespaceUpdateOne) Save(ctx context.Context) (*StatusNamespace, error) {
-	snuo.defaults()
-	return withHooks(ctx, snuo.sqlSave, snuo.mutation, snuo.hooks)
+func (_u *StatusNamespaceUpdateOne) Save(ctx context.Context) (*StatusNamespace, error) {
+	_u.defaults()
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (snuo *StatusNamespaceUpdateOne) SaveX(ctx context.Context) *StatusNamespace {
-	node, err := snuo.Save(ctx)
+func (_u *StatusNamespaceUpdateOne) SaveX(ctx context.Context) *StatusNamespace {
+	node, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -342,29 +342,29 @@ func (snuo *StatusNamespaceUpdateOne) SaveX(ctx context.Context) *StatusNamespac
 }
 
 // Exec executes the query on the entity.
-func (snuo *StatusNamespaceUpdateOne) Exec(ctx context.Context) error {
-	_, err := snuo.Save(ctx)
+func (_u *StatusNamespaceUpdateOne) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (snuo *StatusNamespaceUpdateOne) ExecX(ctx context.Context) {
-	if err := snuo.Exec(ctx); err != nil {
+func (_u *StatusNamespaceUpdateOne) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (snuo *StatusNamespaceUpdateOne) defaults() {
-	if _, ok := snuo.mutation.UpdatedAt(); !ok {
+func (_u *StatusNamespaceUpdateOne) defaults() {
+	if _, ok := _u.mutation.UpdatedAt(); !ok {
 		v := statusnamespace.UpdateDefaultUpdatedAt()
-		snuo.mutation.SetUpdatedAt(v)
+		_u.mutation.SetUpdatedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (snuo *StatusNamespaceUpdateOne) check() error {
-	if v, ok := snuo.mutation.Name(); ok {
+func (_u *StatusNamespaceUpdateOne) check() error {
+	if v, ok := _u.mutation.Name(); ok {
 		if err := statusnamespace.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`generated: validator failed for field "StatusNamespace.name": %w`, err)}
 		}
@@ -372,17 +372,17 @@ func (snuo *StatusNamespaceUpdateOne) check() error {
 	return nil
 }
 
-func (snuo *StatusNamespaceUpdateOne) sqlSave(ctx context.Context) (_node *StatusNamespace, err error) {
-	if err := snuo.check(); err != nil {
+func (_u *StatusNamespaceUpdateOne) sqlSave(ctx context.Context) (_node *StatusNamespace, err error) {
+	if err := _u.check(); err != nil {
 		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(statusnamespace.Table, statusnamespace.Columns, sqlgraph.NewFieldSpec(statusnamespace.FieldID, field.TypeString))
-	id, ok := snuo.mutation.ID()
+	id, ok := _u.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`generated: missing "StatusNamespace.id" for update`)}
 	}
 	_spec.Node.ID.Value = id
-	if fields := snuo.fields; len(fields) > 0 {
+	if fields := _u.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, statusnamespace.FieldID)
 		for _, f := range fields {
@@ -394,23 +394,23 @@ func (snuo *StatusNamespaceUpdateOne) sqlSave(ctx context.Context) (_node *Statu
 			}
 		}
 	}
-	if ps := snuo.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := snuo.mutation.UpdatedAt(); ok {
+	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(statusnamespace.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if value, ok := snuo.mutation.Name(); ok {
+	if value, ok := _u.mutation.Name(); ok {
 		_spec.SetField(statusnamespace.FieldName, field.TypeString, value)
 	}
-	if value, ok := snuo.mutation.Private(); ok {
+	if value, ok := _u.mutation.Private(); ok {
 		_spec.SetField(statusnamespace.FieldPrivate, field.TypeBool, value)
 	}
-	if snuo.mutation.StatusesCleared() {
+	if _u.mutation.StatusesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -423,7 +423,7 @@ func (snuo *StatusNamespaceUpdateOne) sqlSave(ctx context.Context) (_node *Statu
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := snuo.mutation.RemovedStatusesIDs(); len(nodes) > 0 && !snuo.mutation.StatusesCleared() {
+	if nodes := _u.mutation.RemovedStatusesIDs(); len(nodes) > 0 && !_u.mutation.StatusesCleared() {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -439,7 +439,7 @@ func (snuo *StatusNamespaceUpdateOne) sqlSave(ctx context.Context) (_node *Statu
 		}
 		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
 	}
-	if nodes := snuo.mutation.StatusesIDs(); len(nodes) > 0 {
+	if nodes := _u.mutation.StatusesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -455,10 +455,10 @@ func (snuo *StatusNamespaceUpdateOne) sqlSave(ctx context.Context) (_node *Statu
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	_node = &StatusNamespace{config: snuo.config}
+	_node = &StatusNamespace{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
-	if err = sqlgraph.UpdateNode(ctx, snuo.driver, _spec); err != nil {
+	if err = sqlgraph.UpdateNode(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{statusnamespace.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -466,6 +466,6 @@ func (snuo *StatusNamespaceUpdateOne) sqlSave(ctx context.Context) (_node *Statu
 		}
 		return nil, err
 	}
-	snuo.mutation.done = true
+	_u.mutation.done = true
 	return _node, nil
 }

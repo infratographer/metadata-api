@@ -226,8 +226,8 @@ func (p *annotationPager) applyFilter(query *AnnotationQuery) (*AnnotationQuery,
 	return query, nil
 }
 
-func (p *annotationPager) toCursor(a *Annotation) Cursor {
-	return p.order.Field.toCursor(a)
+func (p *annotationPager) toCursor(_m *Annotation) Cursor {
+	return p.order.Field.toCursor(_m)
 }
 
 func (p *annotationPager) applyCursors(query *AnnotationQuery, after, before *Cursor) (*AnnotationQuery, error) {
@@ -273,7 +273,7 @@ func (p *annotationPager) orderExpr(query *AnnotationQuery) sql.Querier {
 }
 
 // Paginate executes the query and returns a relay based cursor connection to Annotation.
-func (a *AnnotationQuery) Paginate(
+func (_m *AnnotationQuery) Paginate(
 	ctx context.Context, after *Cursor, first *int,
 	before *Cursor, last *int, opts ...AnnotationPaginateOption,
 ) (*AnnotationConnection, error) {
@@ -284,7 +284,7 @@ func (a *AnnotationQuery) Paginate(
 	if err != nil {
 		return nil, err
 	}
-	if a, err = pager.applyFilter(a); err != nil {
+	if _m, err = pager.applyFilter(_m); err != nil {
 		return nil, err
 	}
 	conn := &AnnotationConnection{Edges: []*AnnotationEdge{}}
@@ -292,7 +292,7 @@ func (a *AnnotationQuery) Paginate(
 	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
 		hasPagination := after != nil || first != nil || before != nil || last != nil
 		if hasPagination || ignoredEdges {
-			c := a.Clone()
+			c := _m.Clone()
 			c.ctx.Fields = nil
 			if conn.TotalCount, err = c.Count(ctx); err != nil {
 				return nil, err
@@ -304,20 +304,20 @@ func (a *AnnotationQuery) Paginate(
 	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
 		return conn, nil
 	}
-	if a, err = pager.applyCursors(a, after, before); err != nil {
+	if _m, err = pager.applyCursors(_m, after, before); err != nil {
 		return nil, err
 	}
 	limit := paginateLimit(first, last)
 	if limit != 0 {
-		a.Limit(limit)
+		_m.Limit(limit)
 	}
 	if field := collectedField(ctx, edgesField, nodeField); field != nil {
-		if err := a.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+		if err := _m.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
 			return nil, err
 		}
 	}
-	a = pager.applyOrder(a)
-	nodes, err := a.All(ctx)
+	_m = pager.applyOrder(_m)
+	nodes, err := _m.All(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -328,29 +328,29 @@ func (a *AnnotationQuery) Paginate(
 var (
 	// AnnotationOrderFieldCreatedAt orders Annotation by created_at.
 	AnnotationOrderFieldCreatedAt = &AnnotationOrderField{
-		Value: func(a *Annotation) (ent.Value, error) {
-			return a.CreatedAt, nil
+		Value: func(_m *Annotation) (ent.Value, error) {
+			return _m.CreatedAt, nil
 		},
 		column: annotation.FieldCreatedAt,
 		toTerm: annotation.ByCreatedAt,
-		toCursor: func(a *Annotation) Cursor {
+		toCursor: func(_m *Annotation) Cursor {
 			return Cursor{
-				ID:    a.ID,
-				Value: a.CreatedAt,
+				ID:    _m.ID,
+				Value: _m.CreatedAt,
 			}
 		},
 	}
 	// AnnotationOrderFieldUpdatedAt orders Annotation by updated_at.
 	AnnotationOrderFieldUpdatedAt = &AnnotationOrderField{
-		Value: func(a *Annotation) (ent.Value, error) {
-			return a.UpdatedAt, nil
+		Value: func(_m *Annotation) (ent.Value, error) {
+			return _m.UpdatedAt, nil
 		},
 		column: annotation.FieldUpdatedAt,
 		toTerm: annotation.ByUpdatedAt,
-		toCursor: func(a *Annotation) Cursor {
+		toCursor: func(_m *Annotation) Cursor {
 			return Cursor{
-				ID:    a.ID,
-				Value: a.UpdatedAt,
+				ID:    _m.ID,
+				Value: _m.UpdatedAt,
 			}
 		},
 	}
@@ -409,25 +409,25 @@ type AnnotationOrder struct {
 var DefaultAnnotationOrder = &AnnotationOrder{
 	Direction: entgql.OrderDirectionAsc,
 	Field: &AnnotationOrderField{
-		Value: func(a *Annotation) (ent.Value, error) {
-			return a.ID, nil
+		Value: func(_m *Annotation) (ent.Value, error) {
+			return _m.ID, nil
 		},
 		column: annotation.FieldID,
 		toTerm: annotation.ByID,
-		toCursor: func(a *Annotation) Cursor {
-			return Cursor{ID: a.ID}
+		toCursor: func(_m *Annotation) Cursor {
+			return Cursor{ID: _m.ID}
 		},
 	},
 }
 
 // ToEdge converts Annotation into AnnotationEdge.
-func (a *Annotation) ToEdge(order *AnnotationOrder) *AnnotationEdge {
+func (_m *Annotation) ToEdge(order *AnnotationOrder) *AnnotationEdge {
 	if order == nil {
 		order = DefaultAnnotationOrder
 	}
 	return &AnnotationEdge{
-		Node:   a,
-		Cursor: order.Field.toCursor(a),
+		Node:   _m,
+		Cursor: order.Field.toCursor(_m),
 	}
 }
 
@@ -540,8 +540,8 @@ func (p *annotationnamespacePager) applyFilter(query *AnnotationNamespaceQuery) 
 	return query, nil
 }
 
-func (p *annotationnamespacePager) toCursor(an *AnnotationNamespace) Cursor {
-	return p.order.Field.toCursor(an)
+func (p *annotationnamespacePager) toCursor(_m *AnnotationNamespace) Cursor {
+	return p.order.Field.toCursor(_m)
 }
 
 func (p *annotationnamespacePager) applyCursors(query *AnnotationNamespaceQuery, after, before *Cursor) (*AnnotationNamespaceQuery, error) {
@@ -587,7 +587,7 @@ func (p *annotationnamespacePager) orderExpr(query *AnnotationNamespaceQuery) sq
 }
 
 // Paginate executes the query and returns a relay based cursor connection to AnnotationNamespace.
-func (an *AnnotationNamespaceQuery) Paginate(
+func (_m *AnnotationNamespaceQuery) Paginate(
 	ctx context.Context, after *Cursor, first *int,
 	before *Cursor, last *int, opts ...AnnotationNamespacePaginateOption,
 ) (*AnnotationNamespaceConnection, error) {
@@ -598,7 +598,7 @@ func (an *AnnotationNamespaceQuery) Paginate(
 	if err != nil {
 		return nil, err
 	}
-	if an, err = pager.applyFilter(an); err != nil {
+	if _m, err = pager.applyFilter(_m); err != nil {
 		return nil, err
 	}
 	conn := &AnnotationNamespaceConnection{Edges: []*AnnotationNamespaceEdge{}}
@@ -606,7 +606,7 @@ func (an *AnnotationNamespaceQuery) Paginate(
 	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
 		hasPagination := after != nil || first != nil || before != nil || last != nil
 		if hasPagination || ignoredEdges {
-			c := an.Clone()
+			c := _m.Clone()
 			c.ctx.Fields = nil
 			if conn.TotalCount, err = c.Count(ctx); err != nil {
 				return nil, err
@@ -618,20 +618,20 @@ func (an *AnnotationNamespaceQuery) Paginate(
 	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
 		return conn, nil
 	}
-	if an, err = pager.applyCursors(an, after, before); err != nil {
+	if _m, err = pager.applyCursors(_m, after, before); err != nil {
 		return nil, err
 	}
 	limit := paginateLimit(first, last)
 	if limit != 0 {
-		an.Limit(limit)
+		_m.Limit(limit)
 	}
 	if field := collectedField(ctx, edgesField, nodeField); field != nil {
-		if err := an.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+		if err := _m.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
 			return nil, err
 		}
 	}
-	an = pager.applyOrder(an)
-	nodes, err := an.All(ctx)
+	_m = pager.applyOrder(_m)
+	nodes, err := _m.All(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -642,85 +642,85 @@ func (an *AnnotationNamespaceQuery) Paginate(
 var (
 	// AnnotationNamespaceOrderFieldID orders AnnotationNamespace by id.
 	AnnotationNamespaceOrderFieldID = &AnnotationNamespaceOrderField{
-		Value: func(an *AnnotationNamespace) (ent.Value, error) {
-			return an.ID, nil
+		Value: func(_m *AnnotationNamespace) (ent.Value, error) {
+			return _m.ID, nil
 		},
 		column: annotationnamespace.FieldID,
 		toTerm: annotationnamespace.ByID,
-		toCursor: func(an *AnnotationNamespace) Cursor {
+		toCursor: func(_m *AnnotationNamespace) Cursor {
 			return Cursor{
-				ID:    an.ID,
-				Value: an.ID,
+				ID:    _m.ID,
+				Value: _m.ID,
 			}
 		},
 	}
 	// AnnotationNamespaceOrderFieldCreatedAt orders AnnotationNamespace by created_at.
 	AnnotationNamespaceOrderFieldCreatedAt = &AnnotationNamespaceOrderField{
-		Value: func(an *AnnotationNamespace) (ent.Value, error) {
-			return an.CreatedAt, nil
+		Value: func(_m *AnnotationNamespace) (ent.Value, error) {
+			return _m.CreatedAt, nil
 		},
 		column: annotationnamespace.FieldCreatedAt,
 		toTerm: annotationnamespace.ByCreatedAt,
-		toCursor: func(an *AnnotationNamespace) Cursor {
+		toCursor: func(_m *AnnotationNamespace) Cursor {
 			return Cursor{
-				ID:    an.ID,
-				Value: an.CreatedAt,
+				ID:    _m.ID,
+				Value: _m.CreatedAt,
 			}
 		},
 	}
 	// AnnotationNamespaceOrderFieldUpdatedAt orders AnnotationNamespace by updated_at.
 	AnnotationNamespaceOrderFieldUpdatedAt = &AnnotationNamespaceOrderField{
-		Value: func(an *AnnotationNamespace) (ent.Value, error) {
-			return an.UpdatedAt, nil
+		Value: func(_m *AnnotationNamespace) (ent.Value, error) {
+			return _m.UpdatedAt, nil
 		},
 		column: annotationnamespace.FieldUpdatedAt,
 		toTerm: annotationnamespace.ByUpdatedAt,
-		toCursor: func(an *AnnotationNamespace) Cursor {
+		toCursor: func(_m *AnnotationNamespace) Cursor {
 			return Cursor{
-				ID:    an.ID,
-				Value: an.UpdatedAt,
+				ID:    _m.ID,
+				Value: _m.UpdatedAt,
 			}
 		},
 	}
 	// AnnotationNamespaceOrderFieldName orders AnnotationNamespace by name.
 	AnnotationNamespaceOrderFieldName = &AnnotationNamespaceOrderField{
-		Value: func(an *AnnotationNamespace) (ent.Value, error) {
-			return an.Name, nil
+		Value: func(_m *AnnotationNamespace) (ent.Value, error) {
+			return _m.Name, nil
 		},
 		column: annotationnamespace.FieldName,
 		toTerm: annotationnamespace.ByName,
-		toCursor: func(an *AnnotationNamespace) Cursor {
+		toCursor: func(_m *AnnotationNamespace) Cursor {
 			return Cursor{
-				ID:    an.ID,
-				Value: an.Name,
+				ID:    _m.ID,
+				Value: _m.Name,
 			}
 		},
 	}
 	// AnnotationNamespaceOrderFieldOwnerID orders AnnotationNamespace by owner_id.
 	AnnotationNamespaceOrderFieldOwnerID = &AnnotationNamespaceOrderField{
-		Value: func(an *AnnotationNamespace) (ent.Value, error) {
-			return an.OwnerID, nil
+		Value: func(_m *AnnotationNamespace) (ent.Value, error) {
+			return _m.OwnerID, nil
 		},
 		column: annotationnamespace.FieldOwnerID,
 		toTerm: annotationnamespace.ByOwnerID,
-		toCursor: func(an *AnnotationNamespace) Cursor {
+		toCursor: func(_m *AnnotationNamespace) Cursor {
 			return Cursor{
-				ID:    an.ID,
-				Value: an.OwnerID,
+				ID:    _m.ID,
+				Value: _m.OwnerID,
 			}
 		},
 	}
 	// AnnotationNamespaceOrderFieldPrivate orders AnnotationNamespace by private.
 	AnnotationNamespaceOrderFieldPrivate = &AnnotationNamespaceOrderField{
-		Value: func(an *AnnotationNamespace) (ent.Value, error) {
-			return an.Private, nil
+		Value: func(_m *AnnotationNamespace) (ent.Value, error) {
+			return _m.Private, nil
 		},
 		column: annotationnamespace.FieldPrivate,
 		toTerm: annotationnamespace.ByPrivate,
-		toCursor: func(an *AnnotationNamespace) Cursor {
+		toCursor: func(_m *AnnotationNamespace) Cursor {
 			return Cursor{
-				ID:    an.ID,
-				Value: an.Private,
+				ID:    _m.ID,
+				Value: _m.Private,
 			}
 		},
 	}
@@ -795,25 +795,25 @@ type AnnotationNamespaceOrder struct {
 var DefaultAnnotationNamespaceOrder = &AnnotationNamespaceOrder{
 	Direction: entgql.OrderDirectionAsc,
 	Field: &AnnotationNamespaceOrderField{
-		Value: func(an *AnnotationNamespace) (ent.Value, error) {
-			return an.ID, nil
+		Value: func(_m *AnnotationNamespace) (ent.Value, error) {
+			return _m.ID, nil
 		},
 		column: annotationnamespace.FieldID,
 		toTerm: annotationnamespace.ByID,
-		toCursor: func(an *AnnotationNamespace) Cursor {
-			return Cursor{ID: an.ID}
+		toCursor: func(_m *AnnotationNamespace) Cursor {
+			return Cursor{ID: _m.ID}
 		},
 	},
 }
 
 // ToEdge converts AnnotationNamespace into AnnotationNamespaceEdge.
-func (an *AnnotationNamespace) ToEdge(order *AnnotationNamespaceOrder) *AnnotationNamespaceEdge {
+func (_m *AnnotationNamespace) ToEdge(order *AnnotationNamespaceOrder) *AnnotationNamespaceEdge {
 	if order == nil {
 		order = DefaultAnnotationNamespaceOrder
 	}
 	return &AnnotationNamespaceEdge{
-		Node:   an,
-		Cursor: order.Field.toCursor(an),
+		Node:   _m,
+		Cursor: order.Field.toCursor(_m),
 	}
 }
 
@@ -926,8 +926,8 @@ func (p *metadataPager) applyFilter(query *MetadataQuery) (*MetadataQuery, error
 	return query, nil
 }
 
-func (p *metadataPager) toCursor(m *Metadata) Cursor {
-	return p.order.Field.toCursor(m)
+func (p *metadataPager) toCursor(_m *Metadata) Cursor {
+	return p.order.Field.toCursor(_m)
 }
 
 func (p *metadataPager) applyCursors(query *MetadataQuery, after, before *Cursor) (*MetadataQuery, error) {
@@ -973,7 +973,7 @@ func (p *metadataPager) orderExpr(query *MetadataQuery) sql.Querier {
 }
 
 // Paginate executes the query and returns a relay based cursor connection to Metadata.
-func (m *MetadataQuery) Paginate(
+func (_m *MetadataQuery) Paginate(
 	ctx context.Context, after *Cursor, first *int,
 	before *Cursor, last *int, opts ...MetadataPaginateOption,
 ) (*MetadataConnection, error) {
@@ -984,7 +984,7 @@ func (m *MetadataQuery) Paginate(
 	if err != nil {
 		return nil, err
 	}
-	if m, err = pager.applyFilter(m); err != nil {
+	if _m, err = pager.applyFilter(_m); err != nil {
 		return nil, err
 	}
 	conn := &MetadataConnection{Edges: []*MetadataEdge{}}
@@ -992,7 +992,7 @@ func (m *MetadataQuery) Paginate(
 	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
 		hasPagination := after != nil || first != nil || before != nil || last != nil
 		if hasPagination || ignoredEdges {
-			c := m.Clone()
+			c := _m.Clone()
 			c.ctx.Fields = nil
 			if conn.TotalCount, err = c.Count(ctx); err != nil {
 				return nil, err
@@ -1004,20 +1004,20 @@ func (m *MetadataQuery) Paginate(
 	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
 		return conn, nil
 	}
-	if m, err = pager.applyCursors(m, after, before); err != nil {
+	if _m, err = pager.applyCursors(_m, after, before); err != nil {
 		return nil, err
 	}
 	limit := paginateLimit(first, last)
 	if limit != 0 {
-		m.Limit(limit)
+		_m.Limit(limit)
 	}
 	if field := collectedField(ctx, edgesField, nodeField); field != nil {
-		if err := m.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+		if err := _m.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
 			return nil, err
 		}
 	}
-	m = pager.applyOrder(m)
-	nodes, err := m.All(ctx)
+	_m = pager.applyOrder(_m)
+	nodes, err := _m.All(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1028,29 +1028,29 @@ func (m *MetadataQuery) Paginate(
 var (
 	// MetadataOrderFieldCreatedAt orders Metadata by created_at.
 	MetadataOrderFieldCreatedAt = &MetadataOrderField{
-		Value: func(m *Metadata) (ent.Value, error) {
-			return m.CreatedAt, nil
+		Value: func(_m *Metadata) (ent.Value, error) {
+			return _m.CreatedAt, nil
 		},
 		column: metadata.FieldCreatedAt,
 		toTerm: metadata.ByCreatedAt,
-		toCursor: func(m *Metadata) Cursor {
+		toCursor: func(_m *Metadata) Cursor {
 			return Cursor{
-				ID:    m.ID,
-				Value: m.CreatedAt,
+				ID:    _m.ID,
+				Value: _m.CreatedAt,
 			}
 		},
 	}
 	// MetadataOrderFieldUpdatedAt orders Metadata by updated_at.
 	MetadataOrderFieldUpdatedAt = &MetadataOrderField{
-		Value: func(m *Metadata) (ent.Value, error) {
-			return m.UpdatedAt, nil
+		Value: func(_m *Metadata) (ent.Value, error) {
+			return _m.UpdatedAt, nil
 		},
 		column: metadata.FieldUpdatedAt,
 		toTerm: metadata.ByUpdatedAt,
-		toCursor: func(m *Metadata) Cursor {
+		toCursor: func(_m *Metadata) Cursor {
 			return Cursor{
-				ID:    m.ID,
-				Value: m.UpdatedAt,
+				ID:    _m.ID,
+				Value: _m.UpdatedAt,
 			}
 		},
 	}
@@ -1109,25 +1109,25 @@ type MetadataOrder struct {
 var DefaultMetadataOrder = &MetadataOrder{
 	Direction: entgql.OrderDirectionAsc,
 	Field: &MetadataOrderField{
-		Value: func(m *Metadata) (ent.Value, error) {
-			return m.ID, nil
+		Value: func(_m *Metadata) (ent.Value, error) {
+			return _m.ID, nil
 		},
 		column: metadata.FieldID,
 		toTerm: metadata.ByID,
-		toCursor: func(m *Metadata) Cursor {
-			return Cursor{ID: m.ID}
+		toCursor: func(_m *Metadata) Cursor {
+			return Cursor{ID: _m.ID}
 		},
 	},
 }
 
 // ToEdge converts Metadata into MetadataEdge.
-func (m *Metadata) ToEdge(order *MetadataOrder) *MetadataEdge {
+func (_m *Metadata) ToEdge(order *MetadataOrder) *MetadataEdge {
 	if order == nil {
 		order = DefaultMetadataOrder
 	}
 	return &MetadataEdge{
-		Node:   m,
-		Cursor: order.Field.toCursor(m),
+		Node:   _m,
+		Cursor: order.Field.toCursor(_m),
 	}
 }
 
@@ -1240,8 +1240,8 @@ func (p *statusPager) applyFilter(query *StatusQuery) (*StatusQuery, error) {
 	return query, nil
 }
 
-func (p *statusPager) toCursor(s *Status) Cursor {
-	return p.order.Field.toCursor(s)
+func (p *statusPager) toCursor(_m *Status) Cursor {
+	return p.order.Field.toCursor(_m)
 }
 
 func (p *statusPager) applyCursors(query *StatusQuery, after, before *Cursor) (*StatusQuery, error) {
@@ -1287,7 +1287,7 @@ func (p *statusPager) orderExpr(query *StatusQuery) sql.Querier {
 }
 
 // Paginate executes the query and returns a relay based cursor connection to Status.
-func (s *StatusQuery) Paginate(
+func (_m *StatusQuery) Paginate(
 	ctx context.Context, after *Cursor, first *int,
 	before *Cursor, last *int, opts ...StatusPaginateOption,
 ) (*StatusConnection, error) {
@@ -1298,7 +1298,7 @@ func (s *StatusQuery) Paginate(
 	if err != nil {
 		return nil, err
 	}
-	if s, err = pager.applyFilter(s); err != nil {
+	if _m, err = pager.applyFilter(_m); err != nil {
 		return nil, err
 	}
 	conn := &StatusConnection{Edges: []*StatusEdge{}}
@@ -1306,7 +1306,7 @@ func (s *StatusQuery) Paginate(
 	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
 		hasPagination := after != nil || first != nil || before != nil || last != nil
 		if hasPagination || ignoredEdges {
-			c := s.Clone()
+			c := _m.Clone()
 			c.ctx.Fields = nil
 			if conn.TotalCount, err = c.Count(ctx); err != nil {
 				return nil, err
@@ -1318,20 +1318,20 @@ func (s *StatusQuery) Paginate(
 	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
 		return conn, nil
 	}
-	if s, err = pager.applyCursors(s, after, before); err != nil {
+	if _m, err = pager.applyCursors(_m, after, before); err != nil {
 		return nil, err
 	}
 	limit := paginateLimit(first, last)
 	if limit != 0 {
-		s.Limit(limit)
+		_m.Limit(limit)
 	}
 	if field := collectedField(ctx, edgesField, nodeField); field != nil {
-		if err := s.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+		if err := _m.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
 			return nil, err
 		}
 	}
-	s = pager.applyOrder(s)
-	nodes, err := s.All(ctx)
+	_m = pager.applyOrder(_m)
+	nodes, err := _m.All(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1342,29 +1342,29 @@ func (s *StatusQuery) Paginate(
 var (
 	// StatusOrderFieldCreatedAt orders Status by created_at.
 	StatusOrderFieldCreatedAt = &StatusOrderField{
-		Value: func(s *Status) (ent.Value, error) {
-			return s.CreatedAt, nil
+		Value: func(_m *Status) (ent.Value, error) {
+			return _m.CreatedAt, nil
 		},
 		column: status.FieldCreatedAt,
 		toTerm: status.ByCreatedAt,
-		toCursor: func(s *Status) Cursor {
+		toCursor: func(_m *Status) Cursor {
 			return Cursor{
-				ID:    s.ID,
-				Value: s.CreatedAt,
+				ID:    _m.ID,
+				Value: _m.CreatedAt,
 			}
 		},
 	}
 	// StatusOrderFieldUpdatedAt orders Status by updated_at.
 	StatusOrderFieldUpdatedAt = &StatusOrderField{
-		Value: func(s *Status) (ent.Value, error) {
-			return s.UpdatedAt, nil
+		Value: func(_m *Status) (ent.Value, error) {
+			return _m.UpdatedAt, nil
 		},
 		column: status.FieldUpdatedAt,
 		toTerm: status.ByUpdatedAt,
-		toCursor: func(s *Status) Cursor {
+		toCursor: func(_m *Status) Cursor {
 			return Cursor{
-				ID:    s.ID,
-				Value: s.UpdatedAt,
+				ID:    _m.ID,
+				Value: _m.UpdatedAt,
 			}
 		},
 	}
@@ -1423,25 +1423,25 @@ type StatusOrder struct {
 var DefaultStatusOrder = &StatusOrder{
 	Direction: entgql.OrderDirectionAsc,
 	Field: &StatusOrderField{
-		Value: func(s *Status) (ent.Value, error) {
-			return s.ID, nil
+		Value: func(_m *Status) (ent.Value, error) {
+			return _m.ID, nil
 		},
 		column: status.FieldID,
 		toTerm: status.ByID,
-		toCursor: func(s *Status) Cursor {
-			return Cursor{ID: s.ID}
+		toCursor: func(_m *Status) Cursor {
+			return Cursor{ID: _m.ID}
 		},
 	},
 }
 
 // ToEdge converts Status into StatusEdge.
-func (s *Status) ToEdge(order *StatusOrder) *StatusEdge {
+func (_m *Status) ToEdge(order *StatusOrder) *StatusEdge {
 	if order == nil {
 		order = DefaultStatusOrder
 	}
 	return &StatusEdge{
-		Node:   s,
-		Cursor: order.Field.toCursor(s),
+		Node:   _m,
+		Cursor: order.Field.toCursor(_m),
 	}
 }
 
@@ -1554,8 +1554,8 @@ func (p *statusnamespacePager) applyFilter(query *StatusNamespaceQuery) (*Status
 	return query, nil
 }
 
-func (p *statusnamespacePager) toCursor(sn *StatusNamespace) Cursor {
-	return p.order.Field.toCursor(sn)
+func (p *statusnamespacePager) toCursor(_m *StatusNamespace) Cursor {
+	return p.order.Field.toCursor(_m)
 }
 
 func (p *statusnamespacePager) applyCursors(query *StatusNamespaceQuery, after, before *Cursor) (*StatusNamespaceQuery, error) {
@@ -1601,7 +1601,7 @@ func (p *statusnamespacePager) orderExpr(query *StatusNamespaceQuery) sql.Querie
 }
 
 // Paginate executes the query and returns a relay based cursor connection to StatusNamespace.
-func (sn *StatusNamespaceQuery) Paginate(
+func (_m *StatusNamespaceQuery) Paginate(
 	ctx context.Context, after *Cursor, first *int,
 	before *Cursor, last *int, opts ...StatusNamespacePaginateOption,
 ) (*StatusNamespaceConnection, error) {
@@ -1612,7 +1612,7 @@ func (sn *StatusNamespaceQuery) Paginate(
 	if err != nil {
 		return nil, err
 	}
-	if sn, err = pager.applyFilter(sn); err != nil {
+	if _m, err = pager.applyFilter(_m); err != nil {
 		return nil, err
 	}
 	conn := &StatusNamespaceConnection{Edges: []*StatusNamespaceEdge{}}
@@ -1620,7 +1620,7 @@ func (sn *StatusNamespaceQuery) Paginate(
 	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
 		hasPagination := after != nil || first != nil || before != nil || last != nil
 		if hasPagination || ignoredEdges {
-			c := sn.Clone()
+			c := _m.Clone()
 			c.ctx.Fields = nil
 			if conn.TotalCount, err = c.Count(ctx); err != nil {
 				return nil, err
@@ -1632,20 +1632,20 @@ func (sn *StatusNamespaceQuery) Paginate(
 	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
 		return conn, nil
 	}
-	if sn, err = pager.applyCursors(sn, after, before); err != nil {
+	if _m, err = pager.applyCursors(_m, after, before); err != nil {
 		return nil, err
 	}
 	limit := paginateLimit(first, last)
 	if limit != 0 {
-		sn.Limit(limit)
+		_m.Limit(limit)
 	}
 	if field := collectedField(ctx, edgesField, nodeField); field != nil {
-		if err := sn.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+		if err := _m.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
 			return nil, err
 		}
 	}
-	sn = pager.applyOrder(sn)
-	nodes, err := sn.All(ctx)
+	_m = pager.applyOrder(_m)
+	nodes, err := _m.All(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1656,85 +1656,85 @@ func (sn *StatusNamespaceQuery) Paginate(
 var (
 	// StatusNamespaceOrderFieldID orders StatusNamespace by id.
 	StatusNamespaceOrderFieldID = &StatusNamespaceOrderField{
-		Value: func(sn *StatusNamespace) (ent.Value, error) {
-			return sn.ID, nil
+		Value: func(_m *StatusNamespace) (ent.Value, error) {
+			return _m.ID, nil
 		},
 		column: statusnamespace.FieldID,
 		toTerm: statusnamespace.ByID,
-		toCursor: func(sn *StatusNamespace) Cursor {
+		toCursor: func(_m *StatusNamespace) Cursor {
 			return Cursor{
-				ID:    sn.ID,
-				Value: sn.ID,
+				ID:    _m.ID,
+				Value: _m.ID,
 			}
 		},
 	}
 	// StatusNamespaceOrderFieldCreatedAt orders StatusNamespace by created_at.
 	StatusNamespaceOrderFieldCreatedAt = &StatusNamespaceOrderField{
-		Value: func(sn *StatusNamespace) (ent.Value, error) {
-			return sn.CreatedAt, nil
+		Value: func(_m *StatusNamespace) (ent.Value, error) {
+			return _m.CreatedAt, nil
 		},
 		column: statusnamespace.FieldCreatedAt,
 		toTerm: statusnamespace.ByCreatedAt,
-		toCursor: func(sn *StatusNamespace) Cursor {
+		toCursor: func(_m *StatusNamespace) Cursor {
 			return Cursor{
-				ID:    sn.ID,
-				Value: sn.CreatedAt,
+				ID:    _m.ID,
+				Value: _m.CreatedAt,
 			}
 		},
 	}
 	// StatusNamespaceOrderFieldUpdatedAt orders StatusNamespace by updated_at.
 	StatusNamespaceOrderFieldUpdatedAt = &StatusNamespaceOrderField{
-		Value: func(sn *StatusNamespace) (ent.Value, error) {
-			return sn.UpdatedAt, nil
+		Value: func(_m *StatusNamespace) (ent.Value, error) {
+			return _m.UpdatedAt, nil
 		},
 		column: statusnamespace.FieldUpdatedAt,
 		toTerm: statusnamespace.ByUpdatedAt,
-		toCursor: func(sn *StatusNamespace) Cursor {
+		toCursor: func(_m *StatusNamespace) Cursor {
 			return Cursor{
-				ID:    sn.ID,
-				Value: sn.UpdatedAt,
+				ID:    _m.ID,
+				Value: _m.UpdatedAt,
 			}
 		},
 	}
 	// StatusNamespaceOrderFieldName orders StatusNamespace by name.
 	StatusNamespaceOrderFieldName = &StatusNamespaceOrderField{
-		Value: func(sn *StatusNamespace) (ent.Value, error) {
-			return sn.Name, nil
+		Value: func(_m *StatusNamespace) (ent.Value, error) {
+			return _m.Name, nil
 		},
 		column: statusnamespace.FieldName,
 		toTerm: statusnamespace.ByName,
-		toCursor: func(sn *StatusNamespace) Cursor {
+		toCursor: func(_m *StatusNamespace) Cursor {
 			return Cursor{
-				ID:    sn.ID,
-				Value: sn.Name,
+				ID:    _m.ID,
+				Value: _m.Name,
 			}
 		},
 	}
 	// StatusNamespaceOrderFieldResourceProviderID orders StatusNamespace by resource_provider_id.
 	StatusNamespaceOrderFieldResourceProviderID = &StatusNamespaceOrderField{
-		Value: func(sn *StatusNamespace) (ent.Value, error) {
-			return sn.ResourceProviderID, nil
+		Value: func(_m *StatusNamespace) (ent.Value, error) {
+			return _m.ResourceProviderID, nil
 		},
 		column: statusnamespace.FieldResourceProviderID,
 		toTerm: statusnamespace.ByResourceProviderID,
-		toCursor: func(sn *StatusNamespace) Cursor {
+		toCursor: func(_m *StatusNamespace) Cursor {
 			return Cursor{
-				ID:    sn.ID,
-				Value: sn.ResourceProviderID,
+				ID:    _m.ID,
+				Value: _m.ResourceProviderID,
 			}
 		},
 	}
 	// StatusNamespaceOrderFieldPrivate orders StatusNamespace by private.
 	StatusNamespaceOrderFieldPrivate = &StatusNamespaceOrderField{
-		Value: func(sn *StatusNamespace) (ent.Value, error) {
-			return sn.Private, nil
+		Value: func(_m *StatusNamespace) (ent.Value, error) {
+			return _m.Private, nil
 		},
 		column: statusnamespace.FieldPrivate,
 		toTerm: statusnamespace.ByPrivate,
-		toCursor: func(sn *StatusNamespace) Cursor {
+		toCursor: func(_m *StatusNamespace) Cursor {
 			return Cursor{
-				ID:    sn.ID,
-				Value: sn.Private,
+				ID:    _m.ID,
+				Value: _m.Private,
 			}
 		},
 	}
@@ -1809,24 +1809,24 @@ type StatusNamespaceOrder struct {
 var DefaultStatusNamespaceOrder = &StatusNamespaceOrder{
 	Direction: entgql.OrderDirectionAsc,
 	Field: &StatusNamespaceOrderField{
-		Value: func(sn *StatusNamespace) (ent.Value, error) {
-			return sn.ID, nil
+		Value: func(_m *StatusNamespace) (ent.Value, error) {
+			return _m.ID, nil
 		},
 		column: statusnamespace.FieldID,
 		toTerm: statusnamespace.ByID,
-		toCursor: func(sn *StatusNamespace) Cursor {
-			return Cursor{ID: sn.ID}
+		toCursor: func(_m *StatusNamespace) Cursor {
+			return Cursor{ID: _m.ID}
 		},
 	},
 }
 
 // ToEdge converts StatusNamespace into StatusNamespaceEdge.
-func (sn *StatusNamespace) ToEdge(order *StatusNamespaceOrder) *StatusNamespaceEdge {
+func (_m *StatusNamespace) ToEdge(order *StatusNamespaceOrder) *StatusNamespaceEdge {
 	if order == nil {
 		order = DefaultStatusNamespaceOrder
 	}
 	return &StatusNamespaceEdge{
-		Node:   sn,
-		Cursor: order.Field.toCursor(sn),
+		Node:   _m,
+		Cursor: order.Field.toCursor(_m),
 	}
 }

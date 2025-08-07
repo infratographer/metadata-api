@@ -93,7 +93,7 @@ func (*AnnotationNamespace) scanValues(columns []string) ([]any, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the AnnotationNamespace fields.
-func (an *AnnotationNamespace) assignValues(columns []string, values []any) error {
+func (_m *AnnotationNamespace) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -103,40 +103,40 @@ func (an *AnnotationNamespace) assignValues(columns []string, values []any) erro
 			if value, ok := values[i].(*gidx.PrefixedID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
-				an.ID = *value
+				_m.ID = *value
 			}
 		case annotationnamespace.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
-				an.CreatedAt = value.Time
+				_m.CreatedAt = value.Time
 			}
 		case annotationnamespace.FieldUpdatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
 			} else if value.Valid {
-				an.UpdatedAt = value.Time
+				_m.UpdatedAt = value.Time
 			}
 		case annotationnamespace.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
-				an.Name = value.String
+				_m.Name = value.String
 			}
 		case annotationnamespace.FieldOwnerID:
 			if value, ok := values[i].(*gidx.PrefixedID); !ok {
 				return fmt.Errorf("unexpected type %T for field owner_id", values[i])
 			} else if value != nil {
-				an.OwnerID = *value
+				_m.OwnerID = *value
 			}
 		case annotationnamespace.FieldPrivate:
 			if value, ok := values[i].(*sql.NullBool); !ok {
 				return fmt.Errorf("unexpected type %T for field private", values[i])
 			} else if value.Valid {
-				an.Private = value.Bool
+				_m.Private = value.Bool
 			}
 		default:
-			an.selectValues.Set(columns[i], values[i])
+			_m.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
@@ -144,80 +144,80 @@ func (an *AnnotationNamespace) assignValues(columns []string, values []any) erro
 
 // Value returns the ent.Value that was dynamically selected and assigned to the AnnotationNamespace.
 // This includes values selected through modifiers, order, etc.
-func (an *AnnotationNamespace) Value(name string) (ent.Value, error) {
-	return an.selectValues.Get(name)
+func (_m *AnnotationNamespace) Value(name string) (ent.Value, error) {
+	return _m.selectValues.Get(name)
 }
 
 // QueryAnnotations queries the "annotations" edge of the AnnotationNamespace entity.
-func (an *AnnotationNamespace) QueryAnnotations() *AnnotationQuery {
-	return NewAnnotationNamespaceClient(an.config).QueryAnnotations(an)
+func (_m *AnnotationNamespace) QueryAnnotations() *AnnotationQuery {
+	return NewAnnotationNamespaceClient(_m.config).QueryAnnotations(_m)
 }
 
 // Update returns a builder for updating this AnnotationNamespace.
 // Note that you need to call AnnotationNamespace.Unwrap() before calling this method if this AnnotationNamespace
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (an *AnnotationNamespace) Update() *AnnotationNamespaceUpdateOne {
-	return NewAnnotationNamespaceClient(an.config).UpdateOne(an)
+func (_m *AnnotationNamespace) Update() *AnnotationNamespaceUpdateOne {
+	return NewAnnotationNamespaceClient(_m.config).UpdateOne(_m)
 }
 
 // Unwrap unwraps the AnnotationNamespace entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (an *AnnotationNamespace) Unwrap() *AnnotationNamespace {
-	_tx, ok := an.config.driver.(*txDriver)
+func (_m *AnnotationNamespace) Unwrap() *AnnotationNamespace {
+	_tx, ok := _m.config.driver.(*txDriver)
 	if !ok {
 		panic("generated: AnnotationNamespace is not a transactional entity")
 	}
-	an.config.driver = _tx.drv
-	return an
+	_m.config.driver = _tx.drv
+	return _m
 }
 
 // String implements the fmt.Stringer.
-func (an *AnnotationNamespace) String() string {
+func (_m *AnnotationNamespace) String() string {
 	var builder strings.Builder
 	builder.WriteString("AnnotationNamespace(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", an.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
 	builder.WriteString("created_at=")
-	builder.WriteString(an.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("updated_at=")
-	builder.WriteString(an.UpdatedAt.Format(time.ANSIC))
+	builder.WriteString(_m.UpdatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("name=")
-	builder.WriteString(an.Name)
+	builder.WriteString(_m.Name)
 	builder.WriteString(", ")
 	builder.WriteString("owner_id=")
-	builder.WriteString(fmt.Sprintf("%v", an.OwnerID))
+	builder.WriteString(fmt.Sprintf("%v", _m.OwnerID))
 	builder.WriteString(", ")
 	builder.WriteString("private=")
-	builder.WriteString(fmt.Sprintf("%v", an.Private))
+	builder.WriteString(fmt.Sprintf("%v", _m.Private))
 	builder.WriteByte(')')
 	return builder.String()
 }
 
 // IsEntity implement fedruntime.Entity
-func (an AnnotationNamespace) IsEntity() {}
+func (_m AnnotationNamespace) IsEntity() {}
 
 // NamedAnnotations returns the Annotations named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (an *AnnotationNamespace) NamedAnnotations(name string) ([]*Annotation, error) {
-	if an.Edges.namedAnnotations == nil {
+func (_m *AnnotationNamespace) NamedAnnotations(name string) ([]*Annotation, error) {
+	if _m.Edges.namedAnnotations == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
-	nodes, ok := an.Edges.namedAnnotations[name]
+	nodes, ok := _m.Edges.namedAnnotations[name]
 	if !ok {
 		return nil, &NotLoadedError{edge: name}
 	}
 	return nodes, nil
 }
 
-func (an *AnnotationNamespace) appendNamedAnnotations(name string, edges ...*Annotation) {
-	if an.Edges.namedAnnotations == nil {
-		an.Edges.namedAnnotations = make(map[string][]*Annotation)
+func (_m *AnnotationNamespace) appendNamedAnnotations(name string, edges ...*Annotation) {
+	if _m.Edges.namedAnnotations == nil {
+		_m.Edges.namedAnnotations = make(map[string][]*Annotation)
 	}
 	if len(edges) == 0 {
-		an.Edges.namedAnnotations[name] = []*Annotation{}
+		_m.Edges.namedAnnotations[name] = []*Annotation{}
 	} else {
-		an.Edges.namedAnnotations[name] = append(an.Edges.namedAnnotations[name], edges...)
+		_m.Edges.namedAnnotations[name] = append(_m.Edges.namedAnnotations[name], edges...)
 	}
 }
 

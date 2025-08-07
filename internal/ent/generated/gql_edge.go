@@ -22,35 +22,35 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 )
 
-func (a *Annotation) Namespace(ctx context.Context) (*AnnotationNamespace, error) {
-	result, err := a.Edges.NamespaceOrErr()
+func (_m *Annotation) Namespace(ctx context.Context) (*AnnotationNamespace, error) {
+	result, err := _m.Edges.NamespaceOrErr()
 	if IsNotLoaded(err) {
-		result, err = a.QueryNamespace().Only(ctx)
+		result, err = _m.QueryNamespace().Only(ctx)
 	}
 	return result, err
 }
 
-func (a *Annotation) Metadata(ctx context.Context) (*Metadata, error) {
-	result, err := a.Edges.MetadataOrErr()
+func (_m *Annotation) Metadata(ctx context.Context) (*Metadata, error) {
+	result, err := _m.Edges.MetadataOrErr()
 	if IsNotLoaded(err) {
-		result, err = a.QueryMetadata().Only(ctx)
+		result, err = _m.QueryMetadata().Only(ctx)
 	}
 	return result, err
 }
 
-func (an *AnnotationNamespace) Annotations(ctx context.Context) (result []*Annotation, err error) {
+func (_m *AnnotationNamespace) Annotations(ctx context.Context) (result []*Annotation, err error) {
 	if fc := graphql.GetFieldContext(ctx); fc != nil && fc.Field.Alias != "" {
-		result, err = an.NamedAnnotations(graphql.GetFieldContext(ctx).Field.Alias)
+		result, err = _m.NamedAnnotations(graphql.GetFieldContext(ctx).Field.Alias)
 	} else {
-		result, err = an.Edges.AnnotationsOrErr()
+		result, err = _m.Edges.AnnotationsOrErr()
 	}
 	if IsNotLoaded(err) {
-		result, err = an.QueryAnnotations().All(ctx)
+		result, err = _m.QueryAnnotations().All(ctx)
 	}
 	return result, err
 }
 
-func (m *Metadata) Annotations(
+func (_m *Metadata) Annotations(
 	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy *AnnotationOrder, where *AnnotationWhereInput,
 ) (*AnnotationConnection, error) {
 	opts := []AnnotationPaginateOption{
@@ -58,8 +58,8 @@ func (m *Metadata) Annotations(
 		WithAnnotationFilter(where.Filter),
 	}
 	alias := graphql.GetFieldContext(ctx).Field.Alias
-	totalCount, hasTotalCount := m.Edges.totalCount[0][alias]
-	if nodes, err := m.NamedAnnotations(alias); err == nil || hasTotalCount {
+	totalCount, hasTotalCount := _m.Edges.totalCount[0][alias]
+	if nodes, err := _m.NamedAnnotations(alias); err == nil || hasTotalCount {
 		pager, err := newAnnotationPager(opts, last != nil)
 		if err != nil {
 			return nil, err
@@ -68,10 +68,10 @@ func (m *Metadata) Annotations(
 		conn.build(nodes, pager, after, first, before, last)
 		return conn, nil
 	}
-	return m.QueryAnnotations().Paginate(ctx, after, first, before, last, opts...)
+	return _m.QueryAnnotations().Paginate(ctx, after, first, before, last, opts...)
 }
 
-func (m *Metadata) Statuses(
+func (_m *Metadata) Statuses(
 	ctx context.Context, after *Cursor, first *int, before *Cursor, last *int, orderBy *StatusOrder, where *StatusWhereInput,
 ) (*StatusConnection, error) {
 	opts := []StatusPaginateOption{
@@ -79,8 +79,8 @@ func (m *Metadata) Statuses(
 		WithStatusFilter(where.Filter),
 	}
 	alias := graphql.GetFieldContext(ctx).Field.Alias
-	totalCount, hasTotalCount := m.Edges.totalCount[1][alias]
-	if nodes, err := m.NamedStatuses(alias); err == nil || hasTotalCount {
+	totalCount, hasTotalCount := _m.Edges.totalCount[1][alias]
+	if nodes, err := _m.NamedStatuses(alias); err == nil || hasTotalCount {
 		pager, err := newStatusPager(opts, last != nil)
 		if err != nil {
 			return nil, err
@@ -89,21 +89,21 @@ func (m *Metadata) Statuses(
 		conn.build(nodes, pager, after, first, before, last)
 		return conn, nil
 	}
-	return m.QueryStatuses().Paginate(ctx, after, first, before, last, opts...)
+	return _m.QueryStatuses().Paginate(ctx, after, first, before, last, opts...)
 }
 
-func (s *Status) Namespace(ctx context.Context) (*StatusNamespace, error) {
-	result, err := s.Edges.NamespaceOrErr()
+func (_m *Status) Namespace(ctx context.Context) (*StatusNamespace, error) {
+	result, err := _m.Edges.NamespaceOrErr()
 	if IsNotLoaded(err) {
-		result, err = s.QueryNamespace().Only(ctx)
+		result, err = _m.QueryNamespace().Only(ctx)
 	}
 	return result, err
 }
 
-func (s *Status) Metadata(ctx context.Context) (*Metadata, error) {
-	result, err := s.Edges.MetadataOrErr()
+func (_m *Status) Metadata(ctx context.Context) (*Metadata, error) {
+	result, err := _m.Edges.MetadataOrErr()
 	if IsNotLoaded(err) {
-		result, err = s.QueryMetadata().Only(ctx)
+		result, err = _m.QueryMetadata().Only(ctx)
 	}
 	return result, err
 }

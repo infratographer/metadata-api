@@ -97,7 +97,7 @@ func (*Metadata) scanValues(columns []string) ([]any, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the Metadata fields.
-func (m *Metadata) assignValues(columns []string, values []any) error {
+func (_m *Metadata) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -107,28 +107,28 @@ func (m *Metadata) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*gidx.PrefixedID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
-				m.ID = *value
+				_m.ID = *value
 			}
 		case metadata.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
-				m.CreatedAt = value.Time
+				_m.CreatedAt = value.Time
 			}
 		case metadata.FieldUpdatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
 			} else if value.Valid {
-				m.UpdatedAt = value.Time
+				_m.UpdatedAt = value.Time
 			}
 		case metadata.FieldNodeID:
 			if value, ok := values[i].(*gidx.PrefixedID); !ok {
 				return fmt.Errorf("unexpected type %T for field node_id", values[i])
 			} else if value != nil {
-				m.NodeID = *value
+				_m.NodeID = *value
 			}
 		default:
-			m.selectValues.Set(columns[i], values[i])
+			_m.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
@@ -136,103 +136,103 @@ func (m *Metadata) assignValues(columns []string, values []any) error {
 
 // Value returns the ent.Value that was dynamically selected and assigned to the Metadata.
 // This includes values selected through modifiers, order, etc.
-func (m *Metadata) Value(name string) (ent.Value, error) {
-	return m.selectValues.Get(name)
+func (_m *Metadata) Value(name string) (ent.Value, error) {
+	return _m.selectValues.Get(name)
 }
 
 // QueryAnnotations queries the "annotations" edge of the Metadata entity.
-func (m *Metadata) QueryAnnotations() *AnnotationQuery {
-	return NewMetadataClient(m.config).QueryAnnotations(m)
+func (_m *Metadata) QueryAnnotations() *AnnotationQuery {
+	return NewMetadataClient(_m.config).QueryAnnotations(_m)
 }
 
 // QueryStatuses queries the "statuses" edge of the Metadata entity.
-func (m *Metadata) QueryStatuses() *StatusQuery {
-	return NewMetadataClient(m.config).QueryStatuses(m)
+func (_m *Metadata) QueryStatuses() *StatusQuery {
+	return NewMetadataClient(_m.config).QueryStatuses(_m)
 }
 
 // Update returns a builder for updating this Metadata.
 // Note that you need to call Metadata.Unwrap() before calling this method if this Metadata
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (m *Metadata) Update() *MetadataUpdateOne {
-	return NewMetadataClient(m.config).UpdateOne(m)
+func (_m *Metadata) Update() *MetadataUpdateOne {
+	return NewMetadataClient(_m.config).UpdateOne(_m)
 }
 
 // Unwrap unwraps the Metadata entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (m *Metadata) Unwrap() *Metadata {
-	_tx, ok := m.config.driver.(*txDriver)
+func (_m *Metadata) Unwrap() *Metadata {
+	_tx, ok := _m.config.driver.(*txDriver)
 	if !ok {
 		panic("generated: Metadata is not a transactional entity")
 	}
-	m.config.driver = _tx.drv
-	return m
+	_m.config.driver = _tx.drv
+	return _m
 }
 
 // String implements the fmt.Stringer.
-func (m *Metadata) String() string {
+func (_m *Metadata) String() string {
 	var builder strings.Builder
 	builder.WriteString("Metadata(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", m.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
 	builder.WriteString("created_at=")
-	builder.WriteString(m.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("updated_at=")
-	builder.WriteString(m.UpdatedAt.Format(time.ANSIC))
+	builder.WriteString(_m.UpdatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("node_id=")
-	builder.WriteString(fmt.Sprintf("%v", m.NodeID))
+	builder.WriteString(fmt.Sprintf("%v", _m.NodeID))
 	builder.WriteByte(')')
 	return builder.String()
 }
 
 // IsEntity implement fedruntime.Entity
-func (m Metadata) IsEntity() {}
+func (_m Metadata) IsEntity() {}
 
 // NamedAnnotations returns the Annotations named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (m *Metadata) NamedAnnotations(name string) ([]*Annotation, error) {
-	if m.Edges.namedAnnotations == nil {
+func (_m *Metadata) NamedAnnotations(name string) ([]*Annotation, error) {
+	if _m.Edges.namedAnnotations == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
-	nodes, ok := m.Edges.namedAnnotations[name]
+	nodes, ok := _m.Edges.namedAnnotations[name]
 	if !ok {
 		return nil, &NotLoadedError{edge: name}
 	}
 	return nodes, nil
 }
 
-func (m *Metadata) appendNamedAnnotations(name string, edges ...*Annotation) {
-	if m.Edges.namedAnnotations == nil {
-		m.Edges.namedAnnotations = make(map[string][]*Annotation)
+func (_m *Metadata) appendNamedAnnotations(name string, edges ...*Annotation) {
+	if _m.Edges.namedAnnotations == nil {
+		_m.Edges.namedAnnotations = make(map[string][]*Annotation)
 	}
 	if len(edges) == 0 {
-		m.Edges.namedAnnotations[name] = []*Annotation{}
+		_m.Edges.namedAnnotations[name] = []*Annotation{}
 	} else {
-		m.Edges.namedAnnotations[name] = append(m.Edges.namedAnnotations[name], edges...)
+		_m.Edges.namedAnnotations[name] = append(_m.Edges.namedAnnotations[name], edges...)
 	}
 }
 
 // NamedStatuses returns the Statuses named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (m *Metadata) NamedStatuses(name string) ([]*Status, error) {
-	if m.Edges.namedStatuses == nil {
+func (_m *Metadata) NamedStatuses(name string) ([]*Status, error) {
+	if _m.Edges.namedStatuses == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
-	nodes, ok := m.Edges.namedStatuses[name]
+	nodes, ok := _m.Edges.namedStatuses[name]
 	if !ok {
 		return nil, &NotLoadedError{edge: name}
 	}
 	return nodes, nil
 }
 
-func (m *Metadata) appendNamedStatuses(name string, edges ...*Status) {
-	if m.Edges.namedStatuses == nil {
-		m.Edges.namedStatuses = make(map[string][]*Status)
+func (_m *Metadata) appendNamedStatuses(name string, edges ...*Status) {
+	if _m.Edges.namedStatuses == nil {
+		_m.Edges.namedStatuses = make(map[string][]*Status)
 	}
 	if len(edges) == 0 {
-		m.Edges.namedStatuses[name] = []*Status{}
+		_m.Edges.namedStatuses[name] = []*Status{}
 	} else {
-		m.Edges.namedStatuses[name] = append(m.Edges.namedStatuses[name], edges...)
+		_m.Edges.namedStatuses[name] = append(_m.Edges.namedStatuses[name], edges...)
 	}
 }
 

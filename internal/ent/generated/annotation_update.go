@@ -38,37 +38,37 @@ type AnnotationUpdate struct {
 }
 
 // Where appends a list predicates to the AnnotationUpdate builder.
-func (au *AnnotationUpdate) Where(ps ...predicate.Annotation) *AnnotationUpdate {
-	au.mutation.Where(ps...)
-	return au
+func (_u *AnnotationUpdate) Where(ps ...predicate.Annotation) *AnnotationUpdate {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // SetData sets the "data" field.
-func (au *AnnotationUpdate) SetData(jm json.RawMessage) *AnnotationUpdate {
-	au.mutation.SetData(jm)
-	return au
+func (_u *AnnotationUpdate) SetData(v json.RawMessage) *AnnotationUpdate {
+	_u.mutation.SetData(v)
+	return _u
 }
 
-// AppendData appends jm to the "data" field.
-func (au *AnnotationUpdate) AppendData(jm json.RawMessage) *AnnotationUpdate {
-	au.mutation.AppendData(jm)
-	return au
+// AppendData appends value to the "data" field.
+func (_u *AnnotationUpdate) AppendData(v json.RawMessage) *AnnotationUpdate {
+	_u.mutation.AppendData(v)
+	return _u
 }
 
 // Mutation returns the AnnotationMutation object of the builder.
-func (au *AnnotationUpdate) Mutation() *AnnotationMutation {
-	return au.mutation
+func (_u *AnnotationUpdate) Mutation() *AnnotationMutation {
+	return _u.mutation
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
-func (au *AnnotationUpdate) Save(ctx context.Context) (int, error) {
-	au.defaults()
-	return withHooks(ctx, au.sqlSave, au.mutation, au.hooks)
+func (_u *AnnotationUpdate) Save(ctx context.Context) (int, error) {
+	_u.defaults()
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (au *AnnotationUpdate) SaveX(ctx context.Context) int {
-	affected, err := au.Save(ctx)
+func (_u *AnnotationUpdate) SaveX(ctx context.Context) int {
+	affected, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -76,61 +76,61 @@ func (au *AnnotationUpdate) SaveX(ctx context.Context) int {
 }
 
 // Exec executes the query.
-func (au *AnnotationUpdate) Exec(ctx context.Context) error {
-	_, err := au.Save(ctx)
+func (_u *AnnotationUpdate) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (au *AnnotationUpdate) ExecX(ctx context.Context) {
-	if err := au.Exec(ctx); err != nil {
+func (_u *AnnotationUpdate) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (au *AnnotationUpdate) defaults() {
-	if _, ok := au.mutation.UpdatedAt(); !ok {
+func (_u *AnnotationUpdate) defaults() {
+	if _, ok := _u.mutation.UpdatedAt(); !ok {
 		v := annotation.UpdateDefaultUpdatedAt()
-		au.mutation.SetUpdatedAt(v)
+		_u.mutation.SetUpdatedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (au *AnnotationUpdate) check() error {
-	if au.mutation.NamespaceCleared() && len(au.mutation.NamespaceIDs()) > 0 {
+func (_u *AnnotationUpdate) check() error {
+	if _u.mutation.NamespaceCleared() && len(_u.mutation.NamespaceIDs()) > 0 {
 		return errors.New(`generated: clearing a required unique edge "Annotation.namespace"`)
 	}
-	if au.mutation.MetadataCleared() && len(au.mutation.MetadataIDs()) > 0 {
+	if _u.mutation.MetadataCleared() && len(_u.mutation.MetadataIDs()) > 0 {
 		return errors.New(`generated: clearing a required unique edge "Annotation.metadata"`)
 	}
 	return nil
 }
 
-func (au *AnnotationUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	if err := au.check(); err != nil {
-		return n, err
+func (_u *AnnotationUpdate) sqlSave(ctx context.Context) (_node int, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(annotation.Table, annotation.Columns, sqlgraph.NewFieldSpec(annotation.FieldID, field.TypeString))
-	if ps := au.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := au.mutation.UpdatedAt(); ok {
+	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(annotation.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if value, ok := au.mutation.Data(); ok {
+	if value, ok := _u.mutation.Data(); ok {
 		_spec.SetField(annotation.FieldData, field.TypeJSON, value)
 	}
-	if value, ok := au.mutation.AppendedData(); ok {
+	if value, ok := _u.mutation.AppendedData(); ok {
 		_spec.AddModifier(func(u *sql.UpdateBuilder) {
 			sqljson.Append(u, annotation.FieldData, value)
 		})
 	}
-	if n, err = sqlgraph.UpdateNodes(ctx, au.driver, _spec); err != nil {
+	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{annotation.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -138,8 +138,8 @@ func (au *AnnotationUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
-	au.mutation.done = true
-	return n, nil
+	_u.mutation.done = true
+	return _node, nil
 }
 
 // AnnotationUpdateOne is the builder for updating a single Annotation entity.
@@ -151,44 +151,44 @@ type AnnotationUpdateOne struct {
 }
 
 // SetData sets the "data" field.
-func (auo *AnnotationUpdateOne) SetData(jm json.RawMessage) *AnnotationUpdateOne {
-	auo.mutation.SetData(jm)
-	return auo
+func (_u *AnnotationUpdateOne) SetData(v json.RawMessage) *AnnotationUpdateOne {
+	_u.mutation.SetData(v)
+	return _u
 }
 
-// AppendData appends jm to the "data" field.
-func (auo *AnnotationUpdateOne) AppendData(jm json.RawMessage) *AnnotationUpdateOne {
-	auo.mutation.AppendData(jm)
-	return auo
+// AppendData appends value to the "data" field.
+func (_u *AnnotationUpdateOne) AppendData(v json.RawMessage) *AnnotationUpdateOne {
+	_u.mutation.AppendData(v)
+	return _u
 }
 
 // Mutation returns the AnnotationMutation object of the builder.
-func (auo *AnnotationUpdateOne) Mutation() *AnnotationMutation {
-	return auo.mutation
+func (_u *AnnotationUpdateOne) Mutation() *AnnotationMutation {
+	return _u.mutation
 }
 
 // Where appends a list predicates to the AnnotationUpdate builder.
-func (auo *AnnotationUpdateOne) Where(ps ...predicate.Annotation) *AnnotationUpdateOne {
-	auo.mutation.Where(ps...)
-	return auo
+func (_u *AnnotationUpdateOne) Where(ps ...predicate.Annotation) *AnnotationUpdateOne {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
-func (auo *AnnotationUpdateOne) Select(field string, fields ...string) *AnnotationUpdateOne {
-	auo.fields = append([]string{field}, fields...)
-	return auo
+func (_u *AnnotationUpdateOne) Select(field string, fields ...string) *AnnotationUpdateOne {
+	_u.fields = append([]string{field}, fields...)
+	return _u
 }
 
 // Save executes the query and returns the updated Annotation entity.
-func (auo *AnnotationUpdateOne) Save(ctx context.Context) (*Annotation, error) {
-	auo.defaults()
-	return withHooks(ctx, auo.sqlSave, auo.mutation, auo.hooks)
+func (_u *AnnotationUpdateOne) Save(ctx context.Context) (*Annotation, error) {
+	_u.defaults()
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (auo *AnnotationUpdateOne) SaveX(ctx context.Context) *Annotation {
-	node, err := auo.Save(ctx)
+func (_u *AnnotationUpdateOne) SaveX(ctx context.Context) *Annotation {
+	node, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -196,48 +196,48 @@ func (auo *AnnotationUpdateOne) SaveX(ctx context.Context) *Annotation {
 }
 
 // Exec executes the query on the entity.
-func (auo *AnnotationUpdateOne) Exec(ctx context.Context) error {
-	_, err := auo.Save(ctx)
+func (_u *AnnotationUpdateOne) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (auo *AnnotationUpdateOne) ExecX(ctx context.Context) {
-	if err := auo.Exec(ctx); err != nil {
+func (_u *AnnotationUpdateOne) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (auo *AnnotationUpdateOne) defaults() {
-	if _, ok := auo.mutation.UpdatedAt(); !ok {
+func (_u *AnnotationUpdateOne) defaults() {
+	if _, ok := _u.mutation.UpdatedAt(); !ok {
 		v := annotation.UpdateDefaultUpdatedAt()
-		auo.mutation.SetUpdatedAt(v)
+		_u.mutation.SetUpdatedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (auo *AnnotationUpdateOne) check() error {
-	if auo.mutation.NamespaceCleared() && len(auo.mutation.NamespaceIDs()) > 0 {
+func (_u *AnnotationUpdateOne) check() error {
+	if _u.mutation.NamespaceCleared() && len(_u.mutation.NamespaceIDs()) > 0 {
 		return errors.New(`generated: clearing a required unique edge "Annotation.namespace"`)
 	}
-	if auo.mutation.MetadataCleared() && len(auo.mutation.MetadataIDs()) > 0 {
+	if _u.mutation.MetadataCleared() && len(_u.mutation.MetadataIDs()) > 0 {
 		return errors.New(`generated: clearing a required unique edge "Annotation.metadata"`)
 	}
 	return nil
 }
 
-func (auo *AnnotationUpdateOne) sqlSave(ctx context.Context) (_node *Annotation, err error) {
-	if err := auo.check(); err != nil {
+func (_u *AnnotationUpdateOne) sqlSave(ctx context.Context) (_node *Annotation, err error) {
+	if err := _u.check(); err != nil {
 		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(annotation.Table, annotation.Columns, sqlgraph.NewFieldSpec(annotation.FieldID, field.TypeString))
-	id, ok := auo.mutation.ID()
+	id, ok := _u.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`generated: missing "Annotation.id" for update`)}
 	}
 	_spec.Node.ID.Value = id
-	if fields := auo.fields; len(fields) > 0 {
+	if fields := _u.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, annotation.FieldID)
 		for _, f := range fields {
@@ -249,28 +249,28 @@ func (auo *AnnotationUpdateOne) sqlSave(ctx context.Context) (_node *Annotation,
 			}
 		}
 	}
-	if ps := auo.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := auo.mutation.UpdatedAt(); ok {
+	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(annotation.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if value, ok := auo.mutation.Data(); ok {
+	if value, ok := _u.mutation.Data(); ok {
 		_spec.SetField(annotation.FieldData, field.TypeJSON, value)
 	}
-	if value, ok := auo.mutation.AppendedData(); ok {
+	if value, ok := _u.mutation.AppendedData(); ok {
 		_spec.AddModifier(func(u *sql.UpdateBuilder) {
 			sqljson.Append(u, annotation.FieldData, value)
 		})
 	}
-	_node = &Annotation{config: auo.config}
+	_node = &Annotation{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
-	if err = sqlgraph.UpdateNode(ctx, auo.driver, _spec); err != nil {
+	if err = sqlgraph.UpdateNode(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{annotation.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -278,6 +278,6 @@ func (auo *AnnotationUpdateOne) sqlSave(ctx context.Context) (_node *Annotation,
 		}
 		return nil, err
 	}
-	auo.mutation.done = true
+	_u.mutation.done = true
 	return _node, nil
 }

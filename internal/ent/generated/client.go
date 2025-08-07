@@ -316,8 +316,8 @@ func (c *AnnotationClient) Update() *AnnotationUpdate {
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *AnnotationClient) UpdateOne(a *Annotation) *AnnotationUpdateOne {
-	mutation := newAnnotationMutation(c.config, OpUpdateOne, withAnnotation(a))
+func (c *AnnotationClient) UpdateOne(_m *Annotation) *AnnotationUpdateOne {
+	mutation := newAnnotationMutation(c.config, OpUpdateOne, withAnnotation(_m))
 	return &AnnotationUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
@@ -334,8 +334,8 @@ func (c *AnnotationClient) Delete() *AnnotationDelete {
 }
 
 // DeleteOne returns a builder for deleting the given entity.
-func (c *AnnotationClient) DeleteOne(a *Annotation) *AnnotationDeleteOne {
-	return c.DeleteOneID(a.ID)
+func (c *AnnotationClient) DeleteOne(_m *Annotation) *AnnotationDeleteOne {
+	return c.DeleteOneID(_m.ID)
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
@@ -370,32 +370,32 @@ func (c *AnnotationClient) GetX(ctx context.Context, id gidx.PrefixedID) *Annota
 }
 
 // QueryNamespace queries the namespace edge of a Annotation.
-func (c *AnnotationClient) QueryNamespace(a *Annotation) *AnnotationNamespaceQuery {
+func (c *AnnotationClient) QueryNamespace(_m *Annotation) *AnnotationNamespaceQuery {
 	query := (&AnnotationNamespaceClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := a.ID
+		id := _m.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(annotation.Table, annotation.FieldID, id),
 			sqlgraph.To(annotationnamespace.Table, annotationnamespace.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, annotation.NamespaceTable, annotation.NamespaceColumn),
 		)
-		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
 	}
 	return query
 }
 
 // QueryMetadata queries the metadata edge of a Annotation.
-func (c *AnnotationClient) QueryMetadata(a *Annotation) *MetadataQuery {
+func (c *AnnotationClient) QueryMetadata(_m *Annotation) *MetadataQuery {
 	query := (&MetadataClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := a.ID
+		id := _m.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(annotation.Table, annotation.FieldID, id),
 			sqlgraph.To(metadata.Table, metadata.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, annotation.MetadataTable, annotation.MetadataColumn),
 		)
-		fromV = sqlgraph.Neighbors(a.driver.Dialect(), step)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
 	}
 	return query
@@ -481,8 +481,8 @@ func (c *AnnotationNamespaceClient) Update() *AnnotationNamespaceUpdate {
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *AnnotationNamespaceClient) UpdateOne(an *AnnotationNamespace) *AnnotationNamespaceUpdateOne {
-	mutation := newAnnotationNamespaceMutation(c.config, OpUpdateOne, withAnnotationNamespace(an))
+func (c *AnnotationNamespaceClient) UpdateOne(_m *AnnotationNamespace) *AnnotationNamespaceUpdateOne {
+	mutation := newAnnotationNamespaceMutation(c.config, OpUpdateOne, withAnnotationNamespace(_m))
 	return &AnnotationNamespaceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
@@ -499,8 +499,8 @@ func (c *AnnotationNamespaceClient) Delete() *AnnotationNamespaceDelete {
 }
 
 // DeleteOne returns a builder for deleting the given entity.
-func (c *AnnotationNamespaceClient) DeleteOne(an *AnnotationNamespace) *AnnotationNamespaceDeleteOne {
-	return c.DeleteOneID(an.ID)
+func (c *AnnotationNamespaceClient) DeleteOne(_m *AnnotationNamespace) *AnnotationNamespaceDeleteOne {
+	return c.DeleteOneID(_m.ID)
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
@@ -535,16 +535,16 @@ func (c *AnnotationNamespaceClient) GetX(ctx context.Context, id gidx.PrefixedID
 }
 
 // QueryAnnotations queries the annotations edge of a AnnotationNamespace.
-func (c *AnnotationNamespaceClient) QueryAnnotations(an *AnnotationNamespace) *AnnotationQuery {
+func (c *AnnotationNamespaceClient) QueryAnnotations(_m *AnnotationNamespace) *AnnotationQuery {
 	query := (&AnnotationClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := an.ID
+		id := _m.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(annotationnamespace.Table, annotationnamespace.FieldID, id),
 			sqlgraph.To(annotation.Table, annotation.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, true, annotationnamespace.AnnotationsTable, annotationnamespace.AnnotationsColumn),
 		)
-		fromV = sqlgraph.Neighbors(an.driver.Dialect(), step)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
 	}
 	return query
@@ -630,8 +630,8 @@ func (c *MetadataClient) Update() *MetadataUpdate {
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *MetadataClient) UpdateOne(m *Metadata) *MetadataUpdateOne {
-	mutation := newMetadataMutation(c.config, OpUpdateOne, withMetadata(m))
+func (c *MetadataClient) UpdateOne(_m *Metadata) *MetadataUpdateOne {
+	mutation := newMetadataMutation(c.config, OpUpdateOne, withMetadata(_m))
 	return &MetadataUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
@@ -648,8 +648,8 @@ func (c *MetadataClient) Delete() *MetadataDelete {
 }
 
 // DeleteOne returns a builder for deleting the given entity.
-func (c *MetadataClient) DeleteOne(m *Metadata) *MetadataDeleteOne {
-	return c.DeleteOneID(m.ID)
+func (c *MetadataClient) DeleteOne(_m *Metadata) *MetadataDeleteOne {
+	return c.DeleteOneID(_m.ID)
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
@@ -684,32 +684,32 @@ func (c *MetadataClient) GetX(ctx context.Context, id gidx.PrefixedID) *Metadata
 }
 
 // QueryAnnotations queries the annotations edge of a Metadata.
-func (c *MetadataClient) QueryAnnotations(m *Metadata) *AnnotationQuery {
+func (c *MetadataClient) QueryAnnotations(_m *Metadata) *AnnotationQuery {
 	query := (&AnnotationClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := m.ID
+		id := _m.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(metadata.Table, metadata.FieldID, id),
 			sqlgraph.To(annotation.Table, annotation.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, true, metadata.AnnotationsTable, metadata.AnnotationsColumn),
 		)
-		fromV = sqlgraph.Neighbors(m.driver.Dialect(), step)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
 	}
 	return query
 }
 
 // QueryStatuses queries the statuses edge of a Metadata.
-func (c *MetadataClient) QueryStatuses(m *Metadata) *StatusQuery {
+func (c *MetadataClient) QueryStatuses(_m *Metadata) *StatusQuery {
 	query := (&StatusClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := m.ID
+		id := _m.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(metadata.Table, metadata.FieldID, id),
 			sqlgraph.To(status.Table, status.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, true, metadata.StatusesTable, metadata.StatusesColumn),
 		)
-		fromV = sqlgraph.Neighbors(m.driver.Dialect(), step)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
 	}
 	return query
@@ -795,8 +795,8 @@ func (c *StatusClient) Update() *StatusUpdate {
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *StatusClient) UpdateOne(s *Status) *StatusUpdateOne {
-	mutation := newStatusMutation(c.config, OpUpdateOne, withStatus(s))
+func (c *StatusClient) UpdateOne(_m *Status) *StatusUpdateOne {
+	mutation := newStatusMutation(c.config, OpUpdateOne, withStatus(_m))
 	return &StatusUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
@@ -813,8 +813,8 @@ func (c *StatusClient) Delete() *StatusDelete {
 }
 
 // DeleteOne returns a builder for deleting the given entity.
-func (c *StatusClient) DeleteOne(s *Status) *StatusDeleteOne {
-	return c.DeleteOneID(s.ID)
+func (c *StatusClient) DeleteOne(_m *Status) *StatusDeleteOne {
+	return c.DeleteOneID(_m.ID)
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
@@ -849,32 +849,32 @@ func (c *StatusClient) GetX(ctx context.Context, id gidx.PrefixedID) *Status {
 }
 
 // QueryNamespace queries the namespace edge of a Status.
-func (c *StatusClient) QueryNamespace(s *Status) *StatusNamespaceQuery {
+func (c *StatusClient) QueryNamespace(_m *Status) *StatusNamespaceQuery {
 	query := (&StatusNamespaceClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := s.ID
+		id := _m.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(status.Table, status.FieldID, id),
 			sqlgraph.To(statusnamespace.Table, statusnamespace.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, status.NamespaceTable, status.NamespaceColumn),
 		)
-		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
 	}
 	return query
 }
 
 // QueryMetadata queries the metadata edge of a Status.
-func (c *StatusClient) QueryMetadata(s *Status) *MetadataQuery {
+func (c *StatusClient) QueryMetadata(_m *Status) *MetadataQuery {
 	query := (&MetadataClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := s.ID
+		id := _m.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(status.Table, status.FieldID, id),
 			sqlgraph.To(metadata.Table, metadata.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, status.MetadataTable, status.MetadataColumn),
 		)
-		fromV = sqlgraph.Neighbors(s.driver.Dialect(), step)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
 	}
 	return query
@@ -960,8 +960,8 @@ func (c *StatusNamespaceClient) Update() *StatusNamespaceUpdate {
 }
 
 // UpdateOne returns an update builder for the given entity.
-func (c *StatusNamespaceClient) UpdateOne(sn *StatusNamespace) *StatusNamespaceUpdateOne {
-	mutation := newStatusNamespaceMutation(c.config, OpUpdateOne, withStatusNamespace(sn))
+func (c *StatusNamespaceClient) UpdateOne(_m *StatusNamespace) *StatusNamespaceUpdateOne {
+	mutation := newStatusNamespaceMutation(c.config, OpUpdateOne, withStatusNamespace(_m))
 	return &StatusNamespaceUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
 
@@ -978,8 +978,8 @@ func (c *StatusNamespaceClient) Delete() *StatusNamespaceDelete {
 }
 
 // DeleteOne returns a builder for deleting the given entity.
-func (c *StatusNamespaceClient) DeleteOne(sn *StatusNamespace) *StatusNamespaceDeleteOne {
-	return c.DeleteOneID(sn.ID)
+func (c *StatusNamespaceClient) DeleteOne(_m *StatusNamespace) *StatusNamespaceDeleteOne {
+	return c.DeleteOneID(_m.ID)
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
@@ -1014,16 +1014,16 @@ func (c *StatusNamespaceClient) GetX(ctx context.Context, id gidx.PrefixedID) *S
 }
 
 // QueryStatuses queries the statuses edge of a StatusNamespace.
-func (c *StatusNamespaceClient) QueryStatuses(sn *StatusNamespace) *StatusQuery {
+func (c *StatusNamespaceClient) QueryStatuses(_m *StatusNamespace) *StatusQuery {
 	query := (&StatusClient{config: c.config}).Query()
 	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
-		id := sn.ID
+		id := _m.ID
 		step := sqlgraph.NewStep(
 			sqlgraph.From(statusnamespace.Table, statusnamespace.FieldID, id),
 			sqlgraph.To(status.Table, status.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, true, statusnamespace.StatusesTable, statusnamespace.StatusesColumn),
 		)
-		fromV = sqlgraph.Neighbors(sn.driver.Dialect(), step)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
 	}
 	return query
