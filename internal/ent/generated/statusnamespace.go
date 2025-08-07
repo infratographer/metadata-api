@@ -91,7 +91,7 @@ func (*StatusNamespace) scanValues(columns []string) ([]any, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the StatusNamespace fields.
-func (sn *StatusNamespace) assignValues(columns []string, values []any) error {
+func (_m *StatusNamespace) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -101,40 +101,40 @@ func (sn *StatusNamespace) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*gidx.PrefixedID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
-				sn.ID = *value
+				_m.ID = *value
 			}
 		case statusnamespace.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
-				sn.CreatedAt = value.Time
+				_m.CreatedAt = value.Time
 			}
 		case statusnamespace.FieldUpdatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
 			} else if value.Valid {
-				sn.UpdatedAt = value.Time
+				_m.UpdatedAt = value.Time
 			}
 		case statusnamespace.FieldName:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field name", values[i])
 			} else if value.Valid {
-				sn.Name = value.String
+				_m.Name = value.String
 			}
 		case statusnamespace.FieldResourceProviderID:
 			if value, ok := values[i].(*gidx.PrefixedID); !ok {
 				return fmt.Errorf("unexpected type %T for field resource_provider_id", values[i])
 			} else if value != nil {
-				sn.ResourceProviderID = *value
+				_m.ResourceProviderID = *value
 			}
 		case statusnamespace.FieldPrivate:
 			if value, ok := values[i].(*sql.NullBool); !ok {
 				return fmt.Errorf("unexpected type %T for field private", values[i])
 			} else if value.Valid {
-				sn.Private = value.Bool
+				_m.Private = value.Bool
 			}
 		default:
-			sn.selectValues.Set(columns[i], values[i])
+			_m.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
@@ -142,80 +142,80 @@ func (sn *StatusNamespace) assignValues(columns []string, values []any) error {
 
 // Value returns the ent.Value that was dynamically selected and assigned to the StatusNamespace.
 // This includes values selected through modifiers, order, etc.
-func (sn *StatusNamespace) Value(name string) (ent.Value, error) {
-	return sn.selectValues.Get(name)
+func (_m *StatusNamespace) Value(name string) (ent.Value, error) {
+	return _m.selectValues.Get(name)
 }
 
 // QueryStatuses queries the "statuses" edge of the StatusNamespace entity.
-func (sn *StatusNamespace) QueryStatuses() *StatusQuery {
-	return NewStatusNamespaceClient(sn.config).QueryStatuses(sn)
+func (_m *StatusNamespace) QueryStatuses() *StatusQuery {
+	return NewStatusNamespaceClient(_m.config).QueryStatuses(_m)
 }
 
 // Update returns a builder for updating this StatusNamespace.
 // Note that you need to call StatusNamespace.Unwrap() before calling this method if this StatusNamespace
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (sn *StatusNamespace) Update() *StatusNamespaceUpdateOne {
-	return NewStatusNamespaceClient(sn.config).UpdateOne(sn)
+func (_m *StatusNamespace) Update() *StatusNamespaceUpdateOne {
+	return NewStatusNamespaceClient(_m.config).UpdateOne(_m)
 }
 
 // Unwrap unwraps the StatusNamespace entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (sn *StatusNamespace) Unwrap() *StatusNamespace {
-	_tx, ok := sn.config.driver.(*txDriver)
+func (_m *StatusNamespace) Unwrap() *StatusNamespace {
+	_tx, ok := _m.config.driver.(*txDriver)
 	if !ok {
 		panic("generated: StatusNamespace is not a transactional entity")
 	}
-	sn.config.driver = _tx.drv
-	return sn
+	_m.config.driver = _tx.drv
+	return _m
 }
 
 // String implements the fmt.Stringer.
-func (sn *StatusNamespace) String() string {
+func (_m *StatusNamespace) String() string {
 	var builder strings.Builder
 	builder.WriteString("StatusNamespace(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", sn.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
 	builder.WriteString("created_at=")
-	builder.WriteString(sn.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("updated_at=")
-	builder.WriteString(sn.UpdatedAt.Format(time.ANSIC))
+	builder.WriteString(_m.UpdatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("name=")
-	builder.WriteString(sn.Name)
+	builder.WriteString(_m.Name)
 	builder.WriteString(", ")
 	builder.WriteString("resource_provider_id=")
-	builder.WriteString(fmt.Sprintf("%v", sn.ResourceProviderID))
+	builder.WriteString(fmt.Sprintf("%v", _m.ResourceProviderID))
 	builder.WriteString(", ")
 	builder.WriteString("private=")
-	builder.WriteString(fmt.Sprintf("%v", sn.Private))
+	builder.WriteString(fmt.Sprintf("%v", _m.Private))
 	builder.WriteByte(')')
 	return builder.String()
 }
 
 // IsEntity implement fedruntime.Entity
-func (sn StatusNamespace) IsEntity() {}
+func (_m StatusNamespace) IsEntity() {}
 
 // NamedStatuses returns the Statuses named value or an error if the edge was not
 // loaded in eager-loading with this name.
-func (sn *StatusNamespace) NamedStatuses(name string) ([]*Status, error) {
-	if sn.Edges.namedStatuses == nil {
+func (_m *StatusNamespace) NamedStatuses(name string) ([]*Status, error) {
+	if _m.Edges.namedStatuses == nil {
 		return nil, &NotLoadedError{edge: name}
 	}
-	nodes, ok := sn.Edges.namedStatuses[name]
+	nodes, ok := _m.Edges.namedStatuses[name]
 	if !ok {
 		return nil, &NotLoadedError{edge: name}
 	}
 	return nodes, nil
 }
 
-func (sn *StatusNamespace) appendNamedStatuses(name string, edges ...*Status) {
-	if sn.Edges.namedStatuses == nil {
-		sn.Edges.namedStatuses = make(map[string][]*Status)
+func (_m *StatusNamespace) appendNamedStatuses(name string, edges ...*Status) {
+	if _m.Edges.namedStatuses == nil {
+		_m.Edges.namedStatuses = make(map[string][]*Status)
 	}
 	if len(edges) == 0 {
-		sn.Edges.namedStatuses[name] = []*Status{}
+		_m.Edges.namedStatuses[name] = []*Status{}
 	} else {
-		sn.Edges.namedStatuses[name] = append(sn.Edges.namedStatuses[name], edges...)
+		_m.Edges.namedStatuses[name] = append(_m.Edges.namedStatuses[name], edges...)
 	}
 }
 

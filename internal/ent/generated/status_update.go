@@ -38,37 +38,37 @@ type StatusUpdate struct {
 }
 
 // Where appends a list predicates to the StatusUpdate builder.
-func (su *StatusUpdate) Where(ps ...predicate.Status) *StatusUpdate {
-	su.mutation.Where(ps...)
-	return su
+func (_u *StatusUpdate) Where(ps ...predicate.Status) *StatusUpdate {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // SetData sets the "data" field.
-func (su *StatusUpdate) SetData(jm json.RawMessage) *StatusUpdate {
-	su.mutation.SetData(jm)
-	return su
+func (_u *StatusUpdate) SetData(v json.RawMessage) *StatusUpdate {
+	_u.mutation.SetData(v)
+	return _u
 }
 
-// AppendData appends jm to the "data" field.
-func (su *StatusUpdate) AppendData(jm json.RawMessage) *StatusUpdate {
-	su.mutation.AppendData(jm)
-	return su
+// AppendData appends value to the "data" field.
+func (_u *StatusUpdate) AppendData(v json.RawMessage) *StatusUpdate {
+	_u.mutation.AppendData(v)
+	return _u
 }
 
 // Mutation returns the StatusMutation object of the builder.
-func (su *StatusUpdate) Mutation() *StatusMutation {
-	return su.mutation
+func (_u *StatusUpdate) Mutation() *StatusMutation {
+	return _u.mutation
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
-func (su *StatusUpdate) Save(ctx context.Context) (int, error) {
-	su.defaults()
-	return withHooks(ctx, su.sqlSave, su.mutation, su.hooks)
+func (_u *StatusUpdate) Save(ctx context.Context) (int, error) {
+	_u.defaults()
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (su *StatusUpdate) SaveX(ctx context.Context) int {
-	affected, err := su.Save(ctx)
+func (_u *StatusUpdate) SaveX(ctx context.Context) int {
+	affected, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -76,61 +76,61 @@ func (su *StatusUpdate) SaveX(ctx context.Context) int {
 }
 
 // Exec executes the query.
-func (su *StatusUpdate) Exec(ctx context.Context) error {
-	_, err := su.Save(ctx)
+func (_u *StatusUpdate) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (su *StatusUpdate) ExecX(ctx context.Context) {
-	if err := su.Exec(ctx); err != nil {
+func (_u *StatusUpdate) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (su *StatusUpdate) defaults() {
-	if _, ok := su.mutation.UpdatedAt(); !ok {
+func (_u *StatusUpdate) defaults() {
+	if _, ok := _u.mutation.UpdatedAt(); !ok {
 		v := status.UpdateDefaultUpdatedAt()
-		su.mutation.SetUpdatedAt(v)
+		_u.mutation.SetUpdatedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (su *StatusUpdate) check() error {
-	if su.mutation.NamespaceCleared() && len(su.mutation.NamespaceIDs()) > 0 {
+func (_u *StatusUpdate) check() error {
+	if _u.mutation.NamespaceCleared() && len(_u.mutation.NamespaceIDs()) > 0 {
 		return errors.New(`generated: clearing a required unique edge "Status.namespace"`)
 	}
-	if su.mutation.MetadataCleared() && len(su.mutation.MetadataIDs()) > 0 {
+	if _u.mutation.MetadataCleared() && len(_u.mutation.MetadataIDs()) > 0 {
 		return errors.New(`generated: clearing a required unique edge "Status.metadata"`)
 	}
 	return nil
 }
 
-func (su *StatusUpdate) sqlSave(ctx context.Context) (n int, err error) {
-	if err := su.check(); err != nil {
-		return n, err
+func (_u *StatusUpdate) sqlSave(ctx context.Context) (_node int, err error) {
+	if err := _u.check(); err != nil {
+		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(status.Table, status.Columns, sqlgraph.NewFieldSpec(status.FieldID, field.TypeString))
-	if ps := su.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := su.mutation.UpdatedAt(); ok {
+	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(status.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if value, ok := su.mutation.Data(); ok {
+	if value, ok := _u.mutation.Data(); ok {
 		_spec.SetField(status.FieldData, field.TypeJSON, value)
 	}
-	if value, ok := su.mutation.AppendedData(); ok {
+	if value, ok := _u.mutation.AppendedData(); ok {
 		_spec.AddModifier(func(u *sql.UpdateBuilder) {
 			sqljson.Append(u, status.FieldData, value)
 		})
 	}
-	if n, err = sqlgraph.UpdateNodes(ctx, su.driver, _spec); err != nil {
+	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{status.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -138,8 +138,8 @@ func (su *StatusUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		return 0, err
 	}
-	su.mutation.done = true
-	return n, nil
+	_u.mutation.done = true
+	return _node, nil
 }
 
 // StatusUpdateOne is the builder for updating a single Status entity.
@@ -151,44 +151,44 @@ type StatusUpdateOne struct {
 }
 
 // SetData sets the "data" field.
-func (suo *StatusUpdateOne) SetData(jm json.RawMessage) *StatusUpdateOne {
-	suo.mutation.SetData(jm)
-	return suo
+func (_u *StatusUpdateOne) SetData(v json.RawMessage) *StatusUpdateOne {
+	_u.mutation.SetData(v)
+	return _u
 }
 
-// AppendData appends jm to the "data" field.
-func (suo *StatusUpdateOne) AppendData(jm json.RawMessage) *StatusUpdateOne {
-	suo.mutation.AppendData(jm)
-	return suo
+// AppendData appends value to the "data" field.
+func (_u *StatusUpdateOne) AppendData(v json.RawMessage) *StatusUpdateOne {
+	_u.mutation.AppendData(v)
+	return _u
 }
 
 // Mutation returns the StatusMutation object of the builder.
-func (suo *StatusUpdateOne) Mutation() *StatusMutation {
-	return suo.mutation
+func (_u *StatusUpdateOne) Mutation() *StatusMutation {
+	return _u.mutation
 }
 
 // Where appends a list predicates to the StatusUpdate builder.
-func (suo *StatusUpdateOne) Where(ps ...predicate.Status) *StatusUpdateOne {
-	suo.mutation.Where(ps...)
-	return suo
+func (_u *StatusUpdateOne) Where(ps ...predicate.Status) *StatusUpdateOne {
+	_u.mutation.Where(ps...)
+	return _u
 }
 
 // Select allows selecting one or more fields (columns) of the returned entity.
 // The default is selecting all fields defined in the entity schema.
-func (suo *StatusUpdateOne) Select(field string, fields ...string) *StatusUpdateOne {
-	suo.fields = append([]string{field}, fields...)
-	return suo
+func (_u *StatusUpdateOne) Select(field string, fields ...string) *StatusUpdateOne {
+	_u.fields = append([]string{field}, fields...)
+	return _u
 }
 
 // Save executes the query and returns the updated Status entity.
-func (suo *StatusUpdateOne) Save(ctx context.Context) (*Status, error) {
-	suo.defaults()
-	return withHooks(ctx, suo.sqlSave, suo.mutation, suo.hooks)
+func (_u *StatusUpdateOne) Save(ctx context.Context) (*Status, error) {
+	_u.defaults()
+	return withHooks(ctx, _u.sqlSave, _u.mutation, _u.hooks)
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (suo *StatusUpdateOne) SaveX(ctx context.Context) *Status {
-	node, err := suo.Save(ctx)
+func (_u *StatusUpdateOne) SaveX(ctx context.Context) *Status {
+	node, err := _u.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -196,48 +196,48 @@ func (suo *StatusUpdateOne) SaveX(ctx context.Context) *Status {
 }
 
 // Exec executes the query on the entity.
-func (suo *StatusUpdateOne) Exec(ctx context.Context) error {
-	_, err := suo.Save(ctx)
+func (_u *StatusUpdateOne) Exec(ctx context.Context) error {
+	_, err := _u.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (suo *StatusUpdateOne) ExecX(ctx context.Context) {
-	if err := suo.Exec(ctx); err != nil {
+func (_u *StatusUpdateOne) ExecX(ctx context.Context) {
+	if err := _u.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (suo *StatusUpdateOne) defaults() {
-	if _, ok := suo.mutation.UpdatedAt(); !ok {
+func (_u *StatusUpdateOne) defaults() {
+	if _, ok := _u.mutation.UpdatedAt(); !ok {
 		v := status.UpdateDefaultUpdatedAt()
-		suo.mutation.SetUpdatedAt(v)
+		_u.mutation.SetUpdatedAt(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (suo *StatusUpdateOne) check() error {
-	if suo.mutation.NamespaceCleared() && len(suo.mutation.NamespaceIDs()) > 0 {
+func (_u *StatusUpdateOne) check() error {
+	if _u.mutation.NamespaceCleared() && len(_u.mutation.NamespaceIDs()) > 0 {
 		return errors.New(`generated: clearing a required unique edge "Status.namespace"`)
 	}
-	if suo.mutation.MetadataCleared() && len(suo.mutation.MetadataIDs()) > 0 {
+	if _u.mutation.MetadataCleared() && len(_u.mutation.MetadataIDs()) > 0 {
 		return errors.New(`generated: clearing a required unique edge "Status.metadata"`)
 	}
 	return nil
 }
 
-func (suo *StatusUpdateOne) sqlSave(ctx context.Context) (_node *Status, err error) {
-	if err := suo.check(); err != nil {
+func (_u *StatusUpdateOne) sqlSave(ctx context.Context) (_node *Status, err error) {
+	if err := _u.check(); err != nil {
 		return _node, err
 	}
 	_spec := sqlgraph.NewUpdateSpec(status.Table, status.Columns, sqlgraph.NewFieldSpec(status.FieldID, field.TypeString))
-	id, ok := suo.mutation.ID()
+	id, ok := _u.mutation.ID()
 	if !ok {
 		return nil, &ValidationError{Name: "id", err: errors.New(`generated: missing "Status.id" for update`)}
 	}
 	_spec.Node.ID.Value = id
-	if fields := suo.fields; len(fields) > 0 {
+	if fields := _u.fields; len(fields) > 0 {
 		_spec.Node.Columns = make([]string, 0, len(fields))
 		_spec.Node.Columns = append(_spec.Node.Columns, status.FieldID)
 		for _, f := range fields {
@@ -249,28 +249,28 @@ func (suo *StatusUpdateOne) sqlSave(ctx context.Context) (_node *Status, err err
 			}
 		}
 	}
-	if ps := suo.mutation.predicates; len(ps) > 0 {
+	if ps := _u.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	if value, ok := suo.mutation.UpdatedAt(); ok {
+	if value, ok := _u.mutation.UpdatedAt(); ok {
 		_spec.SetField(status.FieldUpdatedAt, field.TypeTime, value)
 	}
-	if value, ok := suo.mutation.Data(); ok {
+	if value, ok := _u.mutation.Data(); ok {
 		_spec.SetField(status.FieldData, field.TypeJSON, value)
 	}
-	if value, ok := suo.mutation.AppendedData(); ok {
+	if value, ok := _u.mutation.AppendedData(); ok {
 		_spec.AddModifier(func(u *sql.UpdateBuilder) {
 			sqljson.Append(u, status.FieldData, value)
 		})
 	}
-	_node = &Status{config: suo.config}
+	_node = &Status{config: _u.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
-	if err = sqlgraph.UpdateNode(ctx, suo.driver, _spec); err != nil {
+	if err = sqlgraph.UpdateNode(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{status.Label}
 		} else if sqlgraph.IsConstraintError(err) {
@@ -278,6 +278,6 @@ func (suo *StatusUpdateOne) sqlSave(ctx context.Context) (_node *Status, err err
 		}
 		return nil, err
 	}
-	suo.mutation.done = true
+	_u.mutation.done = true
 	return _node, nil
 }

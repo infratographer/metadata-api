@@ -39,101 +39,101 @@ type StatusCreate struct {
 }
 
 // SetCreatedAt sets the "created_at" field.
-func (sc *StatusCreate) SetCreatedAt(t time.Time) *StatusCreate {
-	sc.mutation.SetCreatedAt(t)
-	return sc
+func (_c *StatusCreate) SetCreatedAt(v time.Time) *StatusCreate {
+	_c.mutation.SetCreatedAt(v)
+	return _c
 }
 
 // SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (sc *StatusCreate) SetNillableCreatedAt(t *time.Time) *StatusCreate {
-	if t != nil {
-		sc.SetCreatedAt(*t)
+func (_c *StatusCreate) SetNillableCreatedAt(v *time.Time) *StatusCreate {
+	if v != nil {
+		_c.SetCreatedAt(*v)
 	}
-	return sc
+	return _c
 }
 
 // SetUpdatedAt sets the "updated_at" field.
-func (sc *StatusCreate) SetUpdatedAt(t time.Time) *StatusCreate {
-	sc.mutation.SetUpdatedAt(t)
-	return sc
+func (_c *StatusCreate) SetUpdatedAt(v time.Time) *StatusCreate {
+	_c.mutation.SetUpdatedAt(v)
+	return _c
 }
 
 // SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
-func (sc *StatusCreate) SetNillableUpdatedAt(t *time.Time) *StatusCreate {
-	if t != nil {
-		sc.SetUpdatedAt(*t)
+func (_c *StatusCreate) SetNillableUpdatedAt(v *time.Time) *StatusCreate {
+	if v != nil {
+		_c.SetUpdatedAt(*v)
 	}
-	return sc
+	return _c
 }
 
 // SetMetadataID sets the "metadata_id" field.
-func (sc *StatusCreate) SetMetadataID(gi gidx.PrefixedID) *StatusCreate {
-	sc.mutation.SetMetadataID(gi)
-	return sc
+func (_c *StatusCreate) SetMetadataID(v gidx.PrefixedID) *StatusCreate {
+	_c.mutation.SetMetadataID(v)
+	return _c
 }
 
 // SetStatusNamespaceID sets the "status_namespace_id" field.
-func (sc *StatusCreate) SetStatusNamespaceID(gi gidx.PrefixedID) *StatusCreate {
-	sc.mutation.SetStatusNamespaceID(gi)
-	return sc
+func (_c *StatusCreate) SetStatusNamespaceID(v gidx.PrefixedID) *StatusCreate {
+	_c.mutation.SetStatusNamespaceID(v)
+	return _c
 }
 
 // SetSource sets the "source" field.
-func (sc *StatusCreate) SetSource(s string) *StatusCreate {
-	sc.mutation.SetSource(s)
-	return sc
+func (_c *StatusCreate) SetSource(v string) *StatusCreate {
+	_c.mutation.SetSource(v)
+	return _c
 }
 
 // SetData sets the "data" field.
-func (sc *StatusCreate) SetData(jm json.RawMessage) *StatusCreate {
-	sc.mutation.SetData(jm)
-	return sc
+func (_c *StatusCreate) SetData(v json.RawMessage) *StatusCreate {
+	_c.mutation.SetData(v)
+	return _c
 }
 
 // SetID sets the "id" field.
-func (sc *StatusCreate) SetID(gi gidx.PrefixedID) *StatusCreate {
-	sc.mutation.SetID(gi)
-	return sc
+func (_c *StatusCreate) SetID(v gidx.PrefixedID) *StatusCreate {
+	_c.mutation.SetID(v)
+	return _c
 }
 
 // SetNillableID sets the "id" field if the given value is not nil.
-func (sc *StatusCreate) SetNillableID(gi *gidx.PrefixedID) *StatusCreate {
-	if gi != nil {
-		sc.SetID(*gi)
+func (_c *StatusCreate) SetNillableID(v *gidx.PrefixedID) *StatusCreate {
+	if v != nil {
+		_c.SetID(*v)
 	}
-	return sc
+	return _c
 }
 
 // SetNamespaceID sets the "namespace" edge to the StatusNamespace entity by ID.
-func (sc *StatusCreate) SetNamespaceID(id gidx.PrefixedID) *StatusCreate {
-	sc.mutation.SetNamespaceID(id)
-	return sc
+func (_c *StatusCreate) SetNamespaceID(id gidx.PrefixedID) *StatusCreate {
+	_c.mutation.SetNamespaceID(id)
+	return _c
 }
 
 // SetNamespace sets the "namespace" edge to the StatusNamespace entity.
-func (sc *StatusCreate) SetNamespace(s *StatusNamespace) *StatusCreate {
-	return sc.SetNamespaceID(s.ID)
+func (_c *StatusCreate) SetNamespace(v *StatusNamespace) *StatusCreate {
+	return _c.SetNamespaceID(v.ID)
 }
 
 // SetMetadata sets the "metadata" edge to the Metadata entity.
-func (sc *StatusCreate) SetMetadata(m *Metadata) *StatusCreate {
-	return sc.SetMetadataID(m.ID)
+func (_c *StatusCreate) SetMetadata(v *Metadata) *StatusCreate {
+	return _c.SetMetadataID(v.ID)
 }
 
 // Mutation returns the StatusMutation object of the builder.
-func (sc *StatusCreate) Mutation() *StatusMutation {
-	return sc.mutation
+func (_c *StatusCreate) Mutation() *StatusMutation {
+	return _c.mutation
 }
 
 // Save creates the Status in the database.
-func (sc *StatusCreate) Save(ctx context.Context) (*Status, error) {
-	sc.defaults()
-	return withHooks(ctx, sc.sqlSave, sc.mutation, sc.hooks)
+func (_c *StatusCreate) Save(ctx context.Context) (*Status, error) {
+	_c.defaults()
+	return withHooks(ctx, _c.sqlSave, _c.mutation, _c.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
-func (sc *StatusCreate) SaveX(ctx context.Context) *Status {
-	v, err := sc.Save(ctx)
+func (_c *StatusCreate) SaveX(ctx context.Context) *Status {
+	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -141,84 +141,84 @@ func (sc *StatusCreate) SaveX(ctx context.Context) *Status {
 }
 
 // Exec executes the query.
-func (sc *StatusCreate) Exec(ctx context.Context) error {
-	_, err := sc.Save(ctx)
+func (_c *StatusCreate) Exec(ctx context.Context) error {
+	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (sc *StatusCreate) ExecX(ctx context.Context) {
-	if err := sc.Exec(ctx); err != nil {
+func (_c *StatusCreate) ExecX(ctx context.Context) {
+	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (sc *StatusCreate) defaults() {
-	if _, ok := sc.mutation.CreatedAt(); !ok {
+func (_c *StatusCreate) defaults() {
+	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := status.DefaultCreatedAt()
-		sc.mutation.SetCreatedAt(v)
+		_c.mutation.SetCreatedAt(v)
 	}
-	if _, ok := sc.mutation.UpdatedAt(); !ok {
+	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		v := status.DefaultUpdatedAt()
-		sc.mutation.SetUpdatedAt(v)
+		_c.mutation.SetUpdatedAt(v)
 	}
-	if _, ok := sc.mutation.ID(); !ok {
+	if _, ok := _c.mutation.ID(); !ok {
 		v := status.DefaultID()
-		sc.mutation.SetID(v)
+		_c.mutation.SetID(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (sc *StatusCreate) check() error {
-	if _, ok := sc.mutation.CreatedAt(); !ok {
+func (_c *StatusCreate) check() error {
+	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`generated: missing required field "Status.created_at"`)}
 	}
-	if _, ok := sc.mutation.UpdatedAt(); !ok {
+	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`generated: missing required field "Status.updated_at"`)}
 	}
-	if _, ok := sc.mutation.MetadataID(); !ok {
+	if _, ok := _c.mutation.MetadataID(); !ok {
 		return &ValidationError{Name: "metadata_id", err: errors.New(`generated: missing required field "Status.metadata_id"`)}
 	}
-	if v, ok := sc.mutation.MetadataID(); ok {
+	if v, ok := _c.mutation.MetadataID(); ok {
 		if err := status.MetadataIDValidator(string(v)); err != nil {
 			return &ValidationError{Name: "metadata_id", err: fmt.Errorf(`generated: validator failed for field "Status.metadata_id": %w`, err)}
 		}
 	}
-	if _, ok := sc.mutation.StatusNamespaceID(); !ok {
+	if _, ok := _c.mutation.StatusNamespaceID(); !ok {
 		return &ValidationError{Name: "status_namespace_id", err: errors.New(`generated: missing required field "Status.status_namespace_id"`)}
 	}
-	if v, ok := sc.mutation.StatusNamespaceID(); ok {
+	if v, ok := _c.mutation.StatusNamespaceID(); ok {
 		if err := status.StatusNamespaceIDValidator(string(v)); err != nil {
 			return &ValidationError{Name: "status_namespace_id", err: fmt.Errorf(`generated: validator failed for field "Status.status_namespace_id": %w`, err)}
 		}
 	}
-	if _, ok := sc.mutation.Source(); !ok {
+	if _, ok := _c.mutation.Source(); !ok {
 		return &ValidationError{Name: "source", err: errors.New(`generated: missing required field "Status.source"`)}
 	}
-	if v, ok := sc.mutation.Source(); ok {
+	if v, ok := _c.mutation.Source(); ok {
 		if err := status.SourceValidator(v); err != nil {
 			return &ValidationError{Name: "source", err: fmt.Errorf(`generated: validator failed for field "Status.source": %w`, err)}
 		}
 	}
-	if _, ok := sc.mutation.Data(); !ok {
+	if _, ok := _c.mutation.Data(); !ok {
 		return &ValidationError{Name: "data", err: errors.New(`generated: missing required field "Status.data"`)}
 	}
-	if len(sc.mutation.NamespaceIDs()) == 0 {
+	if len(_c.mutation.NamespaceIDs()) == 0 {
 		return &ValidationError{Name: "namespace", err: errors.New(`generated: missing required edge "Status.namespace"`)}
 	}
-	if len(sc.mutation.MetadataIDs()) == 0 {
+	if len(_c.mutation.MetadataIDs()) == 0 {
 		return &ValidationError{Name: "metadata", err: errors.New(`generated: missing required edge "Status.metadata"`)}
 	}
 	return nil
 }
 
-func (sc *StatusCreate) sqlSave(ctx context.Context) (*Status, error) {
-	if err := sc.check(); err != nil {
+func (_c *StatusCreate) sqlSave(ctx context.Context) (*Status, error) {
+	if err := _c.check(); err != nil {
 		return nil, err
 	}
-	_node, _spec := sc.createSpec()
-	if err := sqlgraph.CreateNode(ctx, sc.driver, _spec); err != nil {
+	_node, _spec := _c.createSpec()
+	if err := sqlgraph.CreateNode(ctx, _c.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
 			err = &ConstraintError{msg: err.Error(), wrap: err}
 		}
@@ -231,37 +231,37 @@ func (sc *StatusCreate) sqlSave(ctx context.Context) (*Status, error) {
 			return nil, err
 		}
 	}
-	sc.mutation.id = &_node.ID
-	sc.mutation.done = true
+	_c.mutation.id = &_node.ID
+	_c.mutation.done = true
 	return _node, nil
 }
 
-func (sc *StatusCreate) createSpec() (*Status, *sqlgraph.CreateSpec) {
+func (_c *StatusCreate) createSpec() (*Status, *sqlgraph.CreateSpec) {
 	var (
-		_node = &Status{config: sc.config}
+		_node = &Status{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(status.Table, sqlgraph.NewFieldSpec(status.FieldID, field.TypeString))
 	)
-	if id, ok := sc.mutation.ID(); ok {
+	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
 	}
-	if value, ok := sc.mutation.CreatedAt(); ok {
+	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(status.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
-	if value, ok := sc.mutation.UpdatedAt(); ok {
+	if value, ok := _c.mutation.UpdatedAt(); ok {
 		_spec.SetField(status.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
-	if value, ok := sc.mutation.Source(); ok {
+	if value, ok := _c.mutation.Source(); ok {
 		_spec.SetField(status.FieldSource, field.TypeString, value)
 		_node.Source = value
 	}
-	if value, ok := sc.mutation.Data(); ok {
+	if value, ok := _c.mutation.Data(); ok {
 		_spec.SetField(status.FieldData, field.TypeJSON, value)
 		_node.Data = value
 	}
-	if nodes := sc.mutation.NamespaceIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.NamespaceIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -278,7 +278,7 @@ func (sc *StatusCreate) createSpec() (*Status, *sqlgraph.CreateSpec) {
 		_node.StatusNamespaceID = nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
-	if nodes := sc.mutation.MetadataIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.MetadataIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.M2O,
 			Inverse: false,
@@ -306,16 +306,16 @@ type StatusCreateBulk struct {
 }
 
 // Save creates the Status entities in the database.
-func (scb *StatusCreateBulk) Save(ctx context.Context) ([]*Status, error) {
-	if scb.err != nil {
-		return nil, scb.err
+func (_c *StatusCreateBulk) Save(ctx context.Context) ([]*Status, error) {
+	if _c.err != nil {
+		return nil, _c.err
 	}
-	specs := make([]*sqlgraph.CreateSpec, len(scb.builders))
-	nodes := make([]*Status, len(scb.builders))
-	mutators := make([]Mutator, len(scb.builders))
-	for i := range scb.builders {
+	specs := make([]*sqlgraph.CreateSpec, len(_c.builders))
+	nodes := make([]*Status, len(_c.builders))
+	mutators := make([]Mutator, len(_c.builders))
+	for i := range _c.builders {
 		func(i int, root context.Context) {
-			builder := scb.builders[i]
+			builder := _c.builders[i]
 			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*StatusMutation)
@@ -329,11 +329,11 @@ func (scb *StatusCreateBulk) Save(ctx context.Context) ([]*Status, error) {
 				var err error
 				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
-					_, err = mutators[i+1].Mutate(root, scb.builders[i+1].mutation)
+					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
 					// Invoke the actual operation on the latest mutation in the chain.
-					if err = sqlgraph.BatchCreate(ctx, scb.driver, spec); err != nil {
+					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
 							err = &ConstraintError{msg: err.Error(), wrap: err}
 						}
@@ -353,7 +353,7 @@ func (scb *StatusCreateBulk) Save(ctx context.Context) ([]*Status, error) {
 		}(i, ctx)
 	}
 	if len(mutators) > 0 {
-		if _, err := mutators[0].Mutate(ctx, scb.builders[0].mutation); err != nil {
+		if _, err := mutators[0].Mutate(ctx, _c.builders[0].mutation); err != nil {
 			return nil, err
 		}
 	}
@@ -361,8 +361,8 @@ func (scb *StatusCreateBulk) Save(ctx context.Context) ([]*Status, error) {
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (scb *StatusCreateBulk) SaveX(ctx context.Context) []*Status {
-	v, err := scb.Save(ctx)
+func (_c *StatusCreateBulk) SaveX(ctx context.Context) []*Status {
+	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -370,14 +370,14 @@ func (scb *StatusCreateBulk) SaveX(ctx context.Context) []*Status {
 }
 
 // Exec executes the query.
-func (scb *StatusCreateBulk) Exec(ctx context.Context) error {
-	_, err := scb.Save(ctx)
+func (_c *StatusCreateBulk) Exec(ctx context.Context) error {
+	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (scb *StatusCreateBulk) ExecX(ctx context.Context) {
-	if err := scb.Exec(ctx); err != nil {
+func (_c *StatusCreateBulk) ExecX(ctx context.Context) {
+	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

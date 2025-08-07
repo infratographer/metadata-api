@@ -34,56 +34,56 @@ type StatusNamespaceDelete struct {
 }
 
 // Where appends a list predicates to the StatusNamespaceDelete builder.
-func (snd *StatusNamespaceDelete) Where(ps ...predicate.StatusNamespace) *StatusNamespaceDelete {
-	snd.mutation.Where(ps...)
-	return snd
+func (_d *StatusNamespaceDelete) Where(ps ...predicate.StatusNamespace) *StatusNamespaceDelete {
+	_d.mutation.Where(ps...)
+	return _d
 }
 
 // Exec executes the deletion query and returns how many vertices were deleted.
-func (snd *StatusNamespaceDelete) Exec(ctx context.Context) (int, error) {
-	return withHooks(ctx, snd.sqlExec, snd.mutation, snd.hooks)
+func (_d *StatusNamespaceDelete) Exec(ctx context.Context) (int, error) {
+	return withHooks(ctx, _d.sqlExec, _d.mutation, _d.hooks)
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (snd *StatusNamespaceDelete) ExecX(ctx context.Context) int {
-	n, err := snd.Exec(ctx)
+func (_d *StatusNamespaceDelete) ExecX(ctx context.Context) int {
+	n, err := _d.Exec(ctx)
 	if err != nil {
 		panic(err)
 	}
 	return n
 }
 
-func (snd *StatusNamespaceDelete) sqlExec(ctx context.Context) (int, error) {
+func (_d *StatusNamespaceDelete) sqlExec(ctx context.Context) (int, error) {
 	_spec := sqlgraph.NewDeleteSpec(statusnamespace.Table, sqlgraph.NewFieldSpec(statusnamespace.FieldID, field.TypeString))
-	if ps := snd.mutation.predicates; len(ps) > 0 {
+	if ps := _d.mutation.predicates; len(ps) > 0 {
 		_spec.Predicate = func(selector *sql.Selector) {
 			for i := range ps {
 				ps[i](selector)
 			}
 		}
 	}
-	affected, err := sqlgraph.DeleteNodes(ctx, snd.driver, _spec)
+	affected, err := sqlgraph.DeleteNodes(ctx, _d.driver, _spec)
 	if err != nil && sqlgraph.IsConstraintError(err) {
 		err = &ConstraintError{msg: err.Error(), wrap: err}
 	}
-	snd.mutation.done = true
+	_d.mutation.done = true
 	return affected, err
 }
 
 // StatusNamespaceDeleteOne is the builder for deleting a single StatusNamespace entity.
 type StatusNamespaceDeleteOne struct {
-	snd *StatusNamespaceDelete
+	_d *StatusNamespaceDelete
 }
 
 // Where appends a list predicates to the StatusNamespaceDelete builder.
-func (sndo *StatusNamespaceDeleteOne) Where(ps ...predicate.StatusNamespace) *StatusNamespaceDeleteOne {
-	sndo.snd.mutation.Where(ps...)
-	return sndo
+func (_d *StatusNamespaceDeleteOne) Where(ps ...predicate.StatusNamespace) *StatusNamespaceDeleteOne {
+	_d._d.mutation.Where(ps...)
+	return _d
 }
 
 // Exec executes the deletion query.
-func (sndo *StatusNamespaceDeleteOne) Exec(ctx context.Context) error {
-	n, err := sndo.snd.Exec(ctx)
+func (_d *StatusNamespaceDeleteOne) Exec(ctx context.Context) error {
+	n, err := _d._d.Exec(ctx)
 	switch {
 	case err != nil:
 		return err
@@ -95,8 +95,8 @@ func (sndo *StatusNamespaceDeleteOne) Exec(ctx context.Context) error {
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (sndo *StatusNamespaceDeleteOne) ExecX(ctx context.Context) {
-	if err := sndo.Exec(ctx); err != nil {
+func (_d *StatusNamespaceDeleteOne) ExecX(ctx context.Context) {
+	if err := _d.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

@@ -37,102 +37,102 @@ type AnnotationNamespaceCreate struct {
 }
 
 // SetCreatedAt sets the "created_at" field.
-func (anc *AnnotationNamespaceCreate) SetCreatedAt(t time.Time) *AnnotationNamespaceCreate {
-	anc.mutation.SetCreatedAt(t)
-	return anc
+func (_c *AnnotationNamespaceCreate) SetCreatedAt(v time.Time) *AnnotationNamespaceCreate {
+	_c.mutation.SetCreatedAt(v)
+	return _c
 }
 
 // SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (anc *AnnotationNamespaceCreate) SetNillableCreatedAt(t *time.Time) *AnnotationNamespaceCreate {
-	if t != nil {
-		anc.SetCreatedAt(*t)
+func (_c *AnnotationNamespaceCreate) SetNillableCreatedAt(v *time.Time) *AnnotationNamespaceCreate {
+	if v != nil {
+		_c.SetCreatedAt(*v)
 	}
-	return anc
+	return _c
 }
 
 // SetUpdatedAt sets the "updated_at" field.
-func (anc *AnnotationNamespaceCreate) SetUpdatedAt(t time.Time) *AnnotationNamespaceCreate {
-	anc.mutation.SetUpdatedAt(t)
-	return anc
+func (_c *AnnotationNamespaceCreate) SetUpdatedAt(v time.Time) *AnnotationNamespaceCreate {
+	_c.mutation.SetUpdatedAt(v)
+	return _c
 }
 
 // SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
-func (anc *AnnotationNamespaceCreate) SetNillableUpdatedAt(t *time.Time) *AnnotationNamespaceCreate {
-	if t != nil {
-		anc.SetUpdatedAt(*t)
+func (_c *AnnotationNamespaceCreate) SetNillableUpdatedAt(v *time.Time) *AnnotationNamespaceCreate {
+	if v != nil {
+		_c.SetUpdatedAt(*v)
 	}
-	return anc
+	return _c
 }
 
 // SetName sets the "name" field.
-func (anc *AnnotationNamespaceCreate) SetName(s string) *AnnotationNamespaceCreate {
-	anc.mutation.SetName(s)
-	return anc
+func (_c *AnnotationNamespaceCreate) SetName(v string) *AnnotationNamespaceCreate {
+	_c.mutation.SetName(v)
+	return _c
 }
 
 // SetOwnerID sets the "owner_id" field.
-func (anc *AnnotationNamespaceCreate) SetOwnerID(gi gidx.PrefixedID) *AnnotationNamespaceCreate {
-	anc.mutation.SetOwnerID(gi)
-	return anc
+func (_c *AnnotationNamespaceCreate) SetOwnerID(v gidx.PrefixedID) *AnnotationNamespaceCreate {
+	_c.mutation.SetOwnerID(v)
+	return _c
 }
 
 // SetPrivate sets the "private" field.
-func (anc *AnnotationNamespaceCreate) SetPrivate(b bool) *AnnotationNamespaceCreate {
-	anc.mutation.SetPrivate(b)
-	return anc
+func (_c *AnnotationNamespaceCreate) SetPrivate(v bool) *AnnotationNamespaceCreate {
+	_c.mutation.SetPrivate(v)
+	return _c
 }
 
 // SetNillablePrivate sets the "private" field if the given value is not nil.
-func (anc *AnnotationNamespaceCreate) SetNillablePrivate(b *bool) *AnnotationNamespaceCreate {
-	if b != nil {
-		anc.SetPrivate(*b)
+func (_c *AnnotationNamespaceCreate) SetNillablePrivate(v *bool) *AnnotationNamespaceCreate {
+	if v != nil {
+		_c.SetPrivate(*v)
 	}
-	return anc
+	return _c
 }
 
 // SetID sets the "id" field.
-func (anc *AnnotationNamespaceCreate) SetID(gi gidx.PrefixedID) *AnnotationNamespaceCreate {
-	anc.mutation.SetID(gi)
-	return anc
+func (_c *AnnotationNamespaceCreate) SetID(v gidx.PrefixedID) *AnnotationNamespaceCreate {
+	_c.mutation.SetID(v)
+	return _c
 }
 
 // SetNillableID sets the "id" field if the given value is not nil.
-func (anc *AnnotationNamespaceCreate) SetNillableID(gi *gidx.PrefixedID) *AnnotationNamespaceCreate {
-	if gi != nil {
-		anc.SetID(*gi)
+func (_c *AnnotationNamespaceCreate) SetNillableID(v *gidx.PrefixedID) *AnnotationNamespaceCreate {
+	if v != nil {
+		_c.SetID(*v)
 	}
-	return anc
+	return _c
 }
 
 // AddAnnotationIDs adds the "annotations" edge to the Annotation entity by IDs.
-func (anc *AnnotationNamespaceCreate) AddAnnotationIDs(ids ...gidx.PrefixedID) *AnnotationNamespaceCreate {
-	anc.mutation.AddAnnotationIDs(ids...)
-	return anc
+func (_c *AnnotationNamespaceCreate) AddAnnotationIDs(ids ...gidx.PrefixedID) *AnnotationNamespaceCreate {
+	_c.mutation.AddAnnotationIDs(ids...)
+	return _c
 }
 
 // AddAnnotations adds the "annotations" edges to the Annotation entity.
-func (anc *AnnotationNamespaceCreate) AddAnnotations(a ...*Annotation) *AnnotationNamespaceCreate {
-	ids := make([]gidx.PrefixedID, len(a))
-	for i := range a {
-		ids[i] = a[i].ID
+func (_c *AnnotationNamespaceCreate) AddAnnotations(v ...*Annotation) *AnnotationNamespaceCreate {
+	ids := make([]gidx.PrefixedID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return anc.AddAnnotationIDs(ids...)
+	return _c.AddAnnotationIDs(ids...)
 }
 
 // Mutation returns the AnnotationNamespaceMutation object of the builder.
-func (anc *AnnotationNamespaceCreate) Mutation() *AnnotationNamespaceMutation {
-	return anc.mutation
+func (_c *AnnotationNamespaceCreate) Mutation() *AnnotationNamespaceMutation {
+	return _c.mutation
 }
 
 // Save creates the AnnotationNamespace in the database.
-func (anc *AnnotationNamespaceCreate) Save(ctx context.Context) (*AnnotationNamespace, error) {
-	anc.defaults()
-	return withHooks(ctx, anc.sqlSave, anc.mutation, anc.hooks)
+func (_c *AnnotationNamespaceCreate) Save(ctx context.Context) (*AnnotationNamespace, error) {
+	_c.defaults()
+	return withHooks(ctx, _c.sqlSave, _c.mutation, _c.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
-func (anc *AnnotationNamespaceCreate) SaveX(ctx context.Context) *AnnotationNamespace {
-	v, err := anc.Save(ctx)
+func (_c *AnnotationNamespaceCreate) SaveX(ctx context.Context) *AnnotationNamespace {
+	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -140,74 +140,74 @@ func (anc *AnnotationNamespaceCreate) SaveX(ctx context.Context) *AnnotationName
 }
 
 // Exec executes the query.
-func (anc *AnnotationNamespaceCreate) Exec(ctx context.Context) error {
-	_, err := anc.Save(ctx)
+func (_c *AnnotationNamespaceCreate) Exec(ctx context.Context) error {
+	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (anc *AnnotationNamespaceCreate) ExecX(ctx context.Context) {
-	if err := anc.Exec(ctx); err != nil {
+func (_c *AnnotationNamespaceCreate) ExecX(ctx context.Context) {
+	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (anc *AnnotationNamespaceCreate) defaults() {
-	if _, ok := anc.mutation.CreatedAt(); !ok {
+func (_c *AnnotationNamespaceCreate) defaults() {
+	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := annotationnamespace.DefaultCreatedAt()
-		anc.mutation.SetCreatedAt(v)
+		_c.mutation.SetCreatedAt(v)
 	}
-	if _, ok := anc.mutation.UpdatedAt(); !ok {
+	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		v := annotationnamespace.DefaultUpdatedAt()
-		anc.mutation.SetUpdatedAt(v)
+		_c.mutation.SetUpdatedAt(v)
 	}
-	if _, ok := anc.mutation.Private(); !ok {
+	if _, ok := _c.mutation.Private(); !ok {
 		v := annotationnamespace.DefaultPrivate
-		anc.mutation.SetPrivate(v)
+		_c.mutation.SetPrivate(v)
 	}
-	if _, ok := anc.mutation.ID(); !ok {
+	if _, ok := _c.mutation.ID(); !ok {
 		v := annotationnamespace.DefaultID()
-		anc.mutation.SetID(v)
+		_c.mutation.SetID(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (anc *AnnotationNamespaceCreate) check() error {
-	if _, ok := anc.mutation.CreatedAt(); !ok {
+func (_c *AnnotationNamespaceCreate) check() error {
+	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`generated: missing required field "AnnotationNamespace.created_at"`)}
 	}
-	if _, ok := anc.mutation.UpdatedAt(); !ok {
+	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`generated: missing required field "AnnotationNamespace.updated_at"`)}
 	}
-	if _, ok := anc.mutation.Name(); !ok {
+	if _, ok := _c.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`generated: missing required field "AnnotationNamespace.name"`)}
 	}
-	if v, ok := anc.mutation.Name(); ok {
+	if v, ok := _c.mutation.Name(); ok {
 		if err := annotationnamespace.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`generated: validator failed for field "AnnotationNamespace.name": %w`, err)}
 		}
 	}
-	if _, ok := anc.mutation.OwnerID(); !ok {
+	if _, ok := _c.mutation.OwnerID(); !ok {
 		return &ValidationError{Name: "owner_id", err: errors.New(`generated: missing required field "AnnotationNamespace.owner_id"`)}
 	}
-	if v, ok := anc.mutation.OwnerID(); ok {
+	if v, ok := _c.mutation.OwnerID(); ok {
 		if err := annotationnamespace.OwnerIDValidator(string(v)); err != nil {
 			return &ValidationError{Name: "owner_id", err: fmt.Errorf(`generated: validator failed for field "AnnotationNamespace.owner_id": %w`, err)}
 		}
 	}
-	if _, ok := anc.mutation.Private(); !ok {
+	if _, ok := _c.mutation.Private(); !ok {
 		return &ValidationError{Name: "private", err: errors.New(`generated: missing required field "AnnotationNamespace.private"`)}
 	}
 	return nil
 }
 
-func (anc *AnnotationNamespaceCreate) sqlSave(ctx context.Context) (*AnnotationNamespace, error) {
-	if err := anc.check(); err != nil {
+func (_c *AnnotationNamespaceCreate) sqlSave(ctx context.Context) (*AnnotationNamespace, error) {
+	if err := _c.check(); err != nil {
 		return nil, err
 	}
-	_node, _spec := anc.createSpec()
-	if err := sqlgraph.CreateNode(ctx, anc.driver, _spec); err != nil {
+	_node, _spec := _c.createSpec()
+	if err := sqlgraph.CreateNode(ctx, _c.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
 			err = &ConstraintError{msg: err.Error(), wrap: err}
 		}
@@ -220,41 +220,41 @@ func (anc *AnnotationNamespaceCreate) sqlSave(ctx context.Context) (*AnnotationN
 			return nil, err
 		}
 	}
-	anc.mutation.id = &_node.ID
-	anc.mutation.done = true
+	_c.mutation.id = &_node.ID
+	_c.mutation.done = true
 	return _node, nil
 }
 
-func (anc *AnnotationNamespaceCreate) createSpec() (*AnnotationNamespace, *sqlgraph.CreateSpec) {
+func (_c *AnnotationNamespaceCreate) createSpec() (*AnnotationNamespace, *sqlgraph.CreateSpec) {
 	var (
-		_node = &AnnotationNamespace{config: anc.config}
+		_node = &AnnotationNamespace{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(annotationnamespace.Table, sqlgraph.NewFieldSpec(annotationnamespace.FieldID, field.TypeString))
 	)
-	if id, ok := anc.mutation.ID(); ok {
+	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
 	}
-	if value, ok := anc.mutation.CreatedAt(); ok {
+	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(annotationnamespace.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
-	if value, ok := anc.mutation.UpdatedAt(); ok {
+	if value, ok := _c.mutation.UpdatedAt(); ok {
 		_spec.SetField(annotationnamespace.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
-	if value, ok := anc.mutation.Name(); ok {
+	if value, ok := _c.mutation.Name(); ok {
 		_spec.SetField(annotationnamespace.FieldName, field.TypeString, value)
 		_node.Name = value
 	}
-	if value, ok := anc.mutation.OwnerID(); ok {
+	if value, ok := _c.mutation.OwnerID(); ok {
 		_spec.SetField(annotationnamespace.FieldOwnerID, field.TypeString, value)
 		_node.OwnerID = value
 	}
-	if value, ok := anc.mutation.Private(); ok {
+	if value, ok := _c.mutation.Private(); ok {
 		_spec.SetField(annotationnamespace.FieldPrivate, field.TypeBool, value)
 		_node.Private = value
 	}
-	if nodes := anc.mutation.AnnotationsIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.AnnotationsIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -281,16 +281,16 @@ type AnnotationNamespaceCreateBulk struct {
 }
 
 // Save creates the AnnotationNamespace entities in the database.
-func (ancb *AnnotationNamespaceCreateBulk) Save(ctx context.Context) ([]*AnnotationNamespace, error) {
-	if ancb.err != nil {
-		return nil, ancb.err
+func (_c *AnnotationNamespaceCreateBulk) Save(ctx context.Context) ([]*AnnotationNamespace, error) {
+	if _c.err != nil {
+		return nil, _c.err
 	}
-	specs := make([]*sqlgraph.CreateSpec, len(ancb.builders))
-	nodes := make([]*AnnotationNamespace, len(ancb.builders))
-	mutators := make([]Mutator, len(ancb.builders))
-	for i := range ancb.builders {
+	specs := make([]*sqlgraph.CreateSpec, len(_c.builders))
+	nodes := make([]*AnnotationNamespace, len(_c.builders))
+	mutators := make([]Mutator, len(_c.builders))
+	for i := range _c.builders {
 		func(i int, root context.Context) {
-			builder := ancb.builders[i]
+			builder := _c.builders[i]
 			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*AnnotationNamespaceMutation)
@@ -304,11 +304,11 @@ func (ancb *AnnotationNamespaceCreateBulk) Save(ctx context.Context) ([]*Annotat
 				var err error
 				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
-					_, err = mutators[i+1].Mutate(root, ancb.builders[i+1].mutation)
+					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
 					// Invoke the actual operation on the latest mutation in the chain.
-					if err = sqlgraph.BatchCreate(ctx, ancb.driver, spec); err != nil {
+					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
 							err = &ConstraintError{msg: err.Error(), wrap: err}
 						}
@@ -328,7 +328,7 @@ func (ancb *AnnotationNamespaceCreateBulk) Save(ctx context.Context) ([]*Annotat
 		}(i, ctx)
 	}
 	if len(mutators) > 0 {
-		if _, err := mutators[0].Mutate(ctx, ancb.builders[0].mutation); err != nil {
+		if _, err := mutators[0].Mutate(ctx, _c.builders[0].mutation); err != nil {
 			return nil, err
 		}
 	}
@@ -336,8 +336,8 @@ func (ancb *AnnotationNamespaceCreateBulk) Save(ctx context.Context) ([]*Annotat
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (ancb *AnnotationNamespaceCreateBulk) SaveX(ctx context.Context) []*AnnotationNamespace {
-	v, err := ancb.Save(ctx)
+func (_c *AnnotationNamespaceCreateBulk) SaveX(ctx context.Context) []*AnnotationNamespace {
+	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -345,14 +345,14 @@ func (ancb *AnnotationNamespaceCreateBulk) SaveX(ctx context.Context) []*Annotat
 }
 
 // Exec executes the query.
-func (ancb *AnnotationNamespaceCreateBulk) Exec(ctx context.Context) error {
-	_, err := ancb.Save(ctx)
+func (_c *AnnotationNamespaceCreateBulk) Exec(ctx context.Context) error {
+	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (ancb *AnnotationNamespaceCreateBulk) ExecX(ctx context.Context) {
-	if err := ancb.Exec(ctx); err != nil {
+func (_c *AnnotationNamespaceCreateBulk) ExecX(ctx context.Context) {
+	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

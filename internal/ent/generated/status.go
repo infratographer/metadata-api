@@ -110,7 +110,7 @@ func (*Status) scanValues(columns []string) ([]any, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the Status fields.
-func (s *Status) assignValues(columns []string, values []any) error {
+func (_m *Status) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -120,48 +120,48 @@ func (s *Status) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*gidx.PrefixedID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
-				s.ID = *value
+				_m.ID = *value
 			}
 		case status.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
-				s.CreatedAt = value.Time
+				_m.CreatedAt = value.Time
 			}
 		case status.FieldUpdatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
 			} else if value.Valid {
-				s.UpdatedAt = value.Time
+				_m.UpdatedAt = value.Time
 			}
 		case status.FieldMetadataID:
 			if value, ok := values[i].(*gidx.PrefixedID); !ok {
 				return fmt.Errorf("unexpected type %T for field metadata_id", values[i])
 			} else if value != nil {
-				s.MetadataID = *value
+				_m.MetadataID = *value
 			}
 		case status.FieldStatusNamespaceID:
 			if value, ok := values[i].(*gidx.PrefixedID); !ok {
 				return fmt.Errorf("unexpected type %T for field status_namespace_id", values[i])
 			} else if value != nil {
-				s.StatusNamespaceID = *value
+				_m.StatusNamespaceID = *value
 			}
 		case status.FieldSource:
 			if value, ok := values[i].(*sql.NullString); !ok {
 				return fmt.Errorf("unexpected type %T for field source", values[i])
 			} else if value.Valid {
-				s.Source = value.String
+				_m.Source = value.String
 			}
 		case status.FieldData:
 			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field data", values[i])
 			} else if value != nil && len(*value) > 0 {
-				if err := json.Unmarshal(*value, &s.Data); err != nil {
+				if err := json.Unmarshal(*value, &_m.Data); err != nil {
 					return fmt.Errorf("unmarshal field data: %w", err)
 				}
 			}
 		default:
-			s.selectValues.Set(columns[i], values[i])
+			_m.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
@@ -169,66 +169,66 @@ func (s *Status) assignValues(columns []string, values []any) error {
 
 // Value returns the ent.Value that was dynamically selected and assigned to the Status.
 // This includes values selected through modifiers, order, etc.
-func (s *Status) Value(name string) (ent.Value, error) {
-	return s.selectValues.Get(name)
+func (_m *Status) Value(name string) (ent.Value, error) {
+	return _m.selectValues.Get(name)
 }
 
 // QueryNamespace queries the "namespace" edge of the Status entity.
-func (s *Status) QueryNamespace() *StatusNamespaceQuery {
-	return NewStatusClient(s.config).QueryNamespace(s)
+func (_m *Status) QueryNamespace() *StatusNamespaceQuery {
+	return NewStatusClient(_m.config).QueryNamespace(_m)
 }
 
 // QueryMetadata queries the "metadata" edge of the Status entity.
-func (s *Status) QueryMetadata() *MetadataQuery {
-	return NewStatusClient(s.config).QueryMetadata(s)
+func (_m *Status) QueryMetadata() *MetadataQuery {
+	return NewStatusClient(_m.config).QueryMetadata(_m)
 }
 
 // Update returns a builder for updating this Status.
 // Note that you need to call Status.Unwrap() before calling this method if this Status
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (s *Status) Update() *StatusUpdateOne {
-	return NewStatusClient(s.config).UpdateOne(s)
+func (_m *Status) Update() *StatusUpdateOne {
+	return NewStatusClient(_m.config).UpdateOne(_m)
 }
 
 // Unwrap unwraps the Status entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (s *Status) Unwrap() *Status {
-	_tx, ok := s.config.driver.(*txDriver)
+func (_m *Status) Unwrap() *Status {
+	_tx, ok := _m.config.driver.(*txDriver)
 	if !ok {
 		panic("generated: Status is not a transactional entity")
 	}
-	s.config.driver = _tx.drv
-	return s
+	_m.config.driver = _tx.drv
+	return _m
 }
 
 // String implements the fmt.Stringer.
-func (s *Status) String() string {
+func (_m *Status) String() string {
 	var builder strings.Builder
 	builder.WriteString("Status(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", s.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
 	builder.WriteString("created_at=")
-	builder.WriteString(s.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("updated_at=")
-	builder.WriteString(s.UpdatedAt.Format(time.ANSIC))
+	builder.WriteString(_m.UpdatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("metadata_id=")
-	builder.WriteString(fmt.Sprintf("%v", s.MetadataID))
+	builder.WriteString(fmt.Sprintf("%v", _m.MetadataID))
 	builder.WriteString(", ")
 	builder.WriteString("status_namespace_id=")
-	builder.WriteString(fmt.Sprintf("%v", s.StatusNamespaceID))
+	builder.WriteString(fmt.Sprintf("%v", _m.StatusNamespaceID))
 	builder.WriteString(", ")
 	builder.WriteString("source=")
-	builder.WriteString(s.Source)
+	builder.WriteString(_m.Source)
 	builder.WriteString(", ")
 	builder.WriteString("data=")
-	builder.WriteString(fmt.Sprintf("%v", s.Data))
+	builder.WriteString(fmt.Sprintf("%v", _m.Data))
 	builder.WriteByte(')')
 	return builder.String()
 }
 
 // IsEntity implement fedruntime.Entity
-func (s Status) IsEntity() {}
+func (_m Status) IsEntity() {}
 
 // StatusSlice is a parsable slice of Status.
 type StatusSlice []*Status

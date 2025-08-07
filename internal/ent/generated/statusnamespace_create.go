@@ -37,102 +37,102 @@ type StatusNamespaceCreate struct {
 }
 
 // SetCreatedAt sets the "created_at" field.
-func (snc *StatusNamespaceCreate) SetCreatedAt(t time.Time) *StatusNamespaceCreate {
-	snc.mutation.SetCreatedAt(t)
-	return snc
+func (_c *StatusNamespaceCreate) SetCreatedAt(v time.Time) *StatusNamespaceCreate {
+	_c.mutation.SetCreatedAt(v)
+	return _c
 }
 
 // SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (snc *StatusNamespaceCreate) SetNillableCreatedAt(t *time.Time) *StatusNamespaceCreate {
-	if t != nil {
-		snc.SetCreatedAt(*t)
+func (_c *StatusNamespaceCreate) SetNillableCreatedAt(v *time.Time) *StatusNamespaceCreate {
+	if v != nil {
+		_c.SetCreatedAt(*v)
 	}
-	return snc
+	return _c
 }
 
 // SetUpdatedAt sets the "updated_at" field.
-func (snc *StatusNamespaceCreate) SetUpdatedAt(t time.Time) *StatusNamespaceCreate {
-	snc.mutation.SetUpdatedAt(t)
-	return snc
+func (_c *StatusNamespaceCreate) SetUpdatedAt(v time.Time) *StatusNamespaceCreate {
+	_c.mutation.SetUpdatedAt(v)
+	return _c
 }
 
 // SetNillableUpdatedAt sets the "updated_at" field if the given value is not nil.
-func (snc *StatusNamespaceCreate) SetNillableUpdatedAt(t *time.Time) *StatusNamespaceCreate {
-	if t != nil {
-		snc.SetUpdatedAt(*t)
+func (_c *StatusNamespaceCreate) SetNillableUpdatedAt(v *time.Time) *StatusNamespaceCreate {
+	if v != nil {
+		_c.SetUpdatedAt(*v)
 	}
-	return snc
+	return _c
 }
 
 // SetName sets the "name" field.
-func (snc *StatusNamespaceCreate) SetName(s string) *StatusNamespaceCreate {
-	snc.mutation.SetName(s)
-	return snc
+func (_c *StatusNamespaceCreate) SetName(v string) *StatusNamespaceCreate {
+	_c.mutation.SetName(v)
+	return _c
 }
 
 // SetResourceProviderID sets the "resource_provider_id" field.
-func (snc *StatusNamespaceCreate) SetResourceProviderID(gi gidx.PrefixedID) *StatusNamespaceCreate {
-	snc.mutation.SetResourceProviderID(gi)
-	return snc
+func (_c *StatusNamespaceCreate) SetResourceProviderID(v gidx.PrefixedID) *StatusNamespaceCreate {
+	_c.mutation.SetResourceProviderID(v)
+	return _c
 }
 
 // SetPrivate sets the "private" field.
-func (snc *StatusNamespaceCreate) SetPrivate(b bool) *StatusNamespaceCreate {
-	snc.mutation.SetPrivate(b)
-	return snc
+func (_c *StatusNamespaceCreate) SetPrivate(v bool) *StatusNamespaceCreate {
+	_c.mutation.SetPrivate(v)
+	return _c
 }
 
 // SetNillablePrivate sets the "private" field if the given value is not nil.
-func (snc *StatusNamespaceCreate) SetNillablePrivate(b *bool) *StatusNamespaceCreate {
-	if b != nil {
-		snc.SetPrivate(*b)
+func (_c *StatusNamespaceCreate) SetNillablePrivate(v *bool) *StatusNamespaceCreate {
+	if v != nil {
+		_c.SetPrivate(*v)
 	}
-	return snc
+	return _c
 }
 
 // SetID sets the "id" field.
-func (snc *StatusNamespaceCreate) SetID(gi gidx.PrefixedID) *StatusNamespaceCreate {
-	snc.mutation.SetID(gi)
-	return snc
+func (_c *StatusNamespaceCreate) SetID(v gidx.PrefixedID) *StatusNamespaceCreate {
+	_c.mutation.SetID(v)
+	return _c
 }
 
 // SetNillableID sets the "id" field if the given value is not nil.
-func (snc *StatusNamespaceCreate) SetNillableID(gi *gidx.PrefixedID) *StatusNamespaceCreate {
-	if gi != nil {
-		snc.SetID(*gi)
+func (_c *StatusNamespaceCreate) SetNillableID(v *gidx.PrefixedID) *StatusNamespaceCreate {
+	if v != nil {
+		_c.SetID(*v)
 	}
-	return snc
+	return _c
 }
 
 // AddStatusIDs adds the "statuses" edge to the Status entity by IDs.
-func (snc *StatusNamespaceCreate) AddStatusIDs(ids ...gidx.PrefixedID) *StatusNamespaceCreate {
-	snc.mutation.AddStatusIDs(ids...)
-	return snc
+func (_c *StatusNamespaceCreate) AddStatusIDs(ids ...gidx.PrefixedID) *StatusNamespaceCreate {
+	_c.mutation.AddStatusIDs(ids...)
+	return _c
 }
 
 // AddStatuses adds the "statuses" edges to the Status entity.
-func (snc *StatusNamespaceCreate) AddStatuses(s ...*Status) *StatusNamespaceCreate {
-	ids := make([]gidx.PrefixedID, len(s))
-	for i := range s {
-		ids[i] = s[i].ID
+func (_c *StatusNamespaceCreate) AddStatuses(v ...*Status) *StatusNamespaceCreate {
+	ids := make([]gidx.PrefixedID, len(v))
+	for i := range v {
+		ids[i] = v[i].ID
 	}
-	return snc.AddStatusIDs(ids...)
+	return _c.AddStatusIDs(ids...)
 }
 
 // Mutation returns the StatusNamespaceMutation object of the builder.
-func (snc *StatusNamespaceCreate) Mutation() *StatusNamespaceMutation {
-	return snc.mutation
+func (_c *StatusNamespaceCreate) Mutation() *StatusNamespaceMutation {
+	return _c.mutation
 }
 
 // Save creates the StatusNamespace in the database.
-func (snc *StatusNamespaceCreate) Save(ctx context.Context) (*StatusNamespace, error) {
-	snc.defaults()
-	return withHooks(ctx, snc.sqlSave, snc.mutation, snc.hooks)
+func (_c *StatusNamespaceCreate) Save(ctx context.Context) (*StatusNamespace, error) {
+	_c.defaults()
+	return withHooks(ctx, _c.sqlSave, _c.mutation, _c.hooks)
 }
 
 // SaveX calls Save and panics if Save returns an error.
-func (snc *StatusNamespaceCreate) SaveX(ctx context.Context) *StatusNamespace {
-	v, err := snc.Save(ctx)
+func (_c *StatusNamespaceCreate) SaveX(ctx context.Context) *StatusNamespace {
+	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -140,74 +140,74 @@ func (snc *StatusNamespaceCreate) SaveX(ctx context.Context) *StatusNamespace {
 }
 
 // Exec executes the query.
-func (snc *StatusNamespaceCreate) Exec(ctx context.Context) error {
-	_, err := snc.Save(ctx)
+func (_c *StatusNamespaceCreate) Exec(ctx context.Context) error {
+	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (snc *StatusNamespaceCreate) ExecX(ctx context.Context) {
-	if err := snc.Exec(ctx); err != nil {
+func (_c *StatusNamespaceCreate) ExecX(ctx context.Context) {
+	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}
 }
 
 // defaults sets the default values of the builder before save.
-func (snc *StatusNamespaceCreate) defaults() {
-	if _, ok := snc.mutation.CreatedAt(); !ok {
+func (_c *StatusNamespaceCreate) defaults() {
+	if _, ok := _c.mutation.CreatedAt(); !ok {
 		v := statusnamespace.DefaultCreatedAt()
-		snc.mutation.SetCreatedAt(v)
+		_c.mutation.SetCreatedAt(v)
 	}
-	if _, ok := snc.mutation.UpdatedAt(); !ok {
+	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		v := statusnamespace.DefaultUpdatedAt()
-		snc.mutation.SetUpdatedAt(v)
+		_c.mutation.SetUpdatedAt(v)
 	}
-	if _, ok := snc.mutation.Private(); !ok {
+	if _, ok := _c.mutation.Private(); !ok {
 		v := statusnamespace.DefaultPrivate
-		snc.mutation.SetPrivate(v)
+		_c.mutation.SetPrivate(v)
 	}
-	if _, ok := snc.mutation.ID(); !ok {
+	if _, ok := _c.mutation.ID(); !ok {
 		v := statusnamespace.DefaultID()
-		snc.mutation.SetID(v)
+		_c.mutation.SetID(v)
 	}
 }
 
 // check runs all checks and user-defined validators on the builder.
-func (snc *StatusNamespaceCreate) check() error {
-	if _, ok := snc.mutation.CreatedAt(); !ok {
+func (_c *StatusNamespaceCreate) check() error {
+	if _, ok := _c.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`generated: missing required field "StatusNamespace.created_at"`)}
 	}
-	if _, ok := snc.mutation.UpdatedAt(); !ok {
+	if _, ok := _c.mutation.UpdatedAt(); !ok {
 		return &ValidationError{Name: "updated_at", err: errors.New(`generated: missing required field "StatusNamespace.updated_at"`)}
 	}
-	if _, ok := snc.mutation.Name(); !ok {
+	if _, ok := _c.mutation.Name(); !ok {
 		return &ValidationError{Name: "name", err: errors.New(`generated: missing required field "StatusNamespace.name"`)}
 	}
-	if v, ok := snc.mutation.Name(); ok {
+	if v, ok := _c.mutation.Name(); ok {
 		if err := statusnamespace.NameValidator(v); err != nil {
 			return &ValidationError{Name: "name", err: fmt.Errorf(`generated: validator failed for field "StatusNamespace.name": %w`, err)}
 		}
 	}
-	if _, ok := snc.mutation.ResourceProviderID(); !ok {
+	if _, ok := _c.mutation.ResourceProviderID(); !ok {
 		return &ValidationError{Name: "resource_provider_id", err: errors.New(`generated: missing required field "StatusNamespace.resource_provider_id"`)}
 	}
-	if v, ok := snc.mutation.ResourceProviderID(); ok {
+	if v, ok := _c.mutation.ResourceProviderID(); ok {
 		if err := statusnamespace.ResourceProviderIDValidator(string(v)); err != nil {
 			return &ValidationError{Name: "resource_provider_id", err: fmt.Errorf(`generated: validator failed for field "StatusNamespace.resource_provider_id": %w`, err)}
 		}
 	}
-	if _, ok := snc.mutation.Private(); !ok {
+	if _, ok := _c.mutation.Private(); !ok {
 		return &ValidationError{Name: "private", err: errors.New(`generated: missing required field "StatusNamespace.private"`)}
 	}
 	return nil
 }
 
-func (snc *StatusNamespaceCreate) sqlSave(ctx context.Context) (*StatusNamespace, error) {
-	if err := snc.check(); err != nil {
+func (_c *StatusNamespaceCreate) sqlSave(ctx context.Context) (*StatusNamespace, error) {
+	if err := _c.check(); err != nil {
 		return nil, err
 	}
-	_node, _spec := snc.createSpec()
-	if err := sqlgraph.CreateNode(ctx, snc.driver, _spec); err != nil {
+	_node, _spec := _c.createSpec()
+	if err := sqlgraph.CreateNode(ctx, _c.driver, _spec); err != nil {
 		if sqlgraph.IsConstraintError(err) {
 			err = &ConstraintError{msg: err.Error(), wrap: err}
 		}
@@ -220,41 +220,41 @@ func (snc *StatusNamespaceCreate) sqlSave(ctx context.Context) (*StatusNamespace
 			return nil, err
 		}
 	}
-	snc.mutation.id = &_node.ID
-	snc.mutation.done = true
+	_c.mutation.id = &_node.ID
+	_c.mutation.done = true
 	return _node, nil
 }
 
-func (snc *StatusNamespaceCreate) createSpec() (*StatusNamespace, *sqlgraph.CreateSpec) {
+func (_c *StatusNamespaceCreate) createSpec() (*StatusNamespace, *sqlgraph.CreateSpec) {
 	var (
-		_node = &StatusNamespace{config: snc.config}
+		_node = &StatusNamespace{config: _c.config}
 		_spec = sqlgraph.NewCreateSpec(statusnamespace.Table, sqlgraph.NewFieldSpec(statusnamespace.FieldID, field.TypeString))
 	)
-	if id, ok := snc.mutation.ID(); ok {
+	if id, ok := _c.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
 	}
-	if value, ok := snc.mutation.CreatedAt(); ok {
+	if value, ok := _c.mutation.CreatedAt(); ok {
 		_spec.SetField(statusnamespace.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
 	}
-	if value, ok := snc.mutation.UpdatedAt(); ok {
+	if value, ok := _c.mutation.UpdatedAt(); ok {
 		_spec.SetField(statusnamespace.FieldUpdatedAt, field.TypeTime, value)
 		_node.UpdatedAt = value
 	}
-	if value, ok := snc.mutation.Name(); ok {
+	if value, ok := _c.mutation.Name(); ok {
 		_spec.SetField(statusnamespace.FieldName, field.TypeString, value)
 		_node.Name = value
 	}
-	if value, ok := snc.mutation.ResourceProviderID(); ok {
+	if value, ok := _c.mutation.ResourceProviderID(); ok {
 		_spec.SetField(statusnamespace.FieldResourceProviderID, field.TypeString, value)
 		_node.ResourceProviderID = value
 	}
-	if value, ok := snc.mutation.Private(); ok {
+	if value, ok := _c.mutation.Private(); ok {
 		_spec.SetField(statusnamespace.FieldPrivate, field.TypeBool, value)
 		_node.Private = value
 	}
-	if nodes := snc.mutation.StatusesIDs(); len(nodes) > 0 {
+	if nodes := _c.mutation.StatusesIDs(); len(nodes) > 0 {
 		edge := &sqlgraph.EdgeSpec{
 			Rel:     sqlgraph.O2M,
 			Inverse: true,
@@ -281,16 +281,16 @@ type StatusNamespaceCreateBulk struct {
 }
 
 // Save creates the StatusNamespace entities in the database.
-func (sncb *StatusNamespaceCreateBulk) Save(ctx context.Context) ([]*StatusNamespace, error) {
-	if sncb.err != nil {
-		return nil, sncb.err
+func (_c *StatusNamespaceCreateBulk) Save(ctx context.Context) ([]*StatusNamespace, error) {
+	if _c.err != nil {
+		return nil, _c.err
 	}
-	specs := make([]*sqlgraph.CreateSpec, len(sncb.builders))
-	nodes := make([]*StatusNamespace, len(sncb.builders))
-	mutators := make([]Mutator, len(sncb.builders))
-	for i := range sncb.builders {
+	specs := make([]*sqlgraph.CreateSpec, len(_c.builders))
+	nodes := make([]*StatusNamespace, len(_c.builders))
+	mutators := make([]Mutator, len(_c.builders))
+	for i := range _c.builders {
 		func(i int, root context.Context) {
-			builder := sncb.builders[i]
+			builder := _c.builders[i]
 			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*StatusNamespaceMutation)
@@ -304,11 +304,11 @@ func (sncb *StatusNamespaceCreateBulk) Save(ctx context.Context) ([]*StatusNames
 				var err error
 				nodes[i], specs[i] = builder.createSpec()
 				if i < len(mutators)-1 {
-					_, err = mutators[i+1].Mutate(root, sncb.builders[i+1].mutation)
+					_, err = mutators[i+1].Mutate(root, _c.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
 					// Invoke the actual operation on the latest mutation in the chain.
-					if err = sqlgraph.BatchCreate(ctx, sncb.driver, spec); err != nil {
+					if err = sqlgraph.BatchCreate(ctx, _c.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
 							err = &ConstraintError{msg: err.Error(), wrap: err}
 						}
@@ -328,7 +328,7 @@ func (sncb *StatusNamespaceCreateBulk) Save(ctx context.Context) ([]*StatusNames
 		}(i, ctx)
 	}
 	if len(mutators) > 0 {
-		if _, err := mutators[0].Mutate(ctx, sncb.builders[0].mutation); err != nil {
+		if _, err := mutators[0].Mutate(ctx, _c.builders[0].mutation); err != nil {
 			return nil, err
 		}
 	}
@@ -336,8 +336,8 @@ func (sncb *StatusNamespaceCreateBulk) Save(ctx context.Context) ([]*StatusNames
 }
 
 // SaveX is like Save, but panics if an error occurs.
-func (sncb *StatusNamespaceCreateBulk) SaveX(ctx context.Context) []*StatusNamespace {
-	v, err := sncb.Save(ctx)
+func (_c *StatusNamespaceCreateBulk) SaveX(ctx context.Context) []*StatusNamespace {
+	v, err := _c.Save(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -345,14 +345,14 @@ func (sncb *StatusNamespaceCreateBulk) SaveX(ctx context.Context) []*StatusNames
 }
 
 // Exec executes the query.
-func (sncb *StatusNamespaceCreateBulk) Exec(ctx context.Context) error {
-	_, err := sncb.Save(ctx)
+func (_c *StatusNamespaceCreateBulk) Exec(ctx context.Context) error {
+	_, err := _c.Save(ctx)
 	return err
 }
 
 // ExecX is like Exec, but panics if an error occurs.
-func (sncb *StatusNamespaceCreateBulk) ExecX(ctx context.Context) {
-	if err := sncb.Exec(ctx); err != nil {
+func (_c *StatusNamespaceCreateBulk) ExecX(ctx context.Context) {
+	if err := _c.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

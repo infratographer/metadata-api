@@ -107,7 +107,7 @@ func (*Annotation) scanValues(columns []string) ([]any, error) {
 
 // assignValues assigns the values that were returned from sql.Rows (after scanning)
 // to the Annotation fields.
-func (a *Annotation) assignValues(columns []string, values []any) error {
+func (_m *Annotation) assignValues(columns []string, values []any) error {
 	if m, n := len(values), len(columns); m < n {
 		return fmt.Errorf("mismatch number of scan values: %d != %d", m, n)
 	}
@@ -117,42 +117,42 @@ func (a *Annotation) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*gidx.PrefixedID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
-				a.ID = *value
+				_m.ID = *value
 			}
 		case annotation.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field created_at", values[i])
 			} else if value.Valid {
-				a.CreatedAt = value.Time
+				_m.CreatedAt = value.Time
 			}
 		case annotation.FieldUpdatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field updated_at", values[i])
 			} else if value.Valid {
-				a.UpdatedAt = value.Time
+				_m.UpdatedAt = value.Time
 			}
 		case annotation.FieldMetadataID:
 			if value, ok := values[i].(*gidx.PrefixedID); !ok {
 				return fmt.Errorf("unexpected type %T for field metadata_id", values[i])
 			} else if value != nil {
-				a.MetadataID = *value
+				_m.MetadataID = *value
 			}
 		case annotation.FieldAnnotationNamespaceID:
 			if value, ok := values[i].(*gidx.PrefixedID); !ok {
 				return fmt.Errorf("unexpected type %T for field annotation_namespace_id", values[i])
 			} else if value != nil {
-				a.AnnotationNamespaceID = *value
+				_m.AnnotationNamespaceID = *value
 			}
 		case annotation.FieldData:
 			if value, ok := values[i].(*[]byte); !ok {
 				return fmt.Errorf("unexpected type %T for field data", values[i])
 			} else if value != nil && len(*value) > 0 {
-				if err := json.Unmarshal(*value, &a.Data); err != nil {
+				if err := json.Unmarshal(*value, &_m.Data); err != nil {
 					return fmt.Errorf("unmarshal field data: %w", err)
 				}
 			}
 		default:
-			a.selectValues.Set(columns[i], values[i])
+			_m.selectValues.Set(columns[i], values[i])
 		}
 	}
 	return nil
@@ -160,63 +160,63 @@ func (a *Annotation) assignValues(columns []string, values []any) error {
 
 // Value returns the ent.Value that was dynamically selected and assigned to the Annotation.
 // This includes values selected through modifiers, order, etc.
-func (a *Annotation) Value(name string) (ent.Value, error) {
-	return a.selectValues.Get(name)
+func (_m *Annotation) Value(name string) (ent.Value, error) {
+	return _m.selectValues.Get(name)
 }
 
 // QueryNamespace queries the "namespace" edge of the Annotation entity.
-func (a *Annotation) QueryNamespace() *AnnotationNamespaceQuery {
-	return NewAnnotationClient(a.config).QueryNamespace(a)
+func (_m *Annotation) QueryNamespace() *AnnotationNamespaceQuery {
+	return NewAnnotationClient(_m.config).QueryNamespace(_m)
 }
 
 // QueryMetadata queries the "metadata" edge of the Annotation entity.
-func (a *Annotation) QueryMetadata() *MetadataQuery {
-	return NewAnnotationClient(a.config).QueryMetadata(a)
+func (_m *Annotation) QueryMetadata() *MetadataQuery {
+	return NewAnnotationClient(_m.config).QueryMetadata(_m)
 }
 
 // Update returns a builder for updating this Annotation.
 // Note that you need to call Annotation.Unwrap() before calling this method if this Annotation
 // was returned from a transaction, and the transaction was committed or rolled back.
-func (a *Annotation) Update() *AnnotationUpdateOne {
-	return NewAnnotationClient(a.config).UpdateOne(a)
+func (_m *Annotation) Update() *AnnotationUpdateOne {
+	return NewAnnotationClient(_m.config).UpdateOne(_m)
 }
 
 // Unwrap unwraps the Annotation entity that was returned from a transaction after it was closed,
 // so that all future queries will be executed through the driver which created the transaction.
-func (a *Annotation) Unwrap() *Annotation {
-	_tx, ok := a.config.driver.(*txDriver)
+func (_m *Annotation) Unwrap() *Annotation {
+	_tx, ok := _m.config.driver.(*txDriver)
 	if !ok {
 		panic("generated: Annotation is not a transactional entity")
 	}
-	a.config.driver = _tx.drv
-	return a
+	_m.config.driver = _tx.drv
+	return _m
 }
 
 // String implements the fmt.Stringer.
-func (a *Annotation) String() string {
+func (_m *Annotation) String() string {
 	var builder strings.Builder
 	builder.WriteString("Annotation(")
-	builder.WriteString(fmt.Sprintf("id=%v, ", a.ID))
+	builder.WriteString(fmt.Sprintf("id=%v, ", _m.ID))
 	builder.WriteString("created_at=")
-	builder.WriteString(a.CreatedAt.Format(time.ANSIC))
+	builder.WriteString(_m.CreatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("updated_at=")
-	builder.WriteString(a.UpdatedAt.Format(time.ANSIC))
+	builder.WriteString(_m.UpdatedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("metadata_id=")
-	builder.WriteString(fmt.Sprintf("%v", a.MetadataID))
+	builder.WriteString(fmt.Sprintf("%v", _m.MetadataID))
 	builder.WriteString(", ")
 	builder.WriteString("annotation_namespace_id=")
-	builder.WriteString(fmt.Sprintf("%v", a.AnnotationNamespaceID))
+	builder.WriteString(fmt.Sprintf("%v", _m.AnnotationNamespaceID))
 	builder.WriteString(", ")
 	builder.WriteString("data=")
-	builder.WriteString(fmt.Sprintf("%v", a.Data))
+	builder.WriteString(fmt.Sprintf("%v", _m.Data))
 	builder.WriteByte(')')
 	return builder.String()
 }
 
 // IsEntity implement fedruntime.Entity
-func (a Annotation) IsEntity() {}
+func (_m Annotation) IsEntity() {}
 
 // Annotations is a parsable slice of Annotation.
 type Annotations []*Annotation
