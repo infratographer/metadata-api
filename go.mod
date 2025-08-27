@@ -21,7 +21,7 @@ require (
 	github.com/nsf/jsondiff v0.0.0-20230430225905-43f6cf3098c1
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.20.1
-	github.com/stretchr/testify v1.11.0
+	github.com/stretchr/testify v1.11.1
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.38.0
 	github.com/vektah/gqlparser/v2 v2.5.30
 	github.com/wundergraph/graphql-go-tools v1.67.4
