@@ -1,7 +1,7 @@
 # Used to install CRDB into the devcontainer
 FROM cockroachdb/cockroach:latest-v22.2 as CRDB
 
-FROM mcr.microsoft.com/devcontainers/go:1.24
+FROM mcr.microsoft.com/devcontainers/go:1.25
 # Set up crdb
 RUN mkdir /usr/local/lib/cockroach
 COPY --from=CRDB /cockroach/cockroach /usr/local/bin
