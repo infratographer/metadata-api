@@ -3048,7 +3048,9 @@ func (ec *executionContext) _Annotation_id(ctx context.Context, field graphql.Co
 		ec.OperationContext,
 		field,
 		ec.fieldContext_Annotation_id,
-		func(ctx context.Context) (any, error) { return obj.ID, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
 		nil,
 		ec.marshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID,
 		true,
@@ -3075,7 +3077,9 @@ func (ec *executionContext) _Annotation_createdAt(ctx context.Context, field gra
 		ec.OperationContext,
 		field,
 		ec.fieldContext_Annotation_createdAt,
-		func(ctx context.Context) (any, error) { return obj.CreatedAt, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
 		nil,
 		ec.marshalNTime2timeᚐTime,
 		true,
@@ -3102,7 +3106,9 @@ func (ec *executionContext) _Annotation_updatedAt(ctx context.Context, field gra
 		ec.OperationContext,
 		field,
 		ec.fieldContext_Annotation_updatedAt,
-		func(ctx context.Context) (any, error) { return obj.UpdatedAt, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.UpdatedAt, nil
+		},
 		nil,
 		ec.marshalNTime2timeᚐTime,
 		true,
@@ -3129,7 +3135,9 @@ func (ec *executionContext) _Annotation_metadataID(ctx context.Context, field gr
 		ec.OperationContext,
 		field,
 		ec.fieldContext_Annotation_metadataID,
-		func(ctx context.Context) (any, error) { return obj.MetadataID, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.MetadataID, nil
+		},
 		nil,
 		ec.marshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID,
 		true,
@@ -3156,7 +3164,9 @@ func (ec *executionContext) _Annotation_data(ctx context.Context, field graphql.
 		ec.OperationContext,
 		field,
 		ec.fieldContext_Annotation_data,
-		func(ctx context.Context) (any, error) { return obj.Data, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.Data, nil
+		},
 		nil,
 		ec.marshalNJSON2encodingᚋjsonᚐRawMessage,
 		true,
@@ -3273,7 +3283,9 @@ func (ec *executionContext) _AnnotationConnection_edges(ctx context.Context, fie
 		ec.OperationContext,
 		field,
 		ec.fieldContext_AnnotationConnection_edges,
-		func(ctx context.Context) (any, error) { return obj.Edges, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.Edges, nil
+		},
 		nil,
 		ec.marshalOAnnotationEdge2ᚕᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationEdge,
 		true,
@@ -3306,7 +3318,9 @@ func (ec *executionContext) _AnnotationConnection_pageInfo(ctx context.Context, 
 		ec.OperationContext,
 		field,
 		ec.fieldContext_AnnotationConnection_pageInfo,
-		func(ctx context.Context) (any, error) { return obj.PageInfo, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.PageInfo, nil
+		},
 		nil,
 		ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo,
 		true,
@@ -3343,7 +3357,9 @@ func (ec *executionContext) _AnnotationConnection_totalCount(ctx context.Context
 		ec.OperationContext,
 		field,
 		ec.fieldContext_AnnotationConnection_totalCount,
-		func(ctx context.Context) (any, error) { return obj.TotalCount, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.TotalCount, nil
+		},
 		nil,
 		ec.marshalNInt2int,
 		true,
@@ -3370,7 +3386,9 @@ func (ec *executionContext) _AnnotationDeleteResponse_deletedID(ctx context.Cont
 		ec.OperationContext,
 		field,
 		ec.fieldContext_AnnotationDeleteResponse_deletedID,
-		func(ctx context.Context) (any, error) { return obj.DeletedID, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.DeletedID, nil
+		},
 		nil,
 		ec.marshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID,
 		true,
@@ -3397,7 +3415,9 @@ func (ec *executionContext) _AnnotationEdge_node(ctx context.Context, field grap
 		ec.OperationContext,
 		field,
 		ec.fieldContext_AnnotationEdge_node,
-		func(ctx context.Context) (any, error) { return obj.Node, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.Node, nil
+		},
 		nil,
 		ec.marshalOAnnotation2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotation,
 		true,
@@ -3440,7 +3460,9 @@ func (ec *executionContext) _AnnotationEdge_cursor(ctx context.Context, field gr
 		ec.OperationContext,
 		field,
 		ec.fieldContext_AnnotationEdge_cursor,
-		func(ctx context.Context) (any, error) { return obj.Cursor, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.Cursor, nil
+		},
 		nil,
 		ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor,
 		true,
@@ -3467,7 +3489,9 @@ func (ec *executionContext) _AnnotationNamespace_id(ctx context.Context, field g
 		ec.OperationContext,
 		field,
 		ec.fieldContext_AnnotationNamespace_id,
-		func(ctx context.Context) (any, error) { return obj.ID, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
 		nil,
 		ec.marshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID,
 		true,
@@ -3494,7 +3518,9 @@ func (ec *executionContext) _AnnotationNamespace_createdAt(ctx context.Context, 
 		ec.OperationContext,
 		field,
 		ec.fieldContext_AnnotationNamespace_createdAt,
-		func(ctx context.Context) (any, error) { return obj.CreatedAt, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
 		nil,
 		ec.marshalNTime2timeᚐTime,
 		true,
@@ -3521,7 +3547,9 @@ func (ec *executionContext) _AnnotationNamespace_updatedAt(ctx context.Context, 
 		ec.OperationContext,
 		field,
 		ec.fieldContext_AnnotationNamespace_updatedAt,
-		func(ctx context.Context) (any, error) { return obj.UpdatedAt, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.UpdatedAt, nil
+		},
 		nil,
 		ec.marshalNTime2timeᚐTime,
 		true,
@@ -3548,7 +3576,9 @@ func (ec *executionContext) _AnnotationNamespace_name(ctx context.Context, field
 		ec.OperationContext,
 		field,
 		ec.fieldContext_AnnotationNamespace_name,
-		func(ctx context.Context) (any, error) { return obj.Name, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.Name, nil
+		},
 		nil,
 		ec.marshalNString2string,
 		true,
@@ -3575,7 +3605,9 @@ func (ec *executionContext) _AnnotationNamespace_private(ctx context.Context, fi
 		ec.OperationContext,
 		field,
 		ec.fieldContext_AnnotationNamespace_private,
-		func(ctx context.Context) (any, error) { return obj.Private, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.Private, nil
+		},
 		nil,
 		ec.marshalNBoolean2bool,
 		true,
@@ -3684,7 +3716,9 @@ func (ec *executionContext) _AnnotationNamespaceConnection_edges(ctx context.Con
 		ec.OperationContext,
 		field,
 		ec.fieldContext_AnnotationNamespaceConnection_edges,
-		func(ctx context.Context) (any, error) { return obj.Edges, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.Edges, nil
+		},
 		nil,
 		ec.marshalOAnnotationNamespaceEdge2ᚕᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationNamespaceEdge,
 		true,
@@ -3717,7 +3751,9 @@ func (ec *executionContext) _AnnotationNamespaceConnection_pageInfo(ctx context.
 		ec.OperationContext,
 		field,
 		ec.fieldContext_AnnotationNamespaceConnection_pageInfo,
-		func(ctx context.Context) (any, error) { return obj.PageInfo, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.PageInfo, nil
+		},
 		nil,
 		ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo,
 		true,
@@ -3754,7 +3790,9 @@ func (ec *executionContext) _AnnotationNamespaceConnection_totalCount(ctx contex
 		ec.OperationContext,
 		field,
 		ec.fieldContext_AnnotationNamespaceConnection_totalCount,
-		func(ctx context.Context) (any, error) { return obj.TotalCount, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.TotalCount, nil
+		},
 		nil,
 		ec.marshalNInt2int,
 		true,
@@ -3781,7 +3819,9 @@ func (ec *executionContext) _AnnotationNamespaceCreatePayload_annotationNamespac
 		ec.OperationContext,
 		field,
 		ec.fieldContext_AnnotationNamespaceCreatePayload_annotationNamespace,
-		func(ctx context.Context) (any, error) { return obj.AnnotationNamespace, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.AnnotationNamespace, nil
+		},
 		nil,
 		ec.marshalNAnnotationNamespace2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationNamespace,
 		true,
@@ -3824,7 +3864,9 @@ func (ec *executionContext) _AnnotationNamespaceDeletePayload_deletedID(ctx cont
 		ec.OperationContext,
 		field,
 		ec.fieldContext_AnnotationNamespaceDeletePayload_deletedID,
-		func(ctx context.Context) (any, error) { return obj.DeletedID, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.DeletedID, nil
+		},
 		nil,
 		ec.marshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID,
 		true,
@@ -3851,7 +3893,9 @@ func (ec *executionContext) _AnnotationNamespaceDeletePayload_annotationDeletedC
 		ec.OperationContext,
 		field,
 		ec.fieldContext_AnnotationNamespaceDeletePayload_annotationDeletedCount,
-		func(ctx context.Context) (any, error) { return obj.AnnotationDeletedCount, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.AnnotationDeletedCount, nil
+		},
 		nil,
 		ec.marshalNInt2int,
 		true,
@@ -3878,7 +3922,9 @@ func (ec *executionContext) _AnnotationNamespaceEdge_node(ctx context.Context, f
 		ec.OperationContext,
 		field,
 		ec.fieldContext_AnnotationNamespaceEdge_node,
-		func(ctx context.Context) (any, error) { return obj.Node, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.Node, nil
+		},
 		nil,
 		ec.marshalOAnnotationNamespace2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationNamespace,
 		true,
@@ -3921,7 +3967,9 @@ func (ec *executionContext) _AnnotationNamespaceEdge_cursor(ctx context.Context,
 		ec.OperationContext,
 		field,
 		ec.fieldContext_AnnotationNamespaceEdge_cursor,
-		func(ctx context.Context) (any, error) { return obj.Cursor, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.Cursor, nil
+		},
 		nil,
 		ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor,
 		true,
@@ -3948,7 +3996,9 @@ func (ec *executionContext) _AnnotationNamespaceUpdatePayload_annotationNamespac
 		ec.OperationContext,
 		field,
 		ec.fieldContext_AnnotationNamespaceUpdatePayload_annotationNamespace,
-		func(ctx context.Context) (any, error) { return obj.AnnotationNamespace, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.AnnotationNamespace, nil
+		},
 		nil,
 		ec.marshalNAnnotationNamespace2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotationNamespace,
 		true,
@@ -3991,7 +4041,9 @@ func (ec *executionContext) _AnnotationUpdateResponse_annotation(ctx context.Con
 		ec.OperationContext,
 		field,
 		ec.fieldContext_AnnotationUpdateResponse_annotation,
-		func(ctx context.Context) (any, error) { return obj.Annotation, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.Annotation, nil
+		},
 		nil,
 		ec.marshalNAnnotation2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐAnnotation,
 		true,
@@ -4523,7 +4575,9 @@ func (ec *executionContext) _Metadata_id(ctx context.Context, field graphql.Coll
 		ec.OperationContext,
 		field,
 		ec.fieldContext_Metadata_id,
-		func(ctx context.Context) (any, error) { return obj.ID, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
 		nil,
 		ec.marshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID,
 		true,
@@ -4550,7 +4604,9 @@ func (ec *executionContext) _Metadata_createdAt(ctx context.Context, field graph
 		ec.OperationContext,
 		field,
 		ec.fieldContext_Metadata_createdAt,
-		func(ctx context.Context) (any, error) { return obj.CreatedAt, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
 		nil,
 		ec.marshalNTime2timeᚐTime,
 		true,
@@ -4577,7 +4633,9 @@ func (ec *executionContext) _Metadata_updatedAt(ctx context.Context, field graph
 		ec.OperationContext,
 		field,
 		ec.fieldContext_Metadata_updatedAt,
-		func(ctx context.Context) (any, error) { return obj.UpdatedAt, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.UpdatedAt, nil
+		},
 		nil,
 		ec.marshalNTime2timeᚐTime,
 		true,
@@ -4604,7 +4662,9 @@ func (ec *executionContext) _Metadata_nodeID(ctx context.Context, field graphql.
 		ec.OperationContext,
 		field,
 		ec.fieldContext_Metadata_nodeID,
-		func(ctx context.Context) (any, error) { return obj.NodeID, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.NodeID, nil
+		},
 		nil,
 		ec.marshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID,
 		true,
@@ -4764,7 +4824,9 @@ func (ec *executionContext) _MetadataConnection_edges(ctx context.Context, field
 		ec.OperationContext,
 		field,
 		ec.fieldContext_MetadataConnection_edges,
-		func(ctx context.Context) (any, error) { return obj.Edges, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.Edges, nil
+		},
 		nil,
 		ec.marshalOMetadataEdge2ᚕᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐMetadataEdge,
 		true,
@@ -4797,7 +4859,9 @@ func (ec *executionContext) _MetadataConnection_pageInfo(ctx context.Context, fi
 		ec.OperationContext,
 		field,
 		ec.fieldContext_MetadataConnection_pageInfo,
-		func(ctx context.Context) (any, error) { return obj.PageInfo, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.PageInfo, nil
+		},
 		nil,
 		ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo,
 		true,
@@ -4834,7 +4898,9 @@ func (ec *executionContext) _MetadataConnection_totalCount(ctx context.Context, 
 		ec.OperationContext,
 		field,
 		ec.fieldContext_MetadataConnection_totalCount,
-		func(ctx context.Context) (any, error) { return obj.TotalCount, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.TotalCount, nil
+		},
 		nil,
 		ec.marshalNInt2int,
 		true,
@@ -4861,7 +4927,9 @@ func (ec *executionContext) _MetadataEdge_node(ctx context.Context, field graphq
 		ec.OperationContext,
 		field,
 		ec.fieldContext_MetadataEdge_node,
-		func(ctx context.Context) (any, error) { return obj.Node, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.Node, nil
+		},
 		nil,
 		ec.marshalOMetadata2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐMetadata,
 		true,
@@ -4904,7 +4972,9 @@ func (ec *executionContext) _MetadataEdge_cursor(ctx context.Context, field grap
 		ec.OperationContext,
 		field,
 		ec.fieldContext_MetadataEdge_cursor,
-		func(ctx context.Context) (any, error) { return obj.Cursor, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.Cursor, nil
+		},
 		nil,
 		ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor,
 		true,
@@ -4931,7 +5001,9 @@ func (ec *executionContext) _MetadataNode_id(ctx context.Context, field graphql.
 		ec.OperationContext,
 		field,
 		ec.fieldContext_MetadataNode_id,
-		func(ctx context.Context) (any, error) { return obj.ID, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
 		nil,
 		ec.marshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID,
 		true,
@@ -5457,7 +5529,9 @@ func (ec *executionContext) _PageInfo_hasNextPage(ctx context.Context, field gra
 		ec.OperationContext,
 		field,
 		ec.fieldContext_PageInfo_hasNextPage,
-		func(ctx context.Context) (any, error) { return obj.HasNextPage, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.HasNextPage, nil
+		},
 		nil,
 		ec.marshalNBoolean2bool,
 		true,
@@ -5484,7 +5558,9 @@ func (ec *executionContext) _PageInfo_hasPreviousPage(ctx context.Context, field
 		ec.OperationContext,
 		field,
 		ec.fieldContext_PageInfo_hasPreviousPage,
-		func(ctx context.Context) (any, error) { return obj.HasPreviousPage, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.HasPreviousPage, nil
+		},
 		nil,
 		ec.marshalNBoolean2bool,
 		true,
@@ -5511,7 +5587,9 @@ func (ec *executionContext) _PageInfo_startCursor(ctx context.Context, field gra
 		ec.OperationContext,
 		field,
 		ec.fieldContext_PageInfo_startCursor,
-		func(ctx context.Context) (any, error) { return obj.StartCursor, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.StartCursor, nil
+		},
 		nil,
 		ec.marshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor,
 		true,
@@ -5538,7 +5616,9 @@ func (ec *executionContext) _PageInfo_endCursor(ctx context.Context, field graph
 		ec.OperationContext,
 		field,
 		ec.fieldContext_PageInfo_endCursor,
-		func(ctx context.Context) (any, error) { return obj.EndCursor, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.EndCursor, nil
+		},
 		nil,
 		ec.marshalOCursor2ᚖentgoᚗioᚋcontribᚋentgqlᚐCursor,
 		true,
@@ -5804,7 +5884,9 @@ func (ec *executionContext) _ResourceOwner_id(ctx context.Context, field graphql
 		ec.OperationContext,
 		field,
 		ec.fieldContext_ResourceOwner_id,
-		func(ctx context.Context) (any, error) { return obj.ID, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
 		nil,
 		ec.marshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID,
 		true,
@@ -5925,7 +6007,9 @@ func (ec *executionContext) _Status_id(ctx context.Context, field graphql.Collec
 		ec.OperationContext,
 		field,
 		ec.fieldContext_Status_id,
-		func(ctx context.Context) (any, error) { return obj.ID, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
 		nil,
 		ec.marshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID,
 		true,
@@ -5952,7 +6036,9 @@ func (ec *executionContext) _Status_createdAt(ctx context.Context, field graphql
 		ec.OperationContext,
 		field,
 		ec.fieldContext_Status_createdAt,
-		func(ctx context.Context) (any, error) { return obj.CreatedAt, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
 		nil,
 		ec.marshalNTime2timeᚐTime,
 		true,
@@ -5979,7 +6065,9 @@ func (ec *executionContext) _Status_updatedAt(ctx context.Context, field graphql
 		ec.OperationContext,
 		field,
 		ec.fieldContext_Status_updatedAt,
-		func(ctx context.Context) (any, error) { return obj.UpdatedAt, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.UpdatedAt, nil
+		},
 		nil,
 		ec.marshalNTime2timeᚐTime,
 		true,
@@ -6006,7 +6094,9 @@ func (ec *executionContext) _Status_metadataID(ctx context.Context, field graphq
 		ec.OperationContext,
 		field,
 		ec.fieldContext_Status_metadataID,
-		func(ctx context.Context) (any, error) { return obj.MetadataID, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.MetadataID, nil
+		},
 		nil,
 		ec.marshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID,
 		true,
@@ -6033,7 +6123,9 @@ func (ec *executionContext) _Status_statusNamespaceID(ctx context.Context, field
 		ec.OperationContext,
 		field,
 		ec.fieldContext_Status_statusNamespaceID,
-		func(ctx context.Context) (any, error) { return obj.StatusNamespaceID, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.StatusNamespaceID, nil
+		},
 		nil,
 		ec.marshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID,
 		true,
@@ -6060,7 +6152,9 @@ func (ec *executionContext) _Status_source(ctx context.Context, field graphql.Co
 		ec.OperationContext,
 		field,
 		ec.fieldContext_Status_source,
-		func(ctx context.Context) (any, error) { return obj.Source, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.Source, nil
+		},
 		nil,
 		ec.marshalNString2string,
 		true,
@@ -6087,7 +6181,9 @@ func (ec *executionContext) _Status_data(ctx context.Context, field graphql.Coll
 		ec.OperationContext,
 		field,
 		ec.fieldContext_Status_data,
-		func(ctx context.Context) (any, error) { return obj.Data, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.Data, nil
+		},
 		nil,
 		ec.marshalNJSON2encodingᚋjsonᚐRawMessage,
 		true,
@@ -6202,7 +6298,9 @@ func (ec *executionContext) _StatusConnection_edges(ctx context.Context, field g
 		ec.OperationContext,
 		field,
 		ec.fieldContext_StatusConnection_edges,
-		func(ctx context.Context) (any, error) { return obj.Edges, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.Edges, nil
+		},
 		nil,
 		ec.marshalOStatusEdge2ᚕᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusEdge,
 		true,
@@ -6235,7 +6333,9 @@ func (ec *executionContext) _StatusConnection_pageInfo(ctx context.Context, fiel
 		ec.OperationContext,
 		field,
 		ec.fieldContext_StatusConnection_pageInfo,
-		func(ctx context.Context) (any, error) { return obj.PageInfo, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.PageInfo, nil
+		},
 		nil,
 		ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo,
 		true,
@@ -6272,7 +6372,9 @@ func (ec *executionContext) _StatusConnection_totalCount(ctx context.Context, fi
 		ec.OperationContext,
 		field,
 		ec.fieldContext_StatusConnection_totalCount,
-		func(ctx context.Context) (any, error) { return obj.TotalCount, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.TotalCount, nil
+		},
 		nil,
 		ec.marshalNInt2int,
 		true,
@@ -6299,7 +6401,9 @@ func (ec *executionContext) _StatusDeleteResponse_deletedID(ctx context.Context,
 		ec.OperationContext,
 		field,
 		ec.fieldContext_StatusDeleteResponse_deletedID,
-		func(ctx context.Context) (any, error) { return obj.DeletedID, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.DeletedID, nil
+		},
 		nil,
 		ec.marshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID,
 		true,
@@ -6326,7 +6430,9 @@ func (ec *executionContext) _StatusEdge_node(ctx context.Context, field graphql.
 		ec.OperationContext,
 		field,
 		ec.fieldContext_StatusEdge_node,
-		func(ctx context.Context) (any, error) { return obj.Node, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.Node, nil
+		},
 		nil,
 		ec.marshalOStatus2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatus,
 		true,
@@ -6373,7 +6479,9 @@ func (ec *executionContext) _StatusEdge_cursor(ctx context.Context, field graphq
 		ec.OperationContext,
 		field,
 		ec.fieldContext_StatusEdge_cursor,
-		func(ctx context.Context) (any, error) { return obj.Cursor, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.Cursor, nil
+		},
 		nil,
 		ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor,
 		true,
@@ -6400,7 +6508,9 @@ func (ec *executionContext) _StatusNamespace_id(ctx context.Context, field graph
 		ec.OperationContext,
 		field,
 		ec.fieldContext_StatusNamespace_id,
-		func(ctx context.Context) (any, error) { return obj.ID, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
 		nil,
 		ec.marshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID,
 		true,
@@ -6427,7 +6537,9 @@ func (ec *executionContext) _StatusNamespace_createdAt(ctx context.Context, fiel
 		ec.OperationContext,
 		field,
 		ec.fieldContext_StatusNamespace_createdAt,
-		func(ctx context.Context) (any, error) { return obj.CreatedAt, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
 		nil,
 		ec.marshalNTime2timeᚐTime,
 		true,
@@ -6454,7 +6566,9 @@ func (ec *executionContext) _StatusNamespace_updatedAt(ctx context.Context, fiel
 		ec.OperationContext,
 		field,
 		ec.fieldContext_StatusNamespace_updatedAt,
-		func(ctx context.Context) (any, error) { return obj.UpdatedAt, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.UpdatedAt, nil
+		},
 		nil,
 		ec.marshalNTime2timeᚐTime,
 		true,
@@ -6481,7 +6595,9 @@ func (ec *executionContext) _StatusNamespace_name(ctx context.Context, field gra
 		ec.OperationContext,
 		field,
 		ec.fieldContext_StatusNamespace_name,
-		func(ctx context.Context) (any, error) { return obj.Name, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.Name, nil
+		},
 		nil,
 		ec.marshalNString2string,
 		true,
@@ -6508,7 +6624,9 @@ func (ec *executionContext) _StatusNamespace_private(ctx context.Context, field 
 		ec.OperationContext,
 		field,
 		ec.fieldContext_StatusNamespace_private,
-		func(ctx context.Context) (any, error) { return obj.Private, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.Private, nil
+		},
 		nil,
 		ec.marshalNBoolean2bool,
 		true,
@@ -6572,7 +6690,9 @@ func (ec *executionContext) _StatusNamespaceConnection_edges(ctx context.Context
 		ec.OperationContext,
 		field,
 		ec.fieldContext_StatusNamespaceConnection_edges,
-		func(ctx context.Context) (any, error) { return obj.Edges, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.Edges, nil
+		},
 		nil,
 		ec.marshalOStatusNamespaceEdge2ᚕᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusNamespaceEdge,
 		true,
@@ -6605,7 +6725,9 @@ func (ec *executionContext) _StatusNamespaceConnection_pageInfo(ctx context.Cont
 		ec.OperationContext,
 		field,
 		ec.fieldContext_StatusNamespaceConnection_pageInfo,
-		func(ctx context.Context) (any, error) { return obj.PageInfo, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.PageInfo, nil
+		},
 		nil,
 		ec.marshalNPageInfo2entgoᚗioᚋcontribᚋentgqlᚐPageInfo,
 		true,
@@ -6642,7 +6764,9 @@ func (ec *executionContext) _StatusNamespaceConnection_totalCount(ctx context.Co
 		ec.OperationContext,
 		field,
 		ec.fieldContext_StatusNamespaceConnection_totalCount,
-		func(ctx context.Context) (any, error) { return obj.TotalCount, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.TotalCount, nil
+		},
 		nil,
 		ec.marshalNInt2int,
 		true,
@@ -6669,7 +6793,9 @@ func (ec *executionContext) _StatusNamespaceCreatePayload_statusNamespace(ctx co
 		ec.OperationContext,
 		field,
 		ec.fieldContext_StatusNamespaceCreatePayload_statusNamespace,
-		func(ctx context.Context) (any, error) { return obj.StatusNamespace, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.StatusNamespace, nil
+		},
 		nil,
 		ec.marshalNStatusNamespace2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusNamespace,
 		true,
@@ -6710,7 +6836,9 @@ func (ec *executionContext) _StatusNamespaceDeletePayload_deletedID(ctx context.
 		ec.OperationContext,
 		field,
 		ec.fieldContext_StatusNamespaceDeletePayload_deletedID,
-		func(ctx context.Context) (any, error) { return obj.DeletedID, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.DeletedID, nil
+		},
 		nil,
 		ec.marshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID,
 		true,
@@ -6737,7 +6865,9 @@ func (ec *executionContext) _StatusNamespaceDeletePayload_statusDeletedCount(ctx
 		ec.OperationContext,
 		field,
 		ec.fieldContext_StatusNamespaceDeletePayload_statusDeletedCount,
-		func(ctx context.Context) (any, error) { return obj.StatusDeletedCount, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.StatusDeletedCount, nil
+		},
 		nil,
 		ec.marshalNInt2int,
 		true,
@@ -6764,7 +6894,9 @@ func (ec *executionContext) _StatusNamespaceEdge_node(ctx context.Context, field
 		ec.OperationContext,
 		field,
 		ec.fieldContext_StatusNamespaceEdge_node,
-		func(ctx context.Context) (any, error) { return obj.Node, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.Node, nil
+		},
 		nil,
 		ec.marshalOStatusNamespace2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusNamespace,
 		true,
@@ -6805,7 +6937,9 @@ func (ec *executionContext) _StatusNamespaceEdge_cursor(ctx context.Context, fie
 		ec.OperationContext,
 		field,
 		ec.fieldContext_StatusNamespaceEdge_cursor,
-		func(ctx context.Context) (any, error) { return obj.Cursor, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.Cursor, nil
+		},
 		nil,
 		ec.marshalNCursor2entgoᚗioᚋcontribᚋentgqlᚐCursor,
 		true,
@@ -6832,7 +6966,9 @@ func (ec *executionContext) _StatusNamespaceUpdatePayload_statusNamespace(ctx co
 		ec.OperationContext,
 		field,
 		ec.fieldContext_StatusNamespaceUpdatePayload_statusNamespace,
-		func(ctx context.Context) (any, error) { return obj.StatusNamespace, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.StatusNamespace, nil
+		},
 		nil,
 		ec.marshalNStatusNamespace2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatusNamespace,
 		true,
@@ -6873,7 +7009,9 @@ func (ec *executionContext) _StatusOwner_id(ctx context.Context, field graphql.C
 		ec.OperationContext,
 		field,
 		ec.fieldContext_StatusOwner_id,
-		func(ctx context.Context) (any, error) { return obj.ID, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
 		nil,
 		ec.marshalNID2goᚗinfratographerᚗcomᚋxᚋgidxᚐPrefixedID,
 		true,
@@ -6994,7 +7132,9 @@ func (ec *executionContext) _StatusUpdateResponse_status(ctx context.Context, fi
 		ec.OperationContext,
 		field,
 		ec.fieldContext_StatusUpdateResponse_status,
-		func(ctx context.Context) (any, error) { return obj.Status, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.Status, nil
+		},
 		nil,
 		ec.marshalNStatus2ᚖgoᚗinfratographerᚗcomᚋmetadataᚑapiᚋinternalᚋentᚋgeneratedᚐStatus,
 		true,
@@ -7041,7 +7181,9 @@ func (ec *executionContext) __Service_sdl(ctx context.Context, field graphql.Col
 		ec.OperationContext,
 		field,
 		ec.fieldContext__Service_sdl,
-		func(ctx context.Context) (any, error) { return obj.SDL, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.SDL, nil
+		},
 		nil,
 		ec.marshalOString2string,
 		true,
@@ -7068,7 +7210,9 @@ func (ec *executionContext) ___Directive_name(ctx context.Context, field graphql
 		ec.OperationContext,
 		field,
 		ec.fieldContext___Directive_name,
-		func(ctx context.Context) (any, error) { return obj.Name, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.Name, nil
+		},
 		nil,
 		ec.marshalNString2string,
 		true,
@@ -7124,7 +7268,9 @@ func (ec *executionContext) ___Directive_isRepeatable(ctx context.Context, field
 		ec.OperationContext,
 		field,
 		ec.fieldContext___Directive_isRepeatable,
-		func(ctx context.Context) (any, error) { return obj.IsRepeatable, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.IsRepeatable, nil
+		},
 		nil,
 		ec.marshalNBoolean2bool,
 		true,
@@ -7151,7 +7297,9 @@ func (ec *executionContext) ___Directive_locations(ctx context.Context, field gr
 		ec.OperationContext,
 		field,
 		ec.fieldContext___Directive_locations,
-		func(ctx context.Context) (any, error) { return obj.Locations, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.Locations, nil
+		},
 		nil,
 		ec.marshalN__DirectiveLocation2ᚕstringᚄ,
 		true,
@@ -7178,7 +7326,9 @@ func (ec *executionContext) ___Directive_args(ctx context.Context, field graphql
 		ec.OperationContext,
 		field,
 		ec.fieldContext___Directive_args,
-		func(ctx context.Context) (any, error) { return obj.Args, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.Args, nil
+		},
 		nil,
 		ec.marshalN__InputValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValueᚄ,
 		true,
@@ -7230,7 +7380,9 @@ func (ec *executionContext) ___EnumValue_name(ctx context.Context, field graphql
 		ec.OperationContext,
 		field,
 		ec.fieldContext___EnumValue_name,
-		func(ctx context.Context) (any, error) { return obj.Name, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.Name, nil
+		},
 		nil,
 		ec.marshalNString2string,
 		true,
@@ -7344,7 +7496,9 @@ func (ec *executionContext) ___Field_name(ctx context.Context, field graphql.Col
 		ec.OperationContext,
 		field,
 		ec.fieldContext___Field_name,
-		func(ctx context.Context) (any, error) { return obj.Name, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.Name, nil
+		},
 		nil,
 		ec.marshalNString2string,
 		true,
@@ -7400,7 +7554,9 @@ func (ec *executionContext) ___Field_args(ctx context.Context, field graphql.Col
 		ec.OperationContext,
 		field,
 		ec.fieldContext___Field_args,
-		func(ctx context.Context) (any, error) { return obj.Args, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.Args, nil
+		},
 		nil,
 		ec.marshalN__InputValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐInputValueᚄ,
 		true,
@@ -7452,7 +7608,9 @@ func (ec *executionContext) ___Field_type(ctx context.Context, field graphql.Col
 		ec.OperationContext,
 		field,
 		ec.fieldContext___Field_type,
-		func(ctx context.Context) (any, error) { return obj.Type, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.Type, nil
+		},
 		nil,
 		ec.marshalN__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType,
 		true,
@@ -7561,7 +7719,9 @@ func (ec *executionContext) ___InputValue_name(ctx context.Context, field graphq
 		ec.OperationContext,
 		field,
 		ec.fieldContext___InputValue_name,
-		func(ctx context.Context) (any, error) { return obj.Name, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.Name, nil
+		},
 		nil,
 		ec.marshalNString2string,
 		true,
@@ -7617,7 +7777,9 @@ func (ec *executionContext) ___InputValue_type(ctx context.Context, field graphq
 		ec.OperationContext,
 		field,
 		ec.fieldContext___InputValue_type,
-		func(ctx context.Context) (any, error) { return obj.Type, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.Type, nil
+		},
 		nil,
 		ec.marshalN__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType,
 		true,
@@ -7668,7 +7830,9 @@ func (ec *executionContext) ___InputValue_defaultValue(ctx context.Context, fiel
 		ec.OperationContext,
 		field,
 		ec.fieldContext___InputValue_defaultValue,
-		func(ctx context.Context) (any, error) { return obj.DefaultValue, nil },
+		func(ctx context.Context) (any, error) {
+			return obj.DefaultValue, nil
+		},
 		nil,
 		ec.marshalOString2ᚖstring,
 		true,
