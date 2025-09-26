@@ -1,5 +1,34 @@
 # Changelog
 
+## [0.2.3](https://github.com/infratographer/metadata-api/compare/v0.2.2...v0.2.3) (2025-09-26)
+
+
+### Bug Fixes
+
+* **deps:** update module github.com/99designs/gqlgen to v0.17.77 ([#202](https://github.com/infratographer/metadata-api/issues/202)) ([7919dd0](https://github.com/infratographer/metadata-api/commit/7919dd0a3c95d277bb7a52dd9f3f6c403be16cce))
+* **deps:** update module github.com/99designs/gqlgen to v0.17.78 ([#203](https://github.com/infratographer/metadata-api/issues/203)) ([d49a6cc](https://github.com/infratographer/metadata-api/commit/d49a6cca048f1ba526b190384b6252a028383bcf))
+* **deps:** update module github.com/99designs/gqlgen to v0.17.79 ([#230](https://github.com/infratographer/metadata-api/issues/230)) ([c45e51a](https://github.com/infratographer/metadata-api/commit/c45e51a9352c81bb834986891733f56416963efd))
+* **deps:** update module github.com/99designs/gqlgen to v0.17.80 ([#232](https://github.com/infratographer/metadata-api/issues/232)) ([0d034fd](https://github.com/infratographer/metadata-api/commit/0d034fde37d4fc6731061e67421b6ed0565e7be1))
+* **deps:** update module github.com/99designs/gqlgen to v0.17.81 ([#238](https://github.com/infratographer/metadata-api/issues/238)) ([c50f690](https://github.com/infratographer/metadata-api/commit/c50f6901dcd68f0c1d480c37c651acc5f4609bdf))
+* **deps:** update module github.com/brianvoe/gofakeit/v7 to v7.4.0 ([#219](https://github.com/infratographer/metadata-api/issues/219)) ([8d847c5](https://github.com/infratographer/metadata-api/commit/8d847c581fbafc017c51a923e65514bb658df787))
+* **deps:** update module github.com/brianvoe/gofakeit/v7 to v7.5.1 ([#224](https://github.com/infratographer/metadata-api/issues/224)) ([d6cbec1](https://github.com/infratographer/metadata-api/commit/d6cbec1bae4fb43434cb5c4200a7163944bd4864))
+* **deps:** update module github.com/brianvoe/gofakeit/v7 to v7.6.0 ([#229](https://github.com/infratographer/metadata-api/issues/229)) ([98ed23f](https://github.com/infratographer/metadata-api/commit/98ed23f2aec3a031721ab2fe11aa8b9e4ace40aa))
+* **deps:** update module github.com/brianvoe/gofakeit/v7 to v7.7.0 ([#233](https://github.com/infratographer/metadata-api/issues/233)) ([b0c59bf](https://github.com/infratographer/metadata-api/commit/b0c59bfcae0a68cc08a04b6e9d503cd6ea138445))
+* **deps:** update module github.com/brianvoe/gofakeit/v7 to v7.7.1 ([#235](https://github.com/infratographer/metadata-api/issues/235)) ([3e13a0c](https://github.com/infratographer/metadata-api/commit/3e13a0cb43b193f5bee3166ed8b7b265917a9b2a))
+* **deps:** update module github.com/brianvoe/gofakeit/v7 to v7.7.2 ([#236](https://github.com/infratographer/metadata-api/issues/236)) ([e20b06a](https://github.com/infratographer/metadata-api/commit/e20b06a56fdcd753b59ac9d77ffd151609bf5672))
+* **deps:** update module github.com/brianvoe/gofakeit/v7 to v7.7.3 ([#237](https://github.com/infratographer/metadata-api/issues/237)) ([4492f2a](https://github.com/infratographer/metadata-api/commit/4492f2a3cb373980f08301b16a2d814a9f3b02af))
+* **deps:** update module github.com/mattn/go-sqlite3 to v1.14.29 ([#200](https://github.com/infratographer/metadata-api/issues/200)) ([45d467e](https://github.com/infratographer/metadata-api/commit/45d467e8219231e9b7f33e2e742e7579c20f60df))
+* **deps:** update module github.com/mattn/go-sqlite3 to v1.14.30 ([#207](https://github.com/infratographer/metadata-api/issues/207)) ([e98dcc8](https://github.com/infratographer/metadata-api/commit/e98dcc8755f29d898cf04d2ae2969fecd7de045f))
+* **deps:** update module github.com/mattn/go-sqlite3 to v1.14.31 ([#213](https://github.com/infratographer/metadata-api/issues/213)) ([a5f91cc](https://github.com/infratographer/metadata-api/commit/a5f91cc4254b48ce57b8076f937b244c629eef5c))
+* **deps:** update module github.com/mattn/go-sqlite3 to v1.14.32 ([#218](https://github.com/infratographer/metadata-api/issues/218)) ([b16ce80](https://github.com/infratographer/metadata-api/commit/b16ce80419eb3ef9d70e35be69fc6bbf7b84b3db))
+* **deps:** update module github.com/spf13/viper to v1.21.0 ([#228](https://github.com/infratographer/metadata-api/issues/228)) ([06a8ae8](https://github.com/infratographer/metadata-api/commit/06a8ae87979f87464803a54421939cd3d29f287e))
+* **deps:** update module github.com/stretchr/testify to v1.11.0 ([#221](https://github.com/infratographer/metadata-api/issues/221)) ([f950e4c](https://github.com/infratographer/metadata-api/commit/f950e4c318ae10d036eb399e11948237bab19596))
+* **deps:** update module github.com/stretchr/testify to v1.11.1 ([#223](https://github.com/infratographer/metadata-api/issues/223)) ([c66024d](https://github.com/infratographer/metadata-api/commit/c66024d45c4d701a60285adab6154805ddb31eb7))
+* **deps:** update module github.com/testcontainers/testcontainers-go/modules/postgres to v0.39.0 ([#234](https://github.com/infratographer/metadata-api/issues/234)) ([4937bec](https://github.com/infratographer/metadata-api/commit/4937bec6a1df876bef3b28aeb217c1861f531d85))
+* **deps:** update module go.infratographer.com/x to v0.13.0 ([#206](https://github.com/infratographer/metadata-api/issues/206)) ([7edabbf](https://github.com/infratographer/metadata-api/commit/7edabbfe9c03ed1dd1a7b29f003fe7d40129e983))
+* **deps:** update module go.infratographer.com/x to v0.13.1 ([#211](https://github.com/infratographer/metadata-api/issues/211)) ([b5ee390](https://github.com/infratographer/metadata-api/commit/b5ee3906408b5e4a72cb3c556dd1c0617c9a2ab1))
+* **deps:** update module go.infratographer.com/x to v0.13.2 ([#225](https://github.com/infratographer/metadata-api/issues/225)) ([020eec8](https://github.com/infratographer/metadata-api/commit/020eec803cfae75df15b263867d40cfb0d409447))
+
 ## [0.2.2](https://github.com/infratographer/metadata-api/compare/v0.2.1...v0.2.2) (2025-07-20)
 
 
