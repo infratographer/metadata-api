@@ -7,7 +7,7 @@ toolchain go1.24.6
 require (
 	entgo.io/contrib v0.7.0
 	entgo.io/ent v0.14.5
-	github.com/99designs/gqlgen v0.17.80
+	github.com/99designs/gqlgen v0.17.81
 	github.com/Yamashou/gqlgenc v0.33.0
 	github.com/brianvoe/gofakeit/v7 v7.7.3
 	github.com/hashicorp/go-multierror v1.1.1
