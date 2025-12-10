@@ -26,10 +26,9 @@ type Entity interface {
 }
 
 type Annotation struct {
-	// ID for the annotation.
-	ID        gidx.PrefixedID `json:"id"`
-	CreatedAt time.Time       `json:"createdAt"`
-	UpdatedAt time.Time       `json:"updatedAt"`
+	Node
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
 	// ID of the metadata of this annotation
 	MetadataID gidx.PrefixedID `json:"metadataID"`
 	// JSON formatted data of this annotation.
@@ -78,10 +77,9 @@ type AnnotationEdge struct {
 }
 
 type AnnotationNamespace struct {
-	// The ID for the annotation namespace.
-	ID        gidx.PrefixedID `json:"id"`
-	CreatedAt time.Time       `json:"createdAt"`
-	UpdatedAt time.Time       `json:"updatedAt"`
+	Node
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
 	// The name of the annotation namespace.
 	Name string `json:"name"`
 	// Flag for if this namespace is private.
@@ -291,10 +289,9 @@ type CreateStatusNamespaceInput struct {
 }
 
 type Metadata struct {
-	// ID for the metadata.
-	ID        gidx.PrefixedID `json:"id"`
-	CreatedAt time.Time       `json:"createdAt"`
-	UpdatedAt time.Time       `json:"updatedAt"`
+	Node
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
 	// ID of the node for this metadata
 	NodeID      gidx.PrefixedID       `json:"nodeID"`
 	Annotations *AnnotationConnection `json:"annotations"`
@@ -389,6 +386,18 @@ type MetadataWhereInput struct {
 type Mutation struct {
 }
 
+// An object with an ID.
+// Follows the [Relay Global Object Identification Specification](https://relay.dev/graphql/objectidentification.htm)
+type Node struct {
+	// The id of the object.
+	ID gidx.PrefixedID `json:"id"`
+}
+
+func (Node) IsNode() {}
+
+// The id of the object.
+func (this Node) GetID() gidx.PrefixedID { return this.ID }
+
 // Information about pagination in a connection.
 // https://relay.dev/graphql/connections.htm#sec-undefined.PageInfo
 type PageInfo struct {
@@ -415,9 +424,9 @@ type ResourceOwner struct {
 func (ResourceOwner) IsEntity() {}
 
 type Status struct {
-	ID        gidx.PrefixedID `json:"id"`
-	CreatedAt time.Time       `json:"createdAt"`
-	UpdatedAt time.Time       `json:"updatedAt"`
+	Node
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
 	// ID of the metadata of this status
 	MetadataID        gidx.PrefixedID `json:"metadataID"`
 	StatusNamespaceID gidx.PrefixedID `json:"statusNamespaceID"`
@@ -470,10 +479,9 @@ type StatusEdge struct {
 }
 
 type StatusNamespace struct {
-	// The ID for the status namespace.
-	ID        gidx.PrefixedID `json:"id"`
-	CreatedAt time.Time       `json:"createdAt"`
-	UpdatedAt time.Time       `json:"updatedAt"`
+	Node
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
 	// The name of the status namespace.
 	Name string `json:"name"`
 	// Flag for if this namespace is private.
