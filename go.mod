@@ -11,7 +11,7 @@ require (
 	github.com/Yamashou/gqlgenc v0.33.0
 	github.com/brianvoe/gofakeit/v7 v7.12.1
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/hasura/go-graphql-client v0.15.0
+	github.com/hasura/go-graphql-client v0.15.1
 	github.com/labstack/echo/v4 v4.14.0
 	github.com/lib/pq v1.10.9
 	github.com/mattn/go-sqlite3 v1.14.32
