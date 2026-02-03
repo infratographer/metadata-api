@@ -1,9 +1,9 @@
 dependencies:
 - name: common
   repository: https://charts.bitnami.com/bitnami
-  version: 2.31.4
+  version: 2.34.0
 - name: reloader
   repository: https://stakater.github.io/stakater-charts
   version: 2.2.7
-digest: sha256:8a14c11fc060aa728026282f9da6acc317b7daff198fdb1ab121999285092c01
-generated: "2025-12-15T09:08:45.272638926Z"
+digest: sha256:e0e18369b87f94769cc772db76a89b68d49a61ff0e43a8ce662956f3b685ae6a
+generated: "2026-02-03T01:37:17.047920852Z"
