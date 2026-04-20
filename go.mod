@@ -6,7 +6,7 @@ toolchain go1.24.6
 
 require (
 	entgo.io/contrib v0.7.0
-	entgo.io/ent v0.14.5
+	entgo.io/ent v0.14.6
 	github.com/99designs/gqlgen v0.17.81
 	github.com/Yamashou/gqlgenc v0.33.0
 	github.com/brianvoe/gofakeit/v7 v7.14.0
@@ -31,7 +31,7 @@ require (
 )
 
 require (
-	ariga.io/atlas v0.32.1-0.20250325101103-175b25e1c1b9 // indirect
+	ariga.io/atlas v0.36.2-0.20250730182955-2c6300d0a3e1 // indirect
 	dario.cat/mergo v1.0.2 // indirect
 	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
