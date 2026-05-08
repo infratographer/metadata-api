@@ -13,7 +13,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hasura/go-graphql-client v0.16.0
 	github.com/labstack/echo/v4 v4.15.2
-	github.com/lib/pq v1.11.2
+	github.com/lib/pq v1.12.3
 	github.com/mattn/go-sqlite3 v1.14.44
 	github.com/metal-toolbox/iam-runtime v0.4.1
 	github.com/metal-toolbox/iam-runtime-contrib v1.0.1
