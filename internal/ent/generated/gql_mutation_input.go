@@ -17,7 +17,7 @@
 package generated
 
 import (
-	"encoding/json"
+	"encoding/json/jsontext"
 
 	"go.infratographer.com/x/gidx"
 )
@@ -75,7 +75,7 @@ func (c *AnnotationNamespaceUpdateOne) SetInput(i UpdateAnnotationNamespaceInput
 // CreateStatusInput represents a mutation input for creating statusslice.
 type CreateStatusInput struct {
 	Source      string
-	Data        json.RawMessage
+	Data        jsontext.Value
 	NamespaceID gidx.PrefixedID
 	MetadataID  gidx.PrefixedID
 }
@@ -98,8 +98,8 @@ func (c *StatusCreate) SetInput(i CreateStatusInput) *StatusCreate {
 
 // UpdateStatusInput represents a mutation input for updating statusslice.
 type UpdateStatusInput struct {
-	Data       json.RawMessage
-	AppendData json.RawMessage
+	Data       jsontext.Value
+	AppendData jsontext.Value
 }
 
 // Mutate applies the UpdateStatusInput on the StatusMutation builder.

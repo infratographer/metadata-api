@@ -3,7 +3,7 @@
 package graphapi
 
 import (
-	"encoding/json"
+	"encoding/json/jsontext"
 
 	"go.infratographer.com/metadata-api/internal/ent/generated"
 	"go.infratographer.com/x/gidx"
@@ -50,7 +50,7 @@ type AnnotationUpdateInput struct {
 	// The namespace ID for this annotation.
 	NamespaceID gidx.PrefixedID `json:"namespaceID"`
 	// The data to save in this annotation.
-	Data json.RawMessage `json:"data"`
+	Data jsontext.Value `json:"data"`
 }
 
 // Return response from annotationUpdate
@@ -131,7 +131,7 @@ type StatusUpdateInput struct {
 	// The source for this status.
 	Source string `json:"source"`
 	// The data to save in this status.
-	Data json.RawMessage `json:"data"`
+	Data jsontext.Value `json:"data"`
 }
 
 // Return response from statusUpdate

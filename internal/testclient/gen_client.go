@@ -4,7 +4,7 @@ package testclient
 
 import (
 	"context"
-	"encoding/json"
+	"encoding/json/jsontext"
 	"time"
 
 	"github.com/Yamashou/gqlgenc/clientv2"
@@ -92,7 +92,7 @@ func (t *AnnotationUpdate_AnnotationUpdate_Annotation_Namespace) GetPrivate() bo
 
 type AnnotationUpdate_AnnotationUpdate_Annotation struct {
 	CreatedAt time.Time                                              "json:\"createdAt\" graphql:\"createdAt\""
-	Data      json.RawMessage                                        "json:\"data\" graphql:\"data\""
+	Data      jsontext.Value                                         "json:\"data\" graphql:\"data\""
 	ID        gidx.PrefixedID                                        "json:\"id\" graphql:\"id\""
 	Metadata  AnnotationUpdate_AnnotationUpdate_Annotation_Metadata  "json:\"metadata\" graphql:\"metadata\""
 	Namespace AnnotationUpdate_AnnotationUpdate_Annotation_Namespace "json:\"namespace\" graphql:\"namespace\""
@@ -105,7 +105,7 @@ func (t *AnnotationUpdate_AnnotationUpdate_Annotation) GetCreatedAt() *time.Time
 	}
 	return &t.CreatedAt
 }
-func (t *AnnotationUpdate_AnnotationUpdate_Annotation) GetData() *json.RawMessage {
+func (t *AnnotationUpdate_AnnotationUpdate_Annotation) GetData() *jsontext.Value {
 	if t == nil {
 		t = &AnnotationUpdate_AnnotationUpdate_Annotation{}
 	}
@@ -243,7 +243,7 @@ func (t *GetAnnotationNamespace_AnnotationNamespace_Owner) GetID() *gidx.Prefixe
 
 type GetAnnotationNamespace_AnnotationNamespace_Annotations struct {
 	CreatedAt time.Time       "json:\"createdAt\" graphql:\"createdAt\""
-	Data      json.RawMessage "json:\"data\" graphql:\"data\""
+	Data      jsontext.Value  "json:\"data\" graphql:\"data\""
 	ID        gidx.PrefixedID "json:\"id\" graphql:\"id\""
 	UpdatedAt time.Time       "json:\"updatedAt\" graphql:\"updatedAt\""
 }
@@ -254,7 +254,7 @@ func (t *GetAnnotationNamespace_AnnotationNamespace_Annotations) GetCreatedAt() 
 	}
 	return &t.CreatedAt
 }
-func (t *GetAnnotationNamespace_AnnotationNamespace_Annotations) GetData() *json.RawMessage {
+func (t *GetAnnotationNamespace_AnnotationNamespace_Annotations) GetData() *jsontext.Value {
 	if t == nil {
 		t = &GetAnnotationNamespace_AnnotationNamespace_Annotations{}
 	}
@@ -492,11 +492,11 @@ func (t *GetNodeMetadata_Entities_MetadataNode_Metadata_Annotations_Edges_Node_N
 }
 
 type GetNodeMetadata_Entities_MetadataNode_Metadata_Annotations_Edges_Node struct {
-	Data      json.RawMessage                                                                 "json:\"data\" graphql:\"data\""
+	Data      jsontext.Value                                                                  "json:\"data\" graphql:\"data\""
 	Namespace GetNodeMetadata_Entities_MetadataNode_Metadata_Annotations_Edges_Node_Namespace "json:\"namespace\" graphql:\"namespace\""
 }
 
-func (t *GetNodeMetadata_Entities_MetadataNode_Metadata_Annotations_Edges_Node) GetData() *json.RawMessage {
+func (t *GetNodeMetadata_Entities_MetadataNode_Metadata_Annotations_Edges_Node) GetData() *jsontext.Value {
 	if t == nil {
 		t = &GetNodeMetadata_Entities_MetadataNode_Metadata_Annotations_Edges_Node{}
 	}
@@ -609,7 +609,7 @@ func (t *StatusUpdate_StatusUpdate_Status_Namespace) GetPrivate() bool {
 
 type StatusUpdate_StatusUpdate_Status struct {
 	CreatedAt time.Time                                  "json:\"createdAt\" graphql:\"createdAt\""
-	Data      json.RawMessage                            "json:\"data\" graphql:\"data\""
+	Data      jsontext.Value                             "json:\"data\" graphql:\"data\""
 	ID        gidx.PrefixedID                            "json:\"id\" graphql:\"id\""
 	Metadata  StatusUpdate_StatusUpdate_Status_Metadata  "json:\"metadata\" graphql:\"metadata\""
 	Namespace StatusUpdate_StatusUpdate_Status_Namespace "json:\"namespace\" graphql:\"namespace\""
@@ -623,7 +623,7 @@ func (t *StatusUpdate_StatusUpdate_Status) GetCreatedAt() *time.Time {
 	}
 	return &t.CreatedAt
 }
-func (t *StatusUpdate_StatusUpdate_Status) GetData() *json.RawMessage {
+func (t *StatusUpdate_StatusUpdate_Status) GetData() *jsontext.Value {
 	if t == nil {
 		t = &StatusUpdate_StatusUpdate_Status{}
 	}

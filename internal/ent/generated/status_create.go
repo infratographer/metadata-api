@@ -18,7 +18,7 @@ package generated
 
 import (
 	"context"
-	"encoding/json"
+	"encoding/json/jsontext"
 	"errors"
 	"fmt"
 	"time"
@@ -85,7 +85,7 @@ func (_c *StatusCreate) SetSource(v string) *StatusCreate {
 }
 
 // SetData sets the "data" field.
-func (_c *StatusCreate) SetData(v json.RawMessage) *StatusCreate {
+func (_c *StatusCreate) SetData(v jsontext.Value) *StatusCreate {
 	_c.mutation.SetData(v)
 	return _c
 }
