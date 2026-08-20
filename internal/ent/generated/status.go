@@ -18,6 +18,7 @@ package generated
 
 import (
 	"encoding/json"
+	"encoding/json/jsontext"
 	"fmt"
 	"strings"
 	"time"
@@ -46,7 +47,7 @@ type Status struct {
 	// Source holds the value of the "source" field.
 	Source string `json:"source,omitempty"`
 	// JSON formatted data of this annotation.
-	Data json.RawMessage `json:"data,omitempty"`
+	Data jsontext.Value `json:"data,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the StatusQuery when eager-loading is set.
 	Edges        StatusEdges `json:"edges"`
