@@ -4,7 +4,7 @@ package testclient
 
 import (
 	"bytes"
-	"encoding/json"
+	"encoding/json/jsontext"
 	"fmt"
 	"io"
 	"strconv"
@@ -33,7 +33,7 @@ type Annotation struct {
 	// ID of the metadata of this annotation
 	MetadataID gidx.PrefixedID `json:"metadataID"`
 	// JSON formatted data of this annotation.
-	Data      json.RawMessage      `json:"data"`
+	Data      jsontext.Value       `json:"data"`
 	Namespace *AnnotationNamespace `json:"namespace"`
 	Metadata  *Metadata            `json:"metadata"`
 }
@@ -211,7 +211,7 @@ type AnnotationUpdateInput struct {
 	// The namespace ID for this annotation.
 	NamespaceID gidx.PrefixedID `json:"namespaceID"`
 	// The data to save in this annotation.
-	Data json.RawMessage `json:"data"`
+	Data jsontext.Value `json:"data"`
 }
 
 // Return response from annotationUpdate
@@ -275,7 +275,7 @@ type CreateAnnotationNamespaceInput struct {
 type CreateStatusInput struct {
 	Source string `json:"source"`
 	// JSON formatted data of this annotation.
-	Data        json.RawMessage `json:"data"`
+	Data        jsontext.Value  `json:"data"`
 	NamespaceID gidx.PrefixedID `json:"namespaceID"`
 	MetadataID  gidx.PrefixedID `json:"metadataID"`
 }
@@ -423,7 +423,7 @@ type Status struct {
 	StatusNamespaceID gidx.PrefixedID `json:"statusNamespaceID"`
 	Source            string          `json:"source"`
 	// JSON formatted data of this annotation.
-	Data      json.RawMessage  `json:"data"`
+	Data      jsontext.Value   `json:"data"`
 	Namespace *StatusNamespace `json:"namespace"`
 	Metadata  *Metadata        `json:"metadata"`
 }
@@ -610,7 +610,7 @@ type StatusUpdateInput struct {
 	// The source for this status.
 	Source string `json:"source"`
 	// The data to save in this status.
-	Data json.RawMessage `json:"data"`
+	Data jsontext.Value `json:"data"`
 }
 
 // Return response from statusUpdate
@@ -685,8 +685,8 @@ type UpdateAnnotationNamespaceInput struct {
 // Input information to update a status namespace.
 type UpdateStatusInput struct {
 	// JSON formatted data of this annotation.
-	Data       json.RawMessage `json:"data,omitempty"`
-	AppendData json.RawMessage `json:"appendData,omitempty"`
+	Data       jsontext.Value `json:"data,omitempty"`
+	AppendData jsontext.Value `json:"appendData,omitempty"`
 }
 
 // Input information to update a status namespace.

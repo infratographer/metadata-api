@@ -18,7 +18,7 @@ package generated
 
 import (
 	"context"
-	"encoding/json"
+	"encoding/json/jsontext"
 	"errors"
 	"fmt"
 	"time"
@@ -79,7 +79,7 @@ func (_c *AnnotationCreate) SetAnnotationNamespaceID(v gidx.PrefixedID) *Annotat
 }
 
 // SetData sets the "data" field.
-func (_c *AnnotationCreate) SetData(v json.RawMessage) *AnnotationCreate {
+func (_c *AnnotationCreate) SetData(v jsontext.Value) *AnnotationCreate {
 	_c.mutation.SetData(v)
 	return _c
 }
