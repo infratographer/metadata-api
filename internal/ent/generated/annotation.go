@@ -18,6 +18,7 @@ package generated
 
 import (
 	"encoding/json"
+	"encoding/json/jsontext"
 	"fmt"
 	"strings"
 	"time"
@@ -45,7 +46,7 @@ type Annotation struct {
 	// ID of the AnnotationNamespace of this annotation.
 	AnnotationNamespaceID gidx.PrefixedID `json:"annotation_namespace_id,omitempty"`
 	// JSON formatted data of this annotation.
-	Data json.RawMessage `json:"data,omitempty"`
+	Data jsontext.Value `json:"data,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
 	// The values are being populated by the AnnotationQuery when eager-loading is set.
 	Edges        AnnotationEdges `json:"edges"`

@@ -18,7 +18,7 @@ package generated
 
 import (
 	"context"
-	"encoding/json"
+	"encoding/json/jsontext"
 	"errors"
 	"fmt"
 
@@ -44,13 +44,13 @@ func (_u *StatusUpdate) Where(ps ...predicate.Status) *StatusUpdate {
 }
 
 // SetData sets the "data" field.
-func (_u *StatusUpdate) SetData(v json.RawMessage) *StatusUpdate {
+func (_u *StatusUpdate) SetData(v jsontext.Value) *StatusUpdate {
 	_u.mutation.SetData(v)
 	return _u
 }
 
 // AppendData appends value to the "data" field.
-func (_u *StatusUpdate) AppendData(v json.RawMessage) *StatusUpdate {
+func (_u *StatusUpdate) AppendData(v jsontext.Value) *StatusUpdate {
 	_u.mutation.AppendData(v)
 	return _u
 }
@@ -151,13 +151,13 @@ type StatusUpdateOne struct {
 }
 
 // SetData sets the "data" field.
-func (_u *StatusUpdateOne) SetData(v json.RawMessage) *StatusUpdateOne {
+func (_u *StatusUpdateOne) SetData(v jsontext.Value) *StatusUpdateOne {
 	_u.mutation.SetData(v)
 	return _u
 }
 
 // AppendData appends value to the "data" field.
-func (_u *StatusUpdateOne) AppendData(v json.RawMessage) *StatusUpdateOne {
+func (_u *StatusUpdateOne) AppendData(v jsontext.Value) *StatusUpdateOne {
 	_u.mutation.AppendData(v)
 	return _u
 }

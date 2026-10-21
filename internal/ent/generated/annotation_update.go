@@ -18,7 +18,7 @@ package generated
 
 import (
 	"context"
-	"encoding/json"
+	"encoding/json/jsontext"
 	"errors"
 	"fmt"
 
@@ -44,13 +44,13 @@ func (_u *AnnotationUpdate) Where(ps ...predicate.Annotation) *AnnotationUpdate 
 }
 
 // SetData sets the "data" field.
-func (_u *AnnotationUpdate) SetData(v json.RawMessage) *AnnotationUpdate {
+func (_u *AnnotationUpdate) SetData(v jsontext.Value) *AnnotationUpdate {
 	_u.mutation.SetData(v)
 	return _u
 }
 
 // AppendData appends value to the "data" field.
-func (_u *AnnotationUpdate) AppendData(v json.RawMessage) *AnnotationUpdate {
+func (_u *AnnotationUpdate) AppendData(v jsontext.Value) *AnnotationUpdate {
 	_u.mutation.AppendData(v)
 	return _u
 }
@@ -151,13 +151,13 @@ type AnnotationUpdateOne struct {
 }
 
 // SetData sets the "data" field.
-func (_u *AnnotationUpdateOne) SetData(v json.RawMessage) *AnnotationUpdateOne {
+func (_u *AnnotationUpdateOne) SetData(v jsontext.Value) *AnnotationUpdateOne {
 	_u.mutation.SetData(v)
 	return _u
 }
 
 // AppendData appends value to the "data" field.
-func (_u *AnnotationUpdateOne) AppendData(v json.RawMessage) *AnnotationUpdateOne {
+func (_u *AnnotationUpdateOne) AppendData(v jsontext.Value) *AnnotationUpdateOne {
 	_u.mutation.AppendData(v)
 	return _u
 }

@@ -18,7 +18,7 @@ package generated
 
 import (
 	"context"
-	"encoding/json"
+	"encoding/json/jsontext"
 	"errors"
 	"fmt"
 	"sync"
@@ -59,8 +59,8 @@ type AnnotationMutation struct {
 	id               *gidx.PrefixedID
 	created_at       *time.Time
 	updated_at       *time.Time
-	data             *json.RawMessage
-	appenddata       json.RawMessage
+	data             *jsontext.Value
+	appenddata       jsontext.Value
 	clearedFields    map[string]struct{}
 	namespace        *gidx.PrefixedID
 	clearednamespace bool
@@ -320,13 +320,13 @@ func (m *AnnotationMutation) ResetAnnotationNamespaceID() {
 }
 
 // SetData sets the "data" field.
-func (m *AnnotationMutation) SetData(jm json.RawMessage) {
-	m.data = &jm
+func (m *AnnotationMutation) SetData(j jsontext.Value) {
+	m.data = &j
 	m.appenddata = nil
 }
 
 // Data returns the value of the "data" field in the mutation.
-func (m *AnnotationMutation) Data() (r json.RawMessage, exists bool) {
+func (m *AnnotationMutation) Data() (r jsontext.Value, exists bool) {
 	v := m.data
 	if v == nil {
 		return
@@ -337,7 +337,7 @@ func (m *AnnotationMutation) Data() (r json.RawMessage, exists bool) {
 // OldData returns the old "data" field's value of the Annotation entity.
 // If the Annotation object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *AnnotationMutation) OldData(ctx context.Context) (v json.RawMessage, err error) {
+func (m *AnnotationMutation) OldData(ctx context.Context) (v jsontext.Value, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldData is only allowed on UpdateOne operations")
 	}
@@ -351,13 +351,13 @@ func (m *AnnotationMutation) OldData(ctx context.Context) (v json.RawMessage, er
 	return oldValue.Data, nil
 }
 
-// AppendData adds jm to the "data" field.
-func (m *AnnotationMutation) AppendData(jm json.RawMessage) {
-	m.appenddata = append(m.appenddata, jm...)
+// AppendData adds j to the "data" field.
+func (m *AnnotationMutation) AppendData(j jsontext.Value) {
+	m.appenddata = append(m.appenddata, j...)
 }
 
 // AppendedData returns the list of values that were appended to the "data" field in this mutation.
-func (m *AnnotationMutation) AppendedData() (json.RawMessage, bool) {
+func (m *AnnotationMutation) AppendedData() (jsontext.Value, bool) {
 	if len(m.appenddata) == 0 {
 		return nil, false
 	}
@@ -562,7 +562,7 @@ func (m *AnnotationMutation) SetField(name string, value ent.Value) error {
 		m.SetAnnotationNamespaceID(v)
 		return nil
 	case annotation.FieldData:
-		v, ok := value.(json.RawMessage)
+		v, ok := value.(jsontext.Value)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
@@ -1994,8 +1994,8 @@ type StatusMutation struct {
 	created_at       *time.Time
 	updated_at       *time.Time
 	source           *string
-	data             *json.RawMessage
-	appenddata       json.RawMessage
+	data             *jsontext.Value
+	appenddata       jsontext.Value
 	clearedFields    map[string]struct{}
 	namespace        *gidx.PrefixedID
 	clearednamespace bool
@@ -2291,13 +2291,13 @@ func (m *StatusMutation) ResetSource() {
 }
 
 // SetData sets the "data" field.
-func (m *StatusMutation) SetData(jm json.RawMessage) {
-	m.data = &jm
+func (m *StatusMutation) SetData(j jsontext.Value) {
+	m.data = &j
 	m.appenddata = nil
 }
 
 // Data returns the value of the "data" field in the mutation.
-func (m *StatusMutation) Data() (r json.RawMessage, exists bool) {
+func (m *StatusMutation) Data() (r jsontext.Value, exists bool) {
 	v := m.data
 	if v == nil {
 		return
@@ -2308,7 +2308,7 @@ func (m *StatusMutation) Data() (r json.RawMessage, exists bool) {
 // OldData returns the old "data" field's value of the Status entity.
 // If the Status object wasn't provided to the builder, the object is fetched from the database.
 // An error is returned if the mutation operation is not UpdateOne, or the database query fails.
-func (m *StatusMutation) OldData(ctx context.Context) (v json.RawMessage, err error) {
+func (m *StatusMutation) OldData(ctx context.Context) (v jsontext.Value, err error) {
 	if !m.op.Is(OpUpdateOne) {
 		return v, errors.New("OldData is only allowed on UpdateOne operations")
 	}
@@ -2322,13 +2322,13 @@ func (m *StatusMutation) OldData(ctx context.Context) (v json.RawMessage, err er
 	return oldValue.Data, nil
 }
 
-// AppendData adds jm to the "data" field.
-func (m *StatusMutation) AppendData(jm json.RawMessage) {
-	m.appenddata = append(m.appenddata, jm...)
+// AppendData adds j to the "data" field.
+func (m *StatusMutation) AppendData(j jsontext.Value) {
+	m.appenddata = append(m.appenddata, j...)
 }
 
 // AppendedData returns the list of values that were appended to the "data" field in this mutation.
-func (m *StatusMutation) AppendedData() (json.RawMessage, bool) {
+func (m *StatusMutation) AppendedData() (jsontext.Value, bool) {
 	if len(m.appenddata) == 0 {
 		return nil, false
 	}
@@ -2547,7 +2547,7 @@ func (m *StatusMutation) SetField(name string, value ent.Value) error {
 		m.SetSource(v)
 		return nil
 	case status.FieldData:
-		v, ok := value.(json.RawMessage)
+		v, ok := value.(jsontext.Value)
 		if !ok {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}

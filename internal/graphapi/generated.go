@@ -5,7 +5,7 @@ package graphapi
 import (
 	"bytes"
 	"context"
-	"encoding/json"
+	"encoding/json/jsontext"
 	"errors"
 	"fmt"
 	"strconv"
@@ -3168,7 +3168,7 @@ func (ec *executionContext) _Annotation_data(ctx context.Context, field graphql.
 			return obj.Data, nil
 		},
 		nil,
-		ec.marshalNJSON2encodingᚋjsonᚐRawMessage,
+		ec.marshalNJSON2encodingᚋjsonᚋjsontextᚐValue,
 		true,
 		true,
 	)
@@ -6185,7 +6185,7 @@ func (ec *executionContext) _Status_data(ctx context.Context, field graphql.Coll
 			return obj.Data, nil
 		},
 		nil,
-		ec.marshalNJSON2encodingᚋjsonᚐRawMessage,
+		ec.marshalNJSON2encodingᚋjsonᚋjsontextᚐValue,
 		true,
 		true,
 	)
@@ -9104,7 +9104,7 @@ func (ec *executionContext) unmarshalInputAnnotationUpdateInput(ctx context.Cont
 			it.NamespaceID = data
 		case "data":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("data"))
-			data, err := ec.unmarshalNJSON2encodingᚋjsonᚐRawMessage(ctx, v)
+			data, err := ec.unmarshalNJSON2encodingᚋjsonᚋjsontextᚐValue(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -9416,7 +9416,7 @@ func (ec *executionContext) unmarshalInputCreateStatusInput(ctx context.Context,
 			it.Source = data
 		case "data":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("data"))
-			data, err := ec.unmarshalNJSON2encodingᚋjsonᚐRawMessage(ctx, v)
+			data, err := ec.unmarshalNJSON2encodingᚋjsonᚋjsontextᚐValue(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -10211,7 +10211,7 @@ func (ec *executionContext) unmarshalInputStatusUpdateInput(ctx context.Context,
 			it.Source = data
 		case "data":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("data"))
-			data, err := ec.unmarshalNJSON2encodingᚋjsonᚐRawMessage(ctx, v)
+			data, err := ec.unmarshalNJSON2encodingᚋjsonᚋjsontextᚐValue(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -10600,14 +10600,14 @@ func (ec *executionContext) unmarshalInputUpdateStatusInput(ctx context.Context,
 		switch k {
 		case "data":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("data"))
-			data, err := ec.unmarshalOJSON2encodingᚋjsonᚐRawMessage(ctx, v)
+			data, err := ec.unmarshalOJSON2encodingᚋjsonᚋjsontextᚐValue(ctx, v)
 			if err != nil {
 				return it, err
 			}
 			it.Data = data
 		case "appendData":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("appendData"))
-			data, err := ec.unmarshalOJSON2encodingᚋjsonᚐRawMessage(ctx, v)
+			data, err := ec.unmarshalOJSON2encodingᚋjsonᚋjsontextᚐValue(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -13678,12 +13678,12 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 	return res
 }
 
-func (ec *executionContext) unmarshalNJSON2encodingᚋjsonᚐRawMessage(ctx context.Context, v any) (json.RawMessage, error) {
+func (ec *executionContext) unmarshalNJSON2encodingᚋjsonᚋjsontextᚐValue(ctx context.Context, v any) (jsontext.Value, error) {
 	res, err := entx.UnmarshalRawMessage(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNJSON2encodingᚋjsonᚐRawMessage(ctx context.Context, sel ast.SelectionSet, v json.RawMessage) graphql.Marshaler {
+func (ec *executionContext) marshalNJSON2encodingᚋjsonᚋjsontextᚐValue(ctx context.Context, sel ast.SelectionSet, v jsontext.Value) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -14847,7 +14847,7 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	return res
 }
 
-func (ec *executionContext) unmarshalOJSON2encodingᚋjsonᚐRawMessage(ctx context.Context, v any) (json.RawMessage, error) {
+func (ec *executionContext) unmarshalOJSON2encodingᚋjsonᚋjsontextᚐValue(ctx context.Context, v any) (jsontext.Value, error) {
 	if v == nil {
 		return nil, nil
 	}
@@ -14855,7 +14855,7 @@ func (ec *executionContext) unmarshalOJSON2encodingᚋjsonᚐRawMessage(ctx cont
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalOJSON2encodingᚋjsonᚐRawMessage(ctx context.Context, sel ast.SelectionSet, v json.RawMessage) graphql.Marshaler {
+func (ec *executionContext) marshalOJSON2encodingᚋjsonᚋjsontextᚐValue(ctx context.Context, sel ast.SelectionSet, v jsontext.Value) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}
