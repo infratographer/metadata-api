@@ -12,7 +12,7 @@ require (
 	github.com/brianvoe/gofakeit/v7 v7.16.0
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hasura/go-graphql-client v0.16.0
-	github.com/labstack/echo/v4 v4.16.1
+	github.com/labstack/echo/v4 v4.16.3
 	github.com/lib/pq v1.12.3
 	github.com/mattn/go-sqlite3 v1.14.50
 	github.com/metal-toolbox/iam-runtime v0.4.1
